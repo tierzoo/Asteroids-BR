@@ -29,7 +29,6 @@
     display: block;
     position: fixed;
     top: 0; left: 0;
-    image-rendering: auto;
   }
 
   #hud {
@@ -395,6 +394,21 @@
     border-color: #fff;
   }
 
+  #auto-restart-countdown {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    letter-spacing: 4px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 20px;
+    margin-bottom: -8px;
+  }
+
+  #auto-restart-countdown .countdown-num {
+    font-size: 18px;
+    font-weight: 900;
+    color: rgba(255,255,255,0.7);
+  }
+
   #speed-controls {
     position: fixed;
     bottom: 12px;
@@ -582,6 +596,11 @@
       <button class="hp-btn" data-hp="10">10</button>
     </div>
   </div>
+  <h3 style="margin-top:12px">MATCH</h3>
+  <div class="setting-row">
+    <span class="setting-label">Auto Restart</span>
+    <div class="setting-toggle" data-setting="autoRestart" onclick="toggleSetting(this)"></div>
+  </div>
 </div>
 
 <div id="hud">
@@ -620,6 +639,7 @@
   <h2>MATCH RESULTS</h2>
   <div id="winner-name"></div>
   <div id="rankings"></div>
+  <div id="auto-restart-countdown" style="display:none;"></div>
   <button id="restart-btn">NEW MATCH</button>
 </div>
 
@@ -695,6 +715,7 @@ const settings = {
   aim: false,
   rockShooter: false,
   shipHP: 1,
+  autoRestart: false,
 };
 
 function toggleSetting(el) {
@@ -950,32 +971,9 @@ function playFinaleExplosion() {
 }
 
 // ─── RESIZE ───────────────────────────────────────────────────
-const MAX_RENDER_W = 1280;
-const MAX_RENDER_H = 720;
-const STAR_SCALE = 0.25;
-let stars = [];
-let starCanvas = null; // render star layer at quarter resolution
-
 function resize() {
-  const screenW = window.innerWidth;
-  const screenH = window.innerHeight;
-
-  // Scale down the internal canvas resolution if the screen is larger than our cap
-  const scaleX = screenW / MAX_RENDER_W;
-  const scaleY = screenH / MAX_RENDER_H;
-  const downscale = Math.max(1, Math.max(scaleX, scaleY));
-
-  W = Math.round(screenW / downscale);
-  H = Math.round(screenH / downscale);
-  canvas.width = W;
-  canvas.height = H;
-
-  // CSS fills the screen — the browser upscales for us
-  canvas.style.width = screenW + 'px';
-  canvas.style.height = screenH + 'px';
-
-  // Rebuild the pre-rendered star canvas whenever we resize
-  buildStarCanvas();
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
 }
 window.addEventListener('resize', resize);
 resize();
@@ -2171,10 +2169,9 @@ function render() {
   }
 }
 
-// ─── STARS (pre-rendered) ─────────────────────────────────────
-
+// ─── STARS ────────────────────────────────────────────────────
+let stars = [];
 function initStars() {
-  stars = [];
   for (let i = 0; i < 700; i++) {
     stars.push({
       x: rand(0, CFG.WORLD_W),
@@ -2183,37 +2180,13 @@ function initStars() {
       b: rand(0.4, 1.0),
     });
   }
-  buildStarCanvas();
-}
-
-function buildStarCanvas() {
-  if (stars.length === 0) return;
-  const sw = Math.round(CFG.WORLD_W * STAR_SCALE);
-  const sh = Math.round(CFG.WORLD_H * STAR_SCALE);
-  starCanvas = document.createElement('canvas');
-  starCanvas.width = sw;
-  starCanvas.height = sh;
-  const sctx = starCanvas.getContext('2d');
-  sctx.fillStyle = 'transparent';
-  sctx.clearRect(0, 0, sw, sh);
-  for (const star of stars) {
-    const alpha = star.b * 0.75;
-    const brightness = Math.round(200 + alpha * 55);
-    sctx.fillStyle = `rgb(${brightness},${brightness},${brightness})`;
-    sctx.fillRect(
-      Math.round(star.x * STAR_SCALE),
-      Math.round(star.y * STAR_SCALE),
-      Math.max(1, Math.round(star.s * STAR_SCALE * 2)),
-      Math.max(1, Math.round(star.s * STAR_SCALE * 2))
-    );
-  }
 }
 
 function drawStars() {
-  if (!starCanvas) return;
-  ctx.globalAlpha = 0.8;
-  ctx.drawImage(starCanvas, 0, 0, CFG.WORLD_W, CFG.WORLD_H);
-  ctx.globalAlpha = 1;
+  for (const star of stars) {
+    ctx.fillStyle = `rgba(255,255,255,${star.b * (0.5 + 0.5 * Math.sin(gameTime * 0.5 + star.x))})`;
+    ctx.fillRect(star.x, star.y, star.s, star.s);
+  }
 }
 
 function buildPregameRoster() {
@@ -2231,27 +2204,7 @@ function buildPregameRoster() {
   }
 }
 
-document.getElementById('start-btn').addEventListener('click', () => {
-  ensureAudio();
-  // Apply all settings to ships before starting
-  for (let i = 0; i < ships.length; i++) {
-    const ship = ships[i];
-    const p = PRESET_PROFILES[i];
-    ship.hp = settings.shipHP;
-    ship.maxHp = settings.shipHP;
-    ship.aiBehavior = settings.behavior ? p.behavior : randomBehavior();
-    ship.aggroPhase = settings.aggression ? p.aggroPhase : rand(0, Math.PI * 2);
-    ship.aggroSpeed = settings.aggression ? p.aggroSpeed : rand(0.15, 0.4);
-    ship.rockShooter = settings.rockShooter ? p.rockShooter : rand(0.1, 0.9);
-    ship.aimBaseline = settings.aim ? p.aimBaseline : rand(0.3, 0.9);
-    ship.aimRange = settings.aim ? p.aimRange : rand(0.3, 0.5);
-    ship.aimSpeed = settings.aim ? p.aimSpeed : rand(0.3, 0.8);
-    ship.aimPhase = settings.aim ? p.aimPhase : rand(0, Math.PI * 2);
-  }
-  pregame = false;
-  document.getElementById('pregame-overlay').classList.add('hidden');
-  document.getElementById('settings-panel').classList.remove('open');
-});
+document.getElementById('start-btn').addEventListener('click', startMatch);
 
 // ─── SCOREBOARD ───────────────────────────────────────────────
 function buildScoreboard() {
@@ -2291,6 +2244,39 @@ function addKillMessage(killerName, killerColor, victimName, victimColor) {
 }
 
 // ─── WINNER ───────────────────────────────────────────────────
+let autoRestartInterval = null;
+
+function clearAutoRestart() {
+  if (autoRestartInterval) {
+    clearInterval(autoRestartInterval);
+    autoRestartInterval = null;
+  }
+  const el = document.getElementById('auto-restart-countdown');
+  el.style.display = 'none';
+  el.textContent = '';
+}
+
+function startMatch() {
+  ensureAudio();
+  for (let i = 0; i < ships.length; i++) {
+    const ship = ships[i];
+    const p = PRESET_PROFILES[i];
+    ship.hp = settings.shipHP;
+    ship.maxHp = settings.shipHP;
+    ship.aiBehavior = settings.behavior ? p.behavior : randomBehavior();
+    ship.aggroPhase = settings.aggression ? p.aggroPhase : rand(0, Math.PI * 2);
+    ship.aggroSpeed = settings.aggression ? p.aggroSpeed : rand(0.15, 0.4);
+    ship.rockShooter = settings.rockShooter ? p.rockShooter : rand(0.1, 0.9);
+    ship.aimBaseline = settings.aim ? p.aimBaseline : rand(0.3, 0.9);
+    ship.aimRange = settings.aim ? p.aimRange : rand(0.3, 0.5);
+    ship.aimSpeed = settings.aim ? p.aimSpeed : rand(0.3, 0.8);
+    ship.aimPhase = settings.aim ? p.aimPhase : rand(0, Math.PI * 2);
+  }
+  pregame = false;
+  document.getElementById('pregame-overlay').classList.add('hidden');
+  document.getElementById('settings-panel').classList.remove('open');
+}
+
 function showWinner() {
   const ov = document.getElementById('winner-overlay');
   ov.classList.add('show');
@@ -2342,6 +2328,25 @@ function showWinner() {
     `;
     container.appendChild(row);
   });
+
+  // Auto-restart countdown
+  clearAutoRestart();
+  if (settings.autoRestart) {
+    let remaining = 10;
+    const cdEl = document.getElementById('auto-restart-countdown');
+    cdEl.style.display = 'block';
+    cdEl.innerHTML = `NEXT MATCH IN <span class="countdown-num">${remaining}</span>`;
+    autoRestartInterval = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        clearAutoRestart();
+        init();
+        startMatch();
+      } else {
+        cdEl.innerHTML = `NEXT MATCH IN <span class="countdown-num">${remaining}</span>`;
+      }
+    }, 1000);
+  }
 }
 
 // ─── SPEED CONTROLS ───────────────────────────────────────────
@@ -2353,7 +2358,10 @@ document.querySelectorAll('.speed-btn').forEach(btn => {
   });
 });
 
-document.getElementById('restart-btn').addEventListener('click', init);
+document.getElementById('restart-btn').addEventListener('click', () => {
+  clearAutoRestart();
+  init();
+});
 
 // ─── GAME LOOP ────────────────────────────────────────────────
 let lastTime = 0;
