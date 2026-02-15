@@ -29,6 +29,7 @@
     display: block;
     position: fixed;
     top: 0; left: 0;
+    image-rendering: auto;
   }
 
   #hud {
@@ -949,9 +950,32 @@ function playFinaleExplosion() {
 }
 
 // ─── RESIZE ───────────────────────────────────────────────────
+const MAX_RENDER_W = 1280;
+const MAX_RENDER_H = 720;
+const STAR_SCALE = 0.25;
+let stars = [];
+let starCanvas = null; // render star layer at quarter resolution
+
 function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
+  const screenW = window.innerWidth;
+  const screenH = window.innerHeight;
+
+  // Scale down the internal canvas resolution if the screen is larger than our cap
+  const scaleX = screenW / MAX_RENDER_W;
+  const scaleY = screenH / MAX_RENDER_H;
+  const downscale = Math.max(1, Math.max(scaleX, scaleY));
+
+  W = Math.round(screenW / downscale);
+  H = Math.round(screenH / downscale);
+  canvas.width = W;
+  canvas.height = H;
+
+  // CSS fills the screen — the browser upscales for us
+  canvas.style.width = screenW + 'px';
+  canvas.style.height = screenH + 'px';
+
+  // Rebuild the pre-rendered star canvas whenever we resize
+  buildStarCanvas();
 }
 window.addEventListener('resize', resize);
 resize();
@@ -2147,9 +2171,10 @@ function render() {
   }
 }
 
-// ─── STARS ────────────────────────────────────────────────────
-let stars = [];
+// ─── STARS (pre-rendered) ─────────────────────────────────────
+
 function initStars() {
+  stars = [];
   for (let i = 0; i < 700; i++) {
     stars.push({
       x: rand(0, CFG.WORLD_W),
@@ -2158,13 +2183,37 @@ function initStars() {
       b: rand(0.4, 1.0),
     });
   }
+  buildStarCanvas();
+}
+
+function buildStarCanvas() {
+  if (stars.length === 0) return;
+  const sw = Math.round(CFG.WORLD_W * STAR_SCALE);
+  const sh = Math.round(CFG.WORLD_H * STAR_SCALE);
+  starCanvas = document.createElement('canvas');
+  starCanvas.width = sw;
+  starCanvas.height = sh;
+  const sctx = starCanvas.getContext('2d');
+  sctx.fillStyle = 'transparent';
+  sctx.clearRect(0, 0, sw, sh);
+  for (const star of stars) {
+    const alpha = star.b * 0.75;
+    const brightness = Math.round(200 + alpha * 55);
+    sctx.fillStyle = `rgb(${brightness},${brightness},${brightness})`;
+    sctx.fillRect(
+      Math.round(star.x * STAR_SCALE),
+      Math.round(star.y * STAR_SCALE),
+      Math.max(1, Math.round(star.s * STAR_SCALE * 2)),
+      Math.max(1, Math.round(star.s * STAR_SCALE * 2))
+    );
+  }
 }
 
 function drawStars() {
-  for (const star of stars) {
-    ctx.fillStyle = `rgba(255,255,255,${star.b * (0.5 + 0.5 * Math.sin(gameTime * 0.5 + star.x))})`;
-    ctx.fillRect(star.x, star.y, star.s, star.s);
-  }
+  if (!starCanvas) return;
+  ctx.globalAlpha = 0.8;
+  ctx.drawImage(starCanvas, 0, 0, CFG.WORLD_W, CFG.WORLD_H);
+  ctx.globalAlpha = 1;
 }
 
 function buildPregameRoster() {
