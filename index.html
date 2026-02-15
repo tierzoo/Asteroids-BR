@@ -770,6 +770,8 @@ let manualShips = []; // ship ids tracked in manual mode
 let selectBoxStart = null; // {x, y} screen coords
 let selectBoxEnd = null; // {x, y} screen coords
 let isSelecting = false;
+let cameraLinger = 0; // seconds to hold position after a fight ends
+let cameraTransitioning = false; // true when pulling away from a fight
 
 // ─── AUDIO ─────────────────────────────────────────────────────
 let audioCtx = null;
@@ -1248,6 +1250,8 @@ function init() {
   selectBoxStart = null;
   selectBoxEnd = null;
   isSelecting = false;
+  cameraLinger = 0;
+  cameraTransitioning = false;
 }
 
 // ─── PARTICLES ────────────────────────────────────────────────
@@ -1914,12 +1918,34 @@ function update(rawDt) {
         if (!dogfightPair ||
             (!ships[dogfightPair[0]].alive || !ships[dogfightPair[1]].alive) ||
             (dogfightSwitchCooldown <= 0 && (dogfightPair[0] !== a.id || dogfightPair[1] !== b.id) && (dogfightPair[0] !== b.id || dogfightPair[1] !== a.id))) {
-          dogfightPair = [a.id, b.id];
-          dogfightSwitchCooldown = 2.0; // hold on a pair for at least 2s
+          // If switching away from a dead pair, start linger
+          if (dogfightPair && (!ships[dogfightPair[0]].alive || !ships[dogfightPair[1]].alive) && cameraLinger <= 0) {
+            cameraLinger = 1.2;
+          }
+          if (cameraLinger <= 0) {
+            dogfightPair = [a.id, b.id];
+            dogfightSwitchCooldown = 2.0;
+            cameraTransitioning = false;
+          }
         }
       }
 
-      if (dogfightPair && ships[dogfightPair[0]].alive && ships[dogfightPair[1]].alive) {
+      // Linger countdown — hold camera still
+      if (cameraLinger > 0) {
+        cameraLinger -= rawDt;
+        if (cameraLinger <= 0) {
+          cameraTransitioning = true;
+          // Now allow the pair switch
+          const freshPair = findBestDogfight();
+          if (freshPair) {
+            dogfightPair = [freshPair[0].id, freshPair[1].id];
+            dogfightSwitchCooldown = 2.0;
+          } else {
+            dogfightPair = null;
+          }
+        }
+        // Don't update target — hold position
+      } else if (dogfightPair && ships[dogfightPair[0]].alive && ships[dogfightPair[1]].alive) {
         const sa = ships[dogfightPair[0]], sb = ships[dogfightPair[1]];
         targetCamX = (sa.x + sb.x) / 2;
         targetCamY = (sa.y + sb.y) / 2;
@@ -1928,31 +1954,61 @@ function update(rawDt) {
         const needZoomY = H / spread;
         targetZoom = Math.min(needZoomX, needZoomY);
         targetZoom = Math.max(0.4, Math.min(2.5, targetZoom));
-      } else {
-        // No valid dogfight — fall back to overview behavior
-        dogfightPair = null;
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        for (const s of alive) {
-          minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x);
-          minY = Math.min(minY, s.y); maxY = Math.max(maxY, s.y);
+        cameraTransitioning = false;
+      } else if (!dogfightPair || !ships[dogfightPair[0]].alive || !ships[dogfightPair[1]].alive) {
+        // Pair lost and no linger — start linger if we haven't
+        if (cameraLinger <= 0 && !cameraTransitioning) {
+          cameraLinger = 1.2;
+        } else if (cameraTransitioning) {
+          // Slowly pull out to overview framing
+          dogfightPair = null;
+          let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+          for (const s of alive) {
+            minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x);
+            minY = Math.min(minY, s.y); maxY = Math.max(maxY, s.y);
+          }
+          targetCamX = (minX + maxX) / 2;
+          targetCamY = (minY + maxY) / 2;
+          const spreadX = maxX - minX + 600;
+          const spreadY = maxY - minY + 600;
+          targetZoom = Math.max(0.15, Math.min(1.5, Math.min(W / spreadX, H / spreadY)));
         }
-        targetCamX = (minX + maxX) / 2;
-        targetCamY = (minY + maxY) / 2;
-        const spreadX = maxX - minX + 600;
-        const spreadY = maxY - minY + 600;
-        targetZoom = Math.max(0.15, Math.min(1.5, Math.min(W / spreadX, H / spreadY)));
       }
 
     } else if (cameraMode === 'manual') {
       // Track selected ships
       const tracked = manualShips.filter(id => ships[id] && ships[id].alive);
       if (tracked.length <= 1) {
-        // Not enough ships left — return to overview
-        cameraMode = 'overview';
-        manualShips = [];
-        updateCameraModeUI();
+        if (cameraLinger <= 0 && !cameraTransitioning) {
+          // Start linger — hold on the action
+          cameraLinger = 1.2;
+        } else if (cameraLinger > 0) {
+          cameraLinger -= rawDt;
+          if (cameraLinger <= 0) {
+            cameraTransitioning = true;
+          }
+        } else if (cameraTransitioning) {
+          // Slowly pull out to overview
+          cameraMode = 'overview';
+          manualShips = [];
+          cameraTransitioning = true; // keep slow transition flag
+          updateCameraModeUI();
+          // Set overview target
+          let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+          for (const s of alive) {
+            minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x);
+            minY = Math.min(minY, s.y); maxY = Math.max(maxY, s.y);
+          }
+          targetCamX = (minX + maxX) / 2;
+          targetCamY = (minY + maxY) / 2;
+          const spreadX = maxX - minX + 600;
+          const spreadY = maxY - minY + 600;
+          targetZoom = Math.max(0.15, Math.min(1.5, Math.min(W / spreadX, H / spreadY)));
+        }
       } else {
         manualShips = tracked;
+        cameraLinger = 0;
+        cameraTransitioning = false;
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         for (const id of tracked) {
           const s = ships[id];
@@ -1990,13 +2046,34 @@ function update(rawDt) {
     }
   }
 
-  const baseCamSpeed = (cameraMode === 'dogfight' || cameraMode === 'manual') ? 0.08 : CFG.CAMERA_LERP;
+  // Camera speed: slow when transitioning away from a fight, frozen when lingering
+  let baseCamSpeed;
+  if (cameraLinger > 0) {
+    baseCamSpeed = 0; // hold still during linger
+  } else if (cameraTransitioning) {
+    baseCamSpeed = 0.02; // slow pull-out from fights
+  } else if (cameraMode === 'dogfight' || cameraMode === 'manual') {
+    baseCamSpeed = 0.08; // snappy tracking during active fights
+  } else {
+    baseCamSpeed = CFG.CAMERA_LERP;
+    // Gradually restore normal speed after transitioning
+    if (cameraTransitioning) {
+      baseCamSpeed = 0.02;
+      // Clear once zoom is close enough to target
+      if (Math.abs(camZoom - targetZoom) / Math.max(0.01, targetZoom) < 0.1) {
+        cameraTransitioning = false;
+      }
+    }
+  }
   const camSpeed = finaleMode ? 0.12 : baseCamSpeed;
   if (cameraMode !== 'overview') updateCameraModeUI();
   const camLerp = 1 - Math.pow(1 - camSpeed, rawDt * 60);
-  cameraX = lerp(cameraX, targetCamX, camLerp);
-  cameraY = lerp(cameraY, targetCamY, camLerp);
-  camZoom = lerp(camZoom, targetZoom, camLerp * 0.7);
+  // During transitions: zoom out first, pan follows. Normal: pan leads slightly.
+  const zoomMult = cameraTransitioning ? 2.5 : 0.7;
+  const panMult = cameraTransitioning ? 0.5 : 1.0;
+  cameraX = lerp(cameraX, targetCamX, camLerp * panMult);
+  cameraY = lerp(cameraY, targetCamY, camLerp * panMult);
+  camZoom = lerp(camZoom, targetZoom, camLerp * zoomMult);
 
   // Finale slow-mo: triggered by the killing blow in killShip
   if (finaleMode) {
@@ -2576,6 +2653,8 @@ document.addEventListener('keydown', (e) => {
     }
     dogfightPair = null;
     dogfightSwitchCooldown = 0;
+    cameraLinger = 0;
+    cameraTransitioning = false;
     updateCameraModeUI();
   }
 });
@@ -2663,6 +2742,8 @@ canvas.addEventListener('mouseup', (e) => {
   if (selected.length >= 2) {
     manualShips = selected;
     cameraMode = 'manual';
+    cameraLinger = 0;
+    cameraTransitioning = false;
     updateCameraModeUI();
   }
 });
