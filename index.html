@@ -1,0 +1,2331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ASTEROIDS: Battle Royale</title>
+<meta name="description" content="12-ship AI battle royale in an asteroid field. Watch, spectate, and enjoy the chaos.">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Asteroids BR">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #000;
+    overflow: hidden;
+    font-family: 'Share Tech Mono', monospace;
+    color: #fff;
+    cursor: crosshair;
+  }
+
+  canvas {
+    display: block;
+    position: fixed;
+    top: 0; left: 0;
+  }
+
+  #hud {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    pointer-events: none;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  #title-block {
+    text-align: left;
+  }
+
+  #title-block h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(255,255,255,0.3);
+    margin-bottom: 2px;
+  }
+
+  #title-block .subtitle {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+  }
+
+  #alive-counter {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(255,100,100,0.5);
+    line-height: 1;
+  }
+
+  #alive-counter .label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.4);
+    display: block;
+    text-align: right;
+  }
+
+  #asteroid-kills {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(255,180,100,0.5);
+    line-height: 1;
+  }
+
+  #asteroid-kills .label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.4);
+    display: block;
+    text-align: right;
+  }
+
+  #scoreboard {
+    position: fixed;
+    top: 50px;
+    left: 12px;
+    bottom: 12px;
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 2px;
+  }
+
+  .player-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    transition: opacity 0.5s;
+    border: 1px solid;
+  }
+
+  .player-tag.dead {
+    opacity: 0.2;
+    text-decoration: line-through;
+  }
+
+  .player-tag .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .player-tag .kills {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+  }
+
+  #killfeed {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+  }
+
+  .kill-msg {
+    font-size: 11px;
+    padding: 4px 10px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 3px;
+    animation: killSlide 3s ease-out forwards;
+    white-space: nowrap;
+    border-left: 2px solid;
+  }
+
+  @keyframes killSlide {
+    0% { opacity: 0; transform: translateX(30px); }
+    10% { opacity: 1; transform: translateX(0); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-10px); }
+  }
+
+  #pregame-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 0;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(0,0,0,0.7) 0%,
+      rgba(0,0,0,0.4) 50%,
+      rgba(0,0,0,0.15) 100%
+    );
+  }
+
+  #pregame-overlay.hidden {
+    display: none;
+  }
+
+  #pregame-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 64px;
+    font-weight: 900;
+    letter-spacing: 12px;
+    color: #fff;
+    text-shadow: 0 0 40px rgba(255,255,255,0.3), 0 2px 20px rgba(0,0,0,0.8);
+  }
+
+  #pregame-sub {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    letter-spacing: 10px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 4px;
+    margin-bottom: 28px;
+    text-shadow: 0 1px 10px rgba(0,0,0,0.8);
+  }
+
+  #pregame-roster {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    width: 420px;
+    margin-bottom: 36px;
+  }
+
+  .roster-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 3px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    border: 1px solid;
+    background: rgba(0,0,0,0.5) !important;
+    opacity: 0;
+    animation: rosterIn 0.3s ease forwards;
+  }
+
+  .roster-tag .rdot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  @keyframes rosterIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  #start-btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 6px;
+    padding: 14px 40px;
+    background: rgba(0,0,0,0.5);
+    border: 2px solid rgba(255,255,255,0.4);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  #start-btn:hover {
+    background: rgba(255,255,255,0.15);
+    border-color: #fff;
+    box-shadow: 0 0 30px rgba(255,255,255,0.2);
+  }
+
+  #winner-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+  }
+
+  #winner-overlay.show {
+    display: flex;
+    animation: fadeOverlay 1s ease;
+  }
+
+  @keyframes fadeOverlay {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+
+  #winner-overlay h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    letter-spacing: 8px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 10px;
+  }
+
+  #winner-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 48px;
+    font-weight: 900;
+    text-shadow: 0 0 60px currentColor;
+    margin-bottom: 6px;
+  }
+
+  #rankings {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 20px;
+    width: 380px;
+  }
+
+  .rank-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    opacity: 0;
+    animation: rankSlide 0.4s ease forwards;
+  }
+
+  .rank-row .rank-num {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    font-weight: 900;
+    width: 28px;
+    text-align: right;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .rank-row.top1 .rank-num { color: #ffd700; }
+  .rank-row.top2 .rank-num { color: #c0c0c0; }
+  .rank-row.top3 .rank-num { color: #cd7f32; }
+
+  .rank-row .rank-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .rank-row .rank-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    flex: 1;
+  }
+
+  .rank-row .rank-time {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .rank-row .rank-cause {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: rgba(255,255,255,0.3);
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .rank-row .rank-kills {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.5);
+    flex-shrink: 0;
+    width: 24px;
+    text-align: right;
+  }
+
+  .rank-row.top1 .rank-name { font-weight: bold; }
+
+  @keyframes rankSlide {
+    from { opacity: 0; transform: translateX(-15px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  #restart-btn {
+    margin-top: 30px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    letter-spacing: 4px;
+    padding: 12px 32px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    cursor: pointer;
+    pointer-events: all;
+    transition: all 0.3s;
+  }
+
+  #restart-btn:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: #fff;
+  }
+
+  #speed-controls {
+    position: fixed;
+    bottom: 12px;
+    right: 12px;
+    z-index: 10;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .speed-btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 4px 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.2s;
+  }
+
+  .speed-btn.active {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border-color: rgba(255,255,255,0.5);
+  }
+
+  .speed-btn:hover {
+    border-color: rgba(255,255,255,0.5);
+  }
+
+  #settings-btn {
+    position: fixed;
+    top: 14px;
+    right: 20px;
+    z-index: 110;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.6);
+    font-size: 18px;
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    cursor: pointer;
+    pointer-events: all;
+    transition: all 0.2s;
+  }
+
+  #settings-btn:hover {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+  }
+
+  #settings-panel {
+    position: fixed;
+    top: 54px;
+    right: 20px;
+    z-index: 110;
+    background: rgba(0,0,0,0.85);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 14px 16px;
+    min-width: 240px;
+    display: none;
+    pointer-events: all;
+    backdrop-filter: blur(10px);
+  }
+
+  #settings-panel.open { display: block; }
+
+  #settings-panel h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.5);
+    margin: 0 0 10px 0;
+  }
+
+  .setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .setting-row:last-child { border-bottom: none; }
+
+  .setting-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .setting-toggle {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.15);
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .setting-toggle.on {
+    background: rgba(68, 255, 136, 0.3);
+    border-color: rgba(68, 255, 136, 0.5);
+  }
+
+  .setting-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    transition: all 0.2s;
+  }
+
+  .setting-toggle.on::after {
+    left: 18px;
+    background: #44ff88;
+  }
+
+  .hp-btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    flex: 1;
+    padding: 4px 0;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.4);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .hp-btn.active {
+    background: rgba(68,255,136,0.2);
+    border-color: rgba(68,255,136,0.5);
+    color: #44ff88;
+  }
+
+  .hp-btn:hover {
+    border-color: rgba(255,255,255,0.4);
+  }
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<button id="settings-btn">⚙</button>
+<div id="settings-panel">
+  <h3>PERSONALITY</h3>
+  <div class="setting-row">
+    <span class="setting-label">Combat Style</span>
+    <div class="setting-toggle" data-setting="behavior" onclick="toggleSetting(this)"></div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Aggression Cycle</span>
+    <div class="setting-toggle" data-setting="aggression" onclick="toggleSetting(this)"></div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Aim Style</span>
+    <div class="setting-toggle" data-setting="aim" onclick="toggleSetting(this)"></div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Rock Shooting</span>
+    <div class="setting-toggle" data-setting="rockShooter" onclick="toggleSetting(this)"></div>
+  </div>
+  <h3 style="margin-top:12px">SHIP HP</h3>
+  <div class="setting-row">
+    <div id="hp-selector" style="display:flex;gap:4px;width:100%;">
+      <button class="hp-btn active" data-hp="1">1</button>
+      <button class="hp-btn" data-hp="2">2</button>
+      <button class="hp-btn" data-hp="3">3</button>
+      <button class="hp-btn" data-hp="5">5</button>
+      <button class="hp-btn" data-hp="10">10</button>
+    </div>
+  </div>
+</div>
+
+<div id="hud">
+  <div id="title-block">
+    <h1>ASTEROIDS</h1>
+    <div class="subtitle">Battle Royale</div>
+  </div>
+  <div id="alive-counter">
+    <span class="label">ALIVE</span>
+    <span id="alive-num">12</span>
+  </div>
+  <div id="asteroid-kills">
+    <span class="label">☄ KILLS</span>
+    <span id="ast-kill-num">0</span>
+  </div>
+</div>
+
+<div id="killfeed"></div>
+<div id="scoreboard"></div>
+
+<div id="speed-controls">
+  <button class="speed-btn" data-speed="0.5">0.5x</button>
+  <button class="speed-btn active" data-speed="1">1x</button>
+  <button class="speed-btn" data-speed="2">2x</button>
+  <button class="speed-btn" data-speed="4">4x</button>
+</div>
+
+<div id="pregame-overlay">
+  <div id="pregame-title">ASTEROIDS</div>
+  <div id="pregame-sub">BATTLE ROYALE</div>
+  <div id="pregame-roster"></div>
+  <button id="start-btn">START MATCH</button>
+</div>
+
+<div id="winner-overlay">
+  <h2>MATCH RESULTS</h2>
+  <div id="winner-name"></div>
+  <div id="rankings"></div>
+  <button id="restart-btn">NEW MATCH</button>
+</div>
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────────────
+const CFG = {
+  WORLD_W: 9600,
+  WORLD_H: 5400,
+  NUM_SHIPS: 12,
+  NUM_ASTEROIDS: 180,
+  SHIP_RADIUS: 12,
+  SHIP_THRUST: 192,
+  SHIP_MAX_SPEED: 240,
+  SHIP_TURN_SPEED: 5,
+  BULLET_SPEED: 400,
+  BULLET_LIFE: 1.8,
+  FIRE_RATE: 0.28,
+  ASTEROID_SPEED_MIN: 15,
+  ASTEROID_SPEED_MAX: 70,
+  ASTEROID_SIZES: [200, 50, 30, 16],
+  RESPAWN_ASTEROIDS: true,
+  INVULN_TIME: 0,
+  SHIP_HP: 1,
+  AI_REACTION: 0.05,
+  CAMERA_LERP: 0.06,
+};
+
+// ─── NAMES & COLORS ───────────────────────────────────────────
+const PILOT_NAMES = [
+  'RED', 'GREEN', 'BLUE', 'ORANGE',
+  'PINK', 'CYAN', 'LIME', 'CORAL',
+  'PURPLE', 'WHITE', 'YELLOW', 'MAGENTA'
+];
+
+const PILOT_COLORS = [
+  '#ff4444', '#44ff88', '#4488ff', '#ffaa22',
+  '#dd66bb', '#44ffff', '#88dd55', '#ff6b4a',
+  '#aa44ff', '#ffffff', '#ffff44', '#ff00ff'
+];
+
+// ─── PREDETERMINED PERSONALITY PROFILES ───────────────────────
+const PRESET_PROFILES = [
+  // RED:     Reckless berserker — charges in, sprays lead, blasts everything
+  { behavior: 'aggressive', aggroSpeed: 0.18, aggroPhase: 0,     aimBaseline: 0.4, aimRange: 0.45, aimSpeed: 0.7, aimPhase: 0,    rockShooter: 0.85 },
+  // GREEN:   Calculated sniper — patient lead shots, avoids rocks cleanly
+  { behavior: 'hunter',     aggroSpeed: 0.25, aggroPhase: 1.2,   aimBaseline: 0.85, aimRange: 0.3, aimSpeed: 0.35, aimPhase: 1.0, rockShooter: 0.2 },
+  // BLUE:    Steady soldier — balanced everything, reliable mid-range
+  { behavior: 'hunter',     aggroSpeed: 0.3,  aggroPhase: 2.5,   aimBaseline: 0.65, aimRange: 0.35, aimSpeed: 0.5, aimPhase: 2.0, rockShooter: 0.5 },
+  // ORANGE:  Hot-headed brawler — aggressive with wild aim, loves explosions
+  { behavior: 'aggressive', aggroSpeed: 0.35, aggroPhase: 0.8,   aimBaseline: 0.35, aimRange: 0.5, aimSpeed: 0.75, aimPhase: 3.1, rockShooter: 0.9 },
+  // PINK:    Elusive dancer — dodges everything, precise when they do shoot
+  { behavior: 'evasive',    aggroSpeed: 0.2,  aggroPhase: 4.0,   aimBaseline: 0.9, aimRange: 0.3, aimSpeed: 0.4, aimPhase: 0.5,  rockShooter: 0.15 },
+  // CYAN:    Cool tactician — cautious approach, strong lead prediction
+  { behavior: 'cautious',   aggroSpeed: 0.22, aggroPhase: 3.2,   aimBaseline: 0.8, aimRange: 0.35, aimSpeed: 0.45, aimPhase: 4.2, rockShooter: 0.35 },
+  // LIME:    Twitchy scrapper — fast aggression cycles, chaotic aim
+  { behavior: 'hunter',     aggroSpeed: 0.4,  aggroPhase: 5.5,   aimBaseline: 0.5, aimRange: 0.5, aimSpeed: 0.8, aimPhase: 1.8,  rockShooter: 0.7 },
+  // CORAL:   Bloodthirsty bruiser — ignores asteroids when locked onto a target
+  { behavior: 'bloodthirsty', aggroSpeed: 0.15, aggroPhase: 1.0,   aimBaseline: 0.3, aimRange: 0.3, aimSpeed: 0.3, aimPhase: 5.0,  rockShooter: 0.6 },
+  // PURPLE:  Ghost — evasive navigator, rarely shoots rocks, precise aim
+  { behavior: 'evasive',    aggroSpeed: 0.28, aggroPhase: 2.0,   aimBaseline: 0.75, aimRange: 0.4, aimSpeed: 0.5, aimPhase: 3.5, rockShooter: 0.1 },
+  // WHITE:   Wildcard — cautious but with dramatic aggro swings
+  { behavior: 'cautious',   aggroSpeed: 0.38, aggroPhase: 4.8,   aimBaseline: 0.6, aimRange: 0.45, aimSpeed: 0.6, aimPhase: 0.3, rockShooter: 0.45 },
+  // YELLOW:  Bombardier — hunts aggressively, blasts everything in sight
+  { behavior: 'hunter',     aggroSpeed: 0.32, aggroPhase: 0.5,   aimBaseline: 0.7, aimRange: 0.4, aimSpeed: 0.55, aimPhase: 2.8, rockShooter: 0.8 },
+  // MAGENTA: Razor — cautious with lethal precision, never wastes a shot
+  { behavior: 'cautious',   aggroSpeed: 0.2,  aggroPhase: 3.8,   aimBaseline: 0.95, aimRange: 0.3, aimSpeed: 0.35, aimPhase: 4.5, rockShooter: 0.25 },
+];
+
+// Settings state — false = random, true = predetermined
+const settings = {
+  behavior: false,
+  aggression: false,
+  aim: false,
+  rockShooter: false,
+  shipHP: 1,
+};
+
+function toggleSetting(el) {
+  const key = el.dataset.setting;
+  settings[key] = !settings[key];
+  el.classList.toggle('on', settings[key]);
+}
+
+document.querySelectorAll('.hp-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.hp-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    settings.shipHP = parseInt(btn.dataset.hp);
+  });
+});
+
+document.getElementById('settings-btn').addEventListener('click', () => {
+  document.getElementById('settings-panel').classList.toggle('open');
+});
+
+// ─── GLOBALS ──────────────────────────────────────────────────
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+let ships = [];
+let asteroids = [];
+let bullets = [];
+let particles = [];
+let shockwaves = [];
+let gameTime = 0;
+let gameOver = false;
+let pregame = true;
+let winner = null;
+let simSpeed = 1;
+let finaleMode = false;
+let finaleTimer = 0;
+let finaleSlowMo = 1;
+let finaleDeath = null; // {x, y, color, killerColor, killerName}
+let finaleFlash = 0;
+let screenShakeX = 0;
+let screenShakeY = 0;
+let asteroidKills = 0;
+let cameraX = CFG.WORLD_W / 2;
+let cameraY = CFG.WORLD_H / 2;
+let targetCamX = cameraX;
+let targetCamY = cameraY;
+let camZoom = 0.15;
+let targetZoom = 0.15;
+
+// ─── AUDIO ─────────────────────────────────────────────────────
+let audioCtx = null;
+let masterGain = null;
+
+function initAudio() {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.connect(audioCtx.destination);
+  masterGain.gain.value = 0.4;
+}
+
+function ensureAudio() {
+  if (!audioCtx) initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+// Volume scales with zoom: zoomed in = loud, zoomed out = quiet
+function getZoomVolume() {
+  if (!audioCtx) return 0;
+  return Math.max(0.03, Math.min(1.0, camZoom * 0.7));
+}
+
+// Throttle sounds to avoid overload
+let lastShootTime = 0;
+let lastAsteroidTime = 0;
+
+function playShoot() {
+  ensureAudio();
+  const t = audioCtx.currentTime;
+  if (t - lastShootTime < 0.04) return; // max ~25 shots/sec
+  lastShootTime = t;
+  const vol = getZoomVolume() * 0.06;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(800, t);
+  osc.frequency.exponentialRampToValueAtTime(200, t + 0.08);
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+  osc.start(t);
+  osc.stop(t + 0.08);
+}
+
+function playAsteroidBreak() {
+  ensureAudio();
+  const t = audioCtx.currentTime;
+  if (t - lastAsteroidTime < 0.05) return;
+  lastAsteroidTime = t;
+  const vol = getZoomVolume() * 0.25;
+  // Noise burst via oscillator detune trick
+  const osc = audioCtx.createOscillator();
+  const osc2 = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  osc2.connect(gain);
+  gain.connect(masterGain);
+  osc.type = 'sawtooth';
+  osc2.type = 'square';
+  osc.frequency.setValueAtTime(150, t);
+  osc.frequency.exponentialRampToValueAtTime(40, t + 0.15);
+  osc2.frequency.setValueAtTime(90, t);
+  osc2.frequency.exponentialRampToValueAtTime(20, t + 0.15);
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  osc.start(t);
+  osc2.start(t);
+  osc.stop(t + 0.2);
+  osc2.stop(t + 0.2);
+}
+
+function playShipHit() {
+  ensureAudio();
+  const vol = getZoomVolume() * 0.3;
+  const t = audioCtx.currentTime;
+  // Crunchy impact
+  const osc = audioCtx.createOscillator();
+  const osc2 = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  osc2.connect(gain);
+  gain.connect(masterGain);
+  osc.type = 'sawtooth';
+  osc2.type = 'triangle';
+  osc.frequency.setValueAtTime(300, t);
+  osc.frequency.exponentialRampToValueAtTime(60, t + 0.12);
+  osc2.frequency.setValueAtTime(180, t);
+  osc2.frequency.exponentialRampToValueAtTime(30, t + 0.15);
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+  osc.start(t);
+  osc2.start(t);
+  osc.stop(t + 0.15);
+  osc2.stop(t + 0.15);
+}
+
+function playExplosion() {
+  ensureAudio();
+  const vol = getZoomVolume() * 0.4;
+  const t = audioCtx.currentTime;
+  // Classic arcade descending "bwaaaa-pop" 
+  // High pitched descending whistle
+  const osc1 = audioCtx.createOscillator();
+  const gain1 = audioCtx.createGain();
+  osc1.connect(gain1);
+  gain1.connect(masterGain);
+  osc1.type = 'sine';
+  osc1.frequency.setValueAtTime(1200, t);
+  osc1.frequency.exponentialRampToValueAtTime(80, t + 0.35);
+  gain1.gain.setValueAtTime(vol * 0.6, t);
+  gain1.gain.linearRampToValueAtTime(vol * 0.3, t + 0.1);
+  gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+  osc1.start(t);
+  osc1.stop(t + 0.4);
+  // Crunchy "pop" burst
+  const osc2 = audioCtx.createOscillator();
+  const gain2 = audioCtx.createGain();
+  osc2.connect(gain2);
+  gain2.connect(masterGain);
+  osc2.type = 'square';
+  osc2.frequency.setValueAtTime(600, t);
+  osc2.frequency.exponentialRampToValueAtTime(40, t + 0.2);
+  gain2.gain.setValueAtTime(vol * 0.5, t);
+  gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  osc2.start(t);
+  osc2.stop(t + 0.25);
+  // Wobbly ring-out
+  const osc3 = audioCtx.createOscillator();
+  const gain3 = audioCtx.createGain();
+  osc3.connect(gain3);
+  gain3.connect(masterGain);
+  osc3.type = 'triangle';
+  osc3.frequency.setValueAtTime(300, t + 0.05);
+  osc3.frequency.setValueAtTime(350, t + 0.1);
+  osc3.frequency.setValueAtTime(200, t + 0.15);
+  osc3.frequency.setValueAtTime(250, t + 0.2);
+  osc3.frequency.exponentialRampToValueAtTime(60, t + 0.5);
+  gain3.gain.setValueAtTime(0.001, t);
+  gain3.gain.linearRampToValueAtTime(vol * 0.35, t + 0.05);
+  gain3.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+  osc3.start(t);
+  osc3.stop(t + 0.5);
+}
+
+function playFinaleExplosion() {
+  ensureAudio();
+  const t = audioCtx.currentTime;
+  const vol = 0.6;
+  // Big dramatic descending sweep
+  const osc1 = audioCtx.createOscillator();
+  const gain1 = audioCtx.createGain();
+  osc1.connect(gain1);
+  gain1.connect(masterGain);
+  osc1.type = 'sine';
+  osc1.frequency.setValueAtTime(1800, t);
+  osc1.frequency.exponentialRampToValueAtTime(30, t + 0.8);
+  gain1.gain.setValueAtTime(vol * 0.7, t);
+  gain1.gain.exponentialRampToValueAtTime(0.001, t + 1.0);
+  osc1.start(t);
+  osc1.stop(t + 1.0);
+  // Chunky square crunch
+  const osc2 = audioCtx.createOscillator();
+  const gain2 = audioCtx.createGain();
+  osc2.connect(gain2);
+  gain2.connect(masterGain);
+  osc2.type = 'square';
+  osc2.frequency.setValueAtTime(800, t);
+  osc2.frequency.exponentialRampToValueAtTime(25, t + 0.5);
+  gain2.gain.setValueAtTime(vol * 0.5, t);
+  gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+  osc2.start(t);
+  osc2.stop(t + 0.6);
+  // Wobble ring-out — longer, more dramatic
+  const osc3 = audioCtx.createOscillator();
+  const gain3 = audioCtx.createGain();
+  osc3.connect(gain3);
+  gain3.connect(masterGain);
+  osc3.type = 'triangle';
+  osc3.frequency.setValueAtTime(500, t + 0.05);
+  osc3.frequency.setValueAtTime(400, t + 0.12);
+  osc3.frequency.setValueAtTime(300, t + 0.2);
+  osc3.frequency.setValueAtTime(350, t + 0.3);
+  osc3.frequency.setValueAtTime(200, t + 0.4);
+  osc3.frequency.exponentialRampToValueAtTime(40, t + 1.2);
+  gain3.gain.setValueAtTime(0.001, t);
+  gain3.gain.linearRampToValueAtTime(vol * 0.4, t + 0.08);
+  gain3.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+  osc3.start(t);
+  osc3.stop(t + 1.2);
+  // Sub bass thud
+  const osc4 = audioCtx.createOscillator();
+  const gain4 = audioCtx.createGain();
+  osc4.connect(gain4);
+  gain4.connect(masterGain);
+  osc4.type = 'sine';
+  osc4.frequency.setValueAtTime(60, t);
+  osc4.frequency.exponentialRampToValueAtTime(15, t + 0.8);
+  gain4.gain.setValueAtTime(vol * 0.8, t);
+  gain4.gain.exponentialRampToValueAtTime(0.001, t + 1.0);
+  osc4.start(t);
+  osc4.stop(t + 1.0);
+}
+
+// ─── RESIZE ───────────────────────────────────────────────────
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ─── UTILS ────────────────────────────────────────────────────
+function rand(a, b) { return a + Math.random() * (b - a); }
+function randInt(a, b) { return Math.floor(rand(a, b + 1)); }
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+function angle(a, b) { return Math.atan2(b.y - a.y, b.x - a.x); }
+function wrap(v, max) { return ((v % max) + max) % max; }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function shortAngleDist(a, b) {
+  const d = ((b - a) % (Math.PI*2) + Math.PI*3) % (Math.PI*2) - Math.PI;
+  return d;
+}
+// Random behavior with bloodthirsty as rare (~8% chance)
+function randomBehavior() {
+  if (Math.random() < 0.08) return 'bloodthirsty';
+  return ['aggressive', 'cautious', 'hunter', 'evasive'][randInt(0, 3)];
+}
+
+// ─── SHIP SHAPES ──────────────────────────────────────────────
+// ─── CUSTOM SHIP SHAPES ──────────────────────────────────────
+const SHIP_SHAPES = [
+  // RED — detailed racer with fins and cockpit
+  [[-.075,-.1],[-.45,-.4],[-.2,-.4],[0,-.45],[-.2,-.55],[-.725,-.55],[-.275,0],[-.725,.55],[-.5,.55],[-.2,.55],[0,.5],[-.2,.4],[-.45,.4],[-.075,.1],[.45,.15],[.6,.1],[.65,.05],[.75,.05],[.925,0],[.75,-.05],[.65,-.05],[.6,-.1],[.45,-.15]],
+  // GREEN — asymmetric dart with canard
+  [[-.7,0],[-.3,-.5],[-.05,-.4],[-.15,-.3],[.05,-.35],[.5,-.15],[.45,-.05],[.6,-.1],[1,0],[-.3,.5]],
+  // BLUE — winged fighter
+  [[1,0],[0,-.85],[.1,-.4],[-.1,-.25],[-.25,0],[-.1,.25],[.1,.45],[0,.85],[.75,.2]],
+  // ORANGE — chevron with center strut
+  [[1,0],[-.7,-.65],[-.6,-.15],[.2,0],[-.6,.15],[-.7,.65]],
+  // PINK — asymmetric swept wing
+  [[-.7,-.65],[-.5,-.75],[1,0],[.25,.35],[-.5,.75],[-.7,.65],[-.45,0]],
+  // CYAN — angular interceptor
+  [[-.2,-.65],[-.7,-.65],[-.4,0],[-.7,.65],[-.25,.6],[-.5,.4],[1,0],[-.5,-.45]],
+  // LIME — hex shuttle
+  [[.567,-.55],[-.75,-.65],[-.483,0],[-.75,.65],[.567,.55],[.917,0]],
+  // CORAL — hammerhead
+  [[.55,-.25],[-.7,-.65],[-.4,0],[-.7,.65],[.55,.2],[.75,.35],[1,0],[.75,-.35]],
+  // PURPLE — zigzag blade
+  [[-.6,-.8],[.1,-.5],[-.75,-.2],[0,0],[-.75,.25],[0,.45],[-.55,.8],[.1,.75],[.6,.3],[1,0],[.65,-.25],[.1,-.7]],
+  // WHITE — original chevron
+  [[1,0],[-.7,-.65],[-.4,0],[-.7,.65]],
+  // YELLOW — serrated warship
+  [[1,0],[-.4,-.55],[-.6,-.45],[-.7,-.65],[-.2,-.2],[-.2,-.1],[-.85,0],[-.25,.05],[-.25,.2],[-.55,.4],[-.45,.65],[-.7,.65],[0,.3],[.2,-.2],[.25,.2],[.65,0],[.75,.1],[.85,0]],
+  // MAGENTA — crystalline
+  [[1,0],[-.7,-.65],[-.4,0],[-.7,.65],[.1,.3],[-.4,-.35],[.35,.15],[.15,-.25],[.65,.1]],
+];
+
+function drawShipShape(ctx, x, y, ang, r, color, hp, maxHp, invuln, shipId) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(ang);
+
+  if (invuln && isFinite(invuln)) {
+    ctx.globalAlpha = 0.3 + 0.3 * Math.sin(gameTime * 15);
+  }
+
+  // Thruster glow
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 20;
+
+  const verts = (shipId != null && SHIP_SHAPES[shipId]) ? SHIP_SHAPES[shipId] : SHIP_SHAPES[3]; // fallback to chevron
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(verts[0][0] * r, verts[0][1] * r);
+  for (let i = 1; i < verts.length; i++) {
+    ctx.lineTo(verts[i][0] * r, verts[i][1] * r);
+  }
+  ctx.closePath();
+  ctx.stroke();
+  ctx.fillStyle = color + '22';
+  ctx.fill();
+
+  // HP bar — only show when ships have more than 1 HP
+  if (maxHp > 1) {
+    ctx.rotate(-ang); // un-rotate so bar is always horizontal
+    const barW = r * 2.2;
+    const barH = 3;
+    const barY = -r - 8;
+    // Background
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.fillRect(-barW/2, barY, barW, barH);
+    // Fill
+    const pct = hp / maxHp;
+    const barColor = pct > 0.5 ? color : pct > 0.25 ? '#ffaa22' : '#ff4444';
+    ctx.fillStyle = barColor;
+    ctx.fillRect(-barW/2, barY, barW * pct, barH);
+  }
+
+  ctx.restore();
+}
+
+// ─── ASTEROID SHAPE ───────────────────────────────────────────
+function makeAsteroidVerts(r) {
+  const n = r > 100 ? randInt(14, 20) : randInt(7, 12);
+  const verts = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const d = r * rand(0.7, 1.0);
+    verts.push({ x: Math.cos(a) * d, y: Math.sin(a) * d });
+  }
+  return verts;
+}
+
+// ─── SPAWN ASTEROID ───────────────────────────────────────────
+function spawnAsteroid(sizeIdx, x, y) {
+  const r = CFG.ASTEROID_SIZES[sizeIdx || 0];
+  const a = rand(0, Math.PI * 2);
+  // Mega asteroids drift slowly, others normal speed
+  const speedMult = sizeIdx === 0 ? 0.3 : 1;
+  const sp = rand(CFG.ASTEROID_SPEED_MIN, CFG.ASTEROID_SPEED_MAX) * speedMult;
+  return {
+    x: x ?? rand(0, CFG.WORLD_W),
+    y: y ?? rand(0, CFG.WORLD_H),
+    vx: Math.cos(a) * sp,
+    vy: Math.sin(a) * sp,
+    r: r,
+    sizeIdx: sizeIdx || 0,
+    rot: 0,
+    rotSpeed: rand(-2, 2) * (sizeIdx === 0 ? 0.3 : 1),
+    verts: makeAsteroidVerts(r),
+  };
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+function init() {
+  ships = [];
+  asteroids = [];
+  bullets = [];
+  particles = [];
+  shockwaves = [];
+  gameTime = 0;
+  gameOver = false;
+  winner = null;
+  finaleMode = false;
+  finaleTimer = 0;
+  finaleSlowMo = 1;
+  finaleDeath = null;
+  finaleFlash = 0;
+  screenShakeX = 0;
+  screenShakeY = 0;
+  asteroidKills = 0;
+  document.getElementById('settings-panel').classList.remove('open');
+
+  // Spawn ships in a circle — randomize positions
+  const cx = CFG.WORLD_W / 2;
+  const cy = CFG.WORLD_H / 2;
+  const spawnRx = 3200;
+  const spawnRy = 1800;
+  const spawnSlots = Array.from({length: CFG.NUM_SHIPS}, (_, i) => i);
+  for (let i = spawnSlots.length - 1; i > 0; i--) {
+    const j = randInt(0, i);
+    [spawnSlots[i], spawnSlots[j]] = [spawnSlots[j], spawnSlots[i]];
+  }
+  for (let i = 0; i < CFG.NUM_SHIPS; i++) {
+    const a = (spawnSlots[i] / CFG.NUM_SHIPS) * Math.PI * 2;
+    ships.push({
+      id: i,
+      name: PILOT_NAMES[i],
+      color: PILOT_COLORS[i],
+      x: cx + Math.cos(a) * spawnRx,
+      y: cy + Math.sin(a) * spawnRy,
+      vx: 0, vy: 0,
+      ang: a + Math.PI, // face center
+      r: CFG.SHIP_RADIUS,
+      hp: settings.shipHP,
+      maxHp: settings.shipHP,
+      alive: true,
+      fireCooldown: 0,
+      invuln: CFG.INVULN_TIME,
+      kills: 0,
+      deathTime: null, // timestamp when eliminated
+      placement: 0,
+      killedBy: null, // name of killer or 'ASTEROID'
+      // AI state
+      aiTimer: rand(0, CFG.AI_REACTION),
+      aiTarget: null,
+      aiEvade: null,
+      // Combat personality — preset or random
+      aiBehavior: settings.behavior ? PRESET_PROFILES[i].behavior :
+        randomBehavior(),
+      // Aggression oscillation
+      aggroPhase: settings.aggression ? PRESET_PROFILES[i].aggroPhase : rand(0, Math.PI * 2),
+      aggroSpeed: settings.aggression ? PRESET_PROFILES[i].aggroSpeed : rand(0.15, 0.4),
+      // Rock shooting preference
+      rockShooter: settings.rockShooter ? PRESET_PROFILES[i].rockShooter : rand(0.1, 0.9),
+      // Aim style
+      aimBaseline: settings.aim ? PRESET_PROFILES[i].aimBaseline : rand(0.3, 0.9),
+      aimRange: settings.aim ? PRESET_PROFILES[i].aimRange : rand(0.3, 0.5),
+      aimSpeed: settings.aim ? PRESET_PROFILES[i].aimSpeed : rand(0.3, 0.8),
+      aimPhase: settings.aim ? PRESET_PROFILES[i].aimPhase : rand(0, Math.PI * 2),
+      strafeFuel: 5,       // seconds of strafe available
+      strafeDepleted: false, // lockout when fully drained
+      thrustOn: false,
+    });
+  }
+
+  // Spawn asteroids — avoid ship spawn locations
+  // 2-5 mega asteroids
+  const numMegas = randInt(2, 5);
+  for (let i = 0; i < numMegas; i++) {
+    let ast;
+    let tries = 0;
+    do {
+      ast = spawnAsteroid(0);
+      tries++;
+    } while (tries < 20 && ships.some(s => dist(s, ast) < 400));
+    asteroids.push(ast);
+  }
+  // Standard and half-size asteroids
+  for (let i = 0; i < CFG.NUM_ASTEROIDS; i++) {
+    let ast;
+    let tries = 0;
+    const sizeIdx = Math.random() < 0.1 ? 2 : 1; // 10% half-size
+    do {
+      ast = spawnAsteroid(sizeIdx);
+      tries++;
+    } while (tries < 20 && ships.some(s => dist(s, ast) < 200));
+    asteroids.push(ast);
+  }
+
+  document.getElementById('winner-overlay').classList.remove('show');
+  buildScoreboard();
+  buildPregameRoster();
+  pregame = true;
+  document.getElementById('pregame-overlay').classList.remove('hidden');
+  cameraX = CFG.WORLD_W / 2;
+  cameraY = CFG.WORLD_H / 2;
+  camZoom = 0.15;
+  targetZoom = 0.15;
+}
+
+// ─── PARTICLES ────────────────────────────────────────────────
+function spawnExplosion(x, y, color, count, speed) {
+  for (let i = 0; i < count; i++) {
+    const a = rand(0, Math.PI * 2);
+    const sp = rand(20, speed);
+    particles.push({
+      x, y,
+      vx: Math.cos(a) * sp,
+      vy: Math.sin(a) * sp,
+      life: rand(0.3, 1.2),
+      maxLife: 1.2,
+      color,
+      size: rand(1, 3),
+    });
+  }
+  shockwaves.push({ x, y, r: 0, maxR: speed * 0.8, life: 0.4, color });
+}
+
+function spawnThrustParticle(ship) {
+  const bx = ship.x - Math.cos(ship.ang) * ship.r * 0.5;
+  const by = ship.y - Math.sin(ship.ang) * ship.r * 0.5;
+  particles.push({
+    x: bx + rand(-3, 3),
+    y: by + rand(-3, 3),
+    vx: -Math.cos(ship.ang) * rand(30, 80) + ship.vx * 0.3,
+    vy: -Math.sin(ship.ang) * rand(30, 80) + ship.vy * 0.3,
+    life: rand(0.1, 0.3),
+    maxLife: 0.3,
+    color: ship.color,
+    size: rand(1, 2.5),
+  });
+}
+
+// ─── AI ───────────────────────────────────────────────────────
+// Predict if a ship will collide with an asteroid within `lookahead` seconds
+function predictCollision(ship, ast, lookahead) {
+  // Relative velocity
+  const rvx = ship.vx - ast.vx;
+  const rvy = ship.vy - ast.vy;
+  // Relative position
+  const rpx = ship.x - ast.x;
+  const rpy = ship.y - ast.y;
+  // Closest approach time: t = -dot(rp,rv) / dot(rv,rv)
+  const rvDot = rvx * rvx + rvy * rvy;
+  if (rvDot < 1) return null; // barely moving relative
+  const t = -(rpx * rvx + rpy * rvy) / rvDot;
+  if (t < 0 || t > lookahead) return null;
+  // Distance at closest approach
+  const cx = rpx + rvx * t;
+  const cy = rpy + rvy * t;
+  const closestDist = Math.hypot(cx, cy);
+  const collisionR = ship.r + ast.r * 0.85 + 40; // generous safety margin
+  if (closestDist < collisionR) {
+    return { t, dist: closestDist, ast };
+  }
+  return null;
+}
+
+// Check if a direction is safe — no asteroid collisions along that path
+function isDirectionSafe(ship, ang, speed, lookahead) {
+  const testVx = Math.cos(ang) * speed;
+  const testVy = Math.sin(ang) * speed;
+  const testShip = { x: ship.x, y: ship.y, vx: testVx, vy: testVy, r: ship.r };
+  const scanR = 400 + speed * lookahead; // scale scan with how far we'll travel
+  for (const ast of asteroids) {
+    const d = dist(ship, ast);
+    if (d > scanR) continue;
+    if (predictCollision(testShip, ast, lookahead)) return false;
+  }
+  return true;
+}
+
+// Find the best evasion angle — scan multiple directions and pick the safest
+function findSafeDirection(ship, preferredAng, speed, look) {
+  const la = look || 1.5;
+  // Test preferred angle first
+  if (isDirectionSafe(ship, preferredAng, speed, la)) return preferredAng;
+  // Fan out from preferred angle
+  for (let offset = 0.3; offset <= Math.PI; offset += 0.25) {
+    if (isDirectionSafe(ship, preferredAng + offset, speed, la)) return preferredAng + offset;
+    if (isDirectionSafe(ship, preferredAng - offset, speed, la)) return preferredAng - offset;
+  }
+  // Nothing safe — go opposite of densest threat cluster
+  return preferredAng + Math.PI;
+}
+
+function updateAI(ship, dt) {
+  ship.aiTimer -= dt;
+  if (ship.aiTimer > 0) return;
+  ship.aiTimer = CFG.AI_REACTION + rand(0, 0.08);
+  ship._isStrafing = false;
+  ship._avoidStrafe = false;
+  ship._avoidStrafeStrength = 1;
+  ship._bloodthirstyCombat = false;
+
+  let closestEnemy = null;
+  let closestEnemyDist = Infinity;
+  const shipSpeed = Math.hypot(ship.vx, ship.vy);
+
+  // ── PREDICTIVE ASTEROID COLLISION SCAN ──
+  // Gather all imminent collisions within the next 2 seconds
+  const collisions = [];
+  for (const ast of asteroids) {
+    const d = dist(ship, ast);
+    if (d > 900) continue; // scan wider radius
+    const col = predictCollision(ship, ast, 3.0);
+    if (col) collisions.push(col);
+  }
+  // Sort by urgency (soonest first)
+  collisions.sort((a, b) => a.t - b.t);
+
+  // ── SCAN INCOMING BULLETS ──
+  let bulletThreat = null;
+  for (const b of bullets) {
+    if (b.owner === ship.id) continue;
+    const d = dist(ship, b);
+    if (d > 200) continue;
+    // Is bullet heading toward us?
+    const toShipX = ship.x - b.x;
+    const toShipY = ship.y - b.y;
+    const dot = toShipX * b.vx + toShipY * b.vy;
+    if (dot > 0) { // bullet moving toward ship
+      const bSpeed = Math.hypot(b.vx, b.vy);
+      const timeToHit = d / bSpeed;
+      if (timeToHit < 0.5 && (!bulletThreat || timeToHit < bulletThreat.time)) {
+        bulletThreat = { obj: b, time: timeToHit, dist: d };
+      }
+    }
+  }
+
+  // ── SCAN ENEMIES ──
+  for (const other of ships) {
+    if (other.id === ship.id || !other.alive) continue;
+    const d = dist(ship, other);
+    if (d < closestEnemyDist) {
+      closestEnemyDist = d;
+      closestEnemy = other;
+    }
+  }
+
+  // ── BORDER AVOIDANCE ──
+  const margin = 250;
+  let borderForceX = 0, borderForceY = 0;
+  const borderStrength = 1.5;
+  if (ship.x < margin) borderForceX = borderStrength * (1 - ship.x / margin);
+  if (ship.x > CFG.WORLD_W - margin) borderForceX = -borderStrength * (1 - (CFG.WORLD_W - ship.x) / margin);
+  if (ship.y < margin) borderForceY = borderStrength * (1 - ship.y / margin);
+  if (ship.y > CFG.WORLD_H - margin) borderForceY = -borderStrength * (1 - (CFG.WORLD_H - ship.y) / margin);
+  const hasBorderPressure = Math.abs(borderForceX) > 0.1 || Math.abs(borderForceY) > 0.1;
+
+  // ── DECIDE BEHAVIOR (PRIORITY SYSTEM) ──
+  let desiredAng = ship.ang;
+  let wantThrust = false;
+  let wantShoot = false;
+
+  // Bloodthirsty check: if engaging an enemy, skip asteroid avoidance entirely
+  // Bloodthirsty check: reckless only if target isn't firing back
+  let bloodthirstyInCombat = false;
+  if (ship.aiBehavior === 'bloodthirsty' && closestEnemy && closestEnemyDist < 1400) {
+    // Check if the target has any bullets heading our way
+    let targetFiringBack = false;
+    for (const b of bullets) {
+      if (b.owner !== closestEnemy.id) continue;
+      const d = dist(ship, b);
+      if (d > 500) continue;
+      const dot = (ship.x - b.x) * b.vx + (ship.y - b.y) * b.vy;
+      if (dot > 0) { targetFiringBack = true; break; }
+    }
+    bloodthirstyInCombat = !targetFiringBack;
+  }
+
+  // PRIORITY 1: Imminent asteroid collision (< 1s away) — bloodthirsty ignores when in combat
+  const urgentCollision = collisions.length > 0 && collisions[0].t < 1.0;
+
+  // PRIORITY 2: Bullet dodge
+  const urgentBullet = bulletThreat && bulletThreat.time < 0.4;
+
+  if ((urgentCollision || urgentBullet) && !bloodthirstyInCombat) {
+    // Build a combined avoidance vector from all imminent threats
+    let avoidX = 0, avoidY = 0;
+    const strafeDir = (ship.id % 2 === 0) ? 1 : -1;
+
+    for (const col of collisions) {
+      if (col.t > 1.5) break;
+      const urgency = 1 / (col.t + 0.1);
+      const toAst = angle(ship, col.ast);
+      // Asteroids are weighted 3x — dodging into a rock is always worse than eating a bullet
+      const slipAng = toAst + Math.PI * 0.8 + strafeDir * 0.4;
+      avoidX += Math.cos(slipAng) * urgency * 3;
+      avoidY += Math.sin(slipAng) * urgency * 3;
+    }
+
+    if (bulletThreat) {
+      const toBullet = angle(ship, bulletThreat.obj);
+      const urgency = 1 / (bulletThreat.time + 0.05);
+      const slipAng = toBullet + Math.PI * 0.5 * strafeDir;
+      // Only dodge bullet if there are no nearby asteroid collisions
+      const bulletWeight = collisions.length > 0 ? 0.15 : 0.8;
+      avoidX += Math.cos(slipAng) * urgency * bulletWeight;
+      avoidY += Math.sin(slipAng) * urgency * bulletWeight;
+    }
+
+    if (hasBorderPressure) {
+      avoidX += borderForceX * 2;
+      avoidY += borderForceY * 2;
+    }
+
+    if (Math.abs(avoidX) > 0.01 || Math.abs(avoidY) > 0.01) {
+      const rawAvoidAng = Math.atan2(avoidY, avoidX);
+      desiredAng = findSafeDirection(ship, rawAvoidAng, Math.max(shipSpeed, 120));
+    } else {
+      // Perpendicular escape with strafe bias
+      const threat = collisions[0] || { ast: bulletThreat.obj };
+      const toThreat = angle(ship, threat.ast || bulletThreat.obj);
+      desiredAng = toThreat + Math.PI * 0.5 * strafeDir;
+    }
+    wantThrust = true;
+    // Flag lateral push for smooth per-frame strafe
+    ship._avoidStrafe = true;
+
+    // Opportunistic shooting at the asteroid blocking us
+    if (urgentCollision) {
+      const toAst = angle(ship, collisions[0].ast);
+      const da = Math.abs(shortAngleDist(ship.ang, toAst));
+      if (da < 0.4 && Math.random() < ship.rockShooter) wantShoot = true;
+    }
+  }
+  // PRIORITY 3: Border avoidance
+  else if (hasBorderPressure) {
+    const borderAng = Math.atan2(borderForceY, borderForceX);
+    desiredAng = findSafeDirection(ship, borderAng, Math.max(shipSpeed, 100));
+    wantThrust = true;
+  }
+  // PRIORITY 4: Upcoming collision (1-2.5s) — gentle strafe correction (bloodthirsty ignores when in combat)
+  else if (collisions.length > 0 && collisions[0].t < 2.5 && !bloodthirstyInCombat) {
+    const col = collisions[0];
+    const toAst = angle(ship, col.ast);
+    const strafeDir = (ship.id % 2 === 0) ? 1 : -1;
+    // Gentle lateral offset — weave past rather than hard turn
+    // Blend current heading with a perpendicular nudge
+    const perpAng = toAst + Math.PI * 0.5 * strafeDir;
+    const urgencyBlend = Math.max(0.2, Math.min(0.7, 1 - col.t / 2.5));
+    const weaveAng = ship.ang + shortAngleDist(ship.ang, perpAng) * urgencyBlend;
+    desiredAng = findSafeDirection(ship, weaveAng, Math.max(shipSpeed, 100));
+    wantThrust = true;
+    ship._avoidStrafe = true;
+    ship._avoidStrafeStrength = urgencyBlend; // stronger as collision gets closer
+
+    // Try to shoot the asteroid if we can
+    const da = Math.abs(shortAngleDist(ship.ang, toAst));
+    if (da < 0.35 && Math.random() < ship.rockShooter) wantShoot = true;
+  }
+  // PRIORITY 5: Combat
+  else if (closestEnemy) {
+    // Aggression oscillation — each ship periodically surges toward more aggressive behavior
+    const aggroBase = ship.aiBehavior === 'aggressive' || ship.aiBehavior === 'bloodthirsty' ? 0.85 :
+                      ship.aiBehavior === 'hunter' ? 0.6 :
+                      ship.aiBehavior === 'cautious' ? 0.35 : 0.2;
+    const aggroSwing = ship.aiBehavior === 'aggressive' || ship.aiBehavior === 'bloodthirsty' ? 0.15 :
+                       ship.aiBehavior === 'hunter' ? 0.25 :
+                       ship.aiBehavior === 'cautious' ? 0.3 : 0.35;
+    const aggro = Math.max(0, Math.min(1, aggroBase + Math.sin(gameTime * ship.aggroSpeed + ship.aggroPhase) * aggroSwing));
+
+    // Interpolate personality values toward aggressive levels based on aggro
+    const baseRange = lerp(550, 1400, aggro);
+    const maxRange = Math.hypot(CFG.WORLD_W, CFG.WORLD_H);
+    const timeScale = Math.min(1, gameTime / 60);
+    const aggressionRange = lerp(baseRange, maxRange, timeScale);
+
+    if (closestEnemyDist < aggressionRange) {
+      if (ship.aiBehavior === 'bloodthirsty') ship._bloodthirstyCombat = bloodthirstyInCombat;
+      const toEnemy = angle(ship, closestEnemy);
+      const travelTime = closestEnemyDist / CFG.BULLET_SPEED;
+      // Oscillating lead factor — smoothly drifts between direct and leading shots
+      const rawLead = ship.aimBaseline + Math.sin(gameTime * ship.aimSpeed + ship.aimPhase) * ship.aimRange;
+      const leadFactor = Math.max(0.05, Math.min(1.3, rawLead));
+      const leadX = closestEnemy.x + closestEnemy.vx * travelTime * leadFactor;
+      const leadY = closestEnemy.y + closestEnemy.vy * travelTime * leadFactor;
+      const leadAng = Math.atan2(leadY - ship.y, leadX - ship.x);
+
+      // Evasive flee — only when aggro is low enough (bloodthirsty never flees when reckless)
+      const fleeThreshold = ship.aiBehavior === 'evasive' ? 300 : 150;
+      if (!(ship.aiBehavior === 'bloodthirsty' && bloodthirstyInCombat) && aggro < 0.4 && closestEnemyDist < fleeThreshold) {
+        const fleeAng = toEnemy + Math.PI;
+        desiredAng = findSafeDirection(ship, fleeAng, Math.max(shipSpeed, 120));
+        wantThrust = true;
+      } else {
+        // Separate flight path from aim — approach at a slight offset to create lateral movement
+        const strafeDir = (ship.id % 2 === 0) ? 1 : -1;
+        const baseStrafeAng = lerp(0.4, 0.12, aggro);
+        // Strafe starts gentle from far away, increases as they close in
+        const strafeFactor = Math.max(0.15, Math.min(1, 1 - (closestEnemyDist - 300) / 1500));
+        
+        // Only strafe if we have fuel
+        const canStrafe = !ship.strafeDepleted && ship.strafeFuel > 0;
+        const strafeOffset = canStrafe ? baseStrafeAng * strafeFactor * strafeDir : 0;
+        ship._isStrafing = canStrafe && closestEnemyDist < 1000;
+
+        const flightAng = toEnemy + strafeOffset;
+        const approachAng = closestEnemyDist > 350 ?
+          findSafeDirection(ship, flightAng, Math.max(shipSpeed, 100)) : flightAng;
+        
+        // Safety check: if our combat path leads into an asteroid, override with evasion
+        // Bloodthirsty ignores this when target isn't firing back
+        let combatAng = approachAng;
+        if (!(ship.aiBehavior === 'bloodthirsty' && bloodthirstyInCombat)) {
+          for (const col of collisions) {
+            if (col.t < 1.5) {
+              const toAst = angle(ship, col.ast);
+              const awayAng = toAst + Math.PI;
+              const blend = Math.max(0.3, Math.min(0.8, 1 - col.t / 1.5));
+              combatAng = combatAng + shortAngleDist(combatAng, awayAng) * blend;
+              break;
+            }
+          }
+        }
+        desiredAng = combatAng;
+        wantThrust = closestEnemyDist > 150;
+        const da = Math.abs(shortAngleDist(ship.ang, leadAng));
+        const bulletRange = CFG.BULLET_SPEED * CFG.BULLET_LIFE;
+        const fireRangeMult = lerp(0.75, 1.2, aggro);
+        wantShoot = da < 0.35 && closestEnemyDist < bulletRange * fireRangeMult;
+      }
+    } else {
+      // Roam — head toward center-ish via safe path
+      const toCenterAng = Math.atan2(CFG.WORLD_H/2 - ship.y, CFG.WORLD_W/2 - ship.x);
+      const toCenterDist = Math.hypot(CFG.WORLD_W/2 - ship.x, CFG.WORLD_H/2 - ship.y);
+      const roamThreshold = lerp(2500, 800, Math.min(1, gameTime / 60));
+      const roamAng = toCenterDist > roamThreshold ? toCenterAng + rand(-0.4, 0.4) : ship.ang + rand(-0.6, 0.6);
+      desiredAng = findSafeDirection(ship, roamAng, Math.max(shipSpeed, 80), 2.5);
+      wantThrust = true;
+    }
+  } else {
+    // No enemies — just roam safely
+    desiredAng = findSafeDirection(ship, ship.ang + rand(-0.4, 0.4), Math.max(shipSpeed, 80), 2.5);
+    wantThrust = true;
+  }
+
+  // ── APPLY AI INTENT ──
+  const turnDir = shortAngleDist(ship.ang, desiredAng);
+  ship._aiTurnDir = Math.sign(turnDir) * Math.min(1, Math.abs(turnDir) * 3);
+  ship._aiThrust = wantThrust;
+  ship._aiShoot = wantShoot;
+}
+
+// ─── UPDATE ───────────────────────────────────────────────────
+function update(rawDt) {
+  const dt = rawDt * simSpeed * finaleSlowMo * 0.5;
+
+  // During pregame, still render but don't simulate
+  if (pregame) {
+    // Keep camera showing the full map
+    targetCamX = CFG.WORLD_W / 2;
+    targetCamY = CFG.WORLD_H / 2;
+    const fullZoomX = W / (CFG.WORLD_W + 200);
+    const fullZoomY = H / (CFG.WORLD_H + 200);
+    targetZoom = Math.min(fullZoomX, fullZoomY);
+    const camLerpPre = 1 - Math.pow(1 - 0.05, rawDt * 60);
+    cameraX = lerp(cameraX, targetCamX, camLerpPre);
+    cameraY = lerp(cameraY, targetCamY, camLerpPre);
+    camZoom = lerp(camZoom, targetZoom, camLerpPre);
+    updateScoreboard();
+    return;
+  }
+
+  // During finale, keep updating visuals even after gameOver
+  if (gameOver && !finaleMode) return;
+
+  // If game is over but finale still running, only update visuals
+  const skipGameplay = gameOver;
+  gameTime += dt;
+
+  if (!skipGameplay) {
+  // Update ships
+  for (const ship of ships) {
+    if (!ship.alive) continue;
+
+    ship.invuln = Math.max(0, ship.invuln - dt);
+    ship.fireCooldown = Math.max(0, ship.fireCooldown - dt);
+
+    // AI
+    updateAI(ship, dt);
+
+    // Strafe fuel management
+    if (ship._isStrafing) {
+      ship.strafeFuel = Math.max(0, ship.strafeFuel - dt);
+      if (ship.strafeFuel <= 0) {
+        ship.strafeDepleted = true;
+      }
+    } else {
+      if (ship.strafeDepleted) {
+        ship.strafeFuel = Math.min(5, ship.strafeFuel + dt);
+        if (ship.strafeFuel >= 5) ship.strafeDepleted = false;
+      } else {
+        ship.strafeFuel = Math.min(5, ship.strafeFuel + dt * 1.0);
+      }
+    }
+
+    // Turn
+    ship.ang += (ship._aiTurnDir || 0) * CFG.SHIP_TURN_SPEED * dt;
+
+    // FRAME-LEVEL EMERGENCY: check for imminent asteroid collision every frame
+    // Uses lateral thrust to slip past rather than hard turning
+    let emergency = false;
+    let emergAvoidX = 0, emergAvoidY = 0;
+    let emergCount = 0;
+    for (const ast of asteroids) {
+      const d = dist(ship, ast);
+      if (d > ast.r + 350) continue;
+      const col = predictCollision(ship, ast, 1.0);
+      if (col) {
+        const toAst = angle(ship, ast);
+        const urgency = 1 / (col.t + 0.05);
+        emergAvoidX -= Math.cos(toAst) * urgency;
+        emergAvoidY -= Math.sin(toAst) * urgency;
+        emergCount++;
+      }
+    }
+    if (emergCount > 0) {
+      emergency = true;
+      const escapeAng = Math.atan2(emergAvoidY, emergAvoidX);
+      // Bloodthirsty in combat: only lateral strafe, don't override heading
+      if (!ship._bloodthirstyCombat) {
+        // Gentle turn toward escape angle
+        const turnNeeded = shortAngleDist(ship.ang, escapeAng);
+        ship.ang += Math.sign(turnNeeded) * Math.min(Math.abs(turnNeeded), CFG.SHIP_TURN_SPEED * 1.5 * dt);
+      }
+      // Lateral strafe push — nudge velocity perpendicular to the threat
+      const strafeDir = (ship.id % 2 === 0) ? 1 : -1;
+      const perpAng = ship.ang + Math.PI * 0.5 * strafeDir;
+      const strafeForce = CFG.SHIP_THRUST * 0.35;
+      ship.vx += Math.cos(perpAng) * strafeForce * dt;
+      ship.vy += Math.sin(perpAng) * strafeForce * dt;
+      ship._aiThrust = true;
+    }
+
+    // AI-level avoidance strafe — smooth lateral push when AI detects upcoming asteroids
+    if (!emergency && ship._avoidStrafe) {
+      const strafeDir = (ship.id % 2 === 0) ? 1 : -1;
+      const perpAng = ship.ang + Math.PI * 0.5 * strafeDir;
+      const strength = ship._avoidStrafeStrength || 1;
+      const strafeForce = CFG.SHIP_THRUST * 0.25 * strength;
+      ship.vx += Math.cos(perpAng) * strafeForce * dt;
+      ship.vy += Math.sin(perpAng) * strafeForce * dt;
+    }
+
+    // Thrust
+    ship.thrustOn = ship._aiThrust;
+    if (ship._aiThrust) {
+      ship.vx += Math.cos(ship.ang) * CFG.SHIP_THRUST * dt;
+      ship.vy += Math.sin(ship.ang) * CFG.SHIP_THRUST * dt;
+      if (Math.random() < 0.6) spawnThrustParticle(ship);
+    }
+
+    // Friction
+    const speed = Math.hypot(ship.vx, ship.vy);
+    if (speed > CFG.SHIP_MAX_SPEED) {
+      const ratio = CFG.SHIP_MAX_SPEED / speed;
+      ship.vx *= ratio;
+      ship.vy *= ratio;
+    }
+    ship.vx *= (1 - 0.3 * dt);
+    ship.vy *= (1 - 0.3 * dt);
+
+    // Move
+    ship.x += ship.vx * dt;
+    ship.y += ship.vy * dt;
+
+    // World bounds (soft bounce)
+    const bounce = 300;
+    if (ship.x < 0) { ship.x = 0; ship.vx = Math.abs(ship.vx) * 0.5; }
+    if (ship.x > CFG.WORLD_W) { ship.x = CFG.WORLD_W; ship.vx = -Math.abs(ship.vx) * 0.5; }
+    if (ship.y < 0) { ship.y = 0; ship.vy = Math.abs(ship.vy) * 0.5; }
+    if (ship.y > CFG.WORLD_H) { ship.y = CFG.WORLD_H; ship.vy = -Math.abs(ship.vy) * 0.5; }
+
+    // Shoot
+    if (ship._aiShoot && ship.fireCooldown <= 0) {
+      ship.fireCooldown = CFG.FIRE_RATE;
+      const bx = ship.x + Math.cos(ship.ang) * ship.r * 1.2;
+      const by = ship.y + Math.sin(ship.ang) * ship.r * 1.2;
+      bullets.push({
+        x: bx, y: by,
+        vx: Math.cos(ship.ang) * CFG.BULLET_SPEED + ship.vx * 0.3,
+        vy: Math.sin(ship.ang) * CFG.BULLET_SPEED + ship.vy * 0.3,
+        life: CFG.BULLET_LIFE,
+        owner: ship.id,
+        color: ship.color,
+      });
+      playShoot();
+    }
+  }
+
+  // Update bullets
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    b.life -= dt;
+
+    // Bullet trail particle
+    if (Math.random() < 0.5) {
+      const tLife = rand(0.08, 0.15);
+      particles.push({
+        x: b.x + rand(-2, 2),
+        y: b.y + rand(-2, 2),
+        vx: -b.vx * 0.05 + rand(-8, 8),
+        vy: -b.vy * 0.05 + rand(-8, 8),
+        life: tLife,
+        maxLife: tLife,
+        color: b.color,
+        size: rand(1, 2),
+      });
+    }
+
+    if (b.life <= 0 || b.x < -50 || b.x > CFG.WORLD_W + 50 || b.y < -50 || b.y > CFG.WORLD_H + 50) {
+      bullets.splice(i, 1);
+      continue;
+    }
+
+    // Bullet vs asteroid
+    let bulletHit = false;
+    for (let j = asteroids.length - 1; j >= 0; j--) {
+      const ast = asteroids[j];
+      if (dist(b, ast) < ast.r) {
+        const explodeScale = ast.r / 50; // bigger asteroids = bigger boom
+        spawnExplosion(ast.x, ast.y, 'rgba(255,255,255,0.6)', Math.floor(8 * explodeScale), 100 * explodeScale);
+        playAsteroidBreak();
+        // Split
+        if (ast.sizeIdx < 3) {
+          const spread = ast.r * 0.4;
+          for (let k = 0; k < 2; k++) {
+            asteroids.push(spawnAsteroid(ast.sizeIdx + 1, ast.x + rand(-spread, spread), ast.y + rand(-spread, spread)));
+          }
+        } else if (CFG.RESPAWN_ASTEROIDS && asteroids.length < CFG.NUM_ASTEROIDS * 1.3) {
+          // Spawn rate increases over time — edges get more dangerous
+          const spawnChance = 0.25 + Math.min(0.35, gameTime / 90);
+          if (Math.random() < spawnChance) {
+            const edge = randInt(0, 3);
+            const ex = edge === 0 ? 0 : edge === 2 ? CFG.WORLD_W : rand(0, CFG.WORLD_W);
+            const ey = edge === 1 ? 0 : edge === 3 ? CFG.WORLD_H : rand(0, CFG.WORLD_H);
+            asteroids.push(spawnAsteroid(1, ex, ey));
+          }
+        }
+        asteroids.splice(j, 1);
+        bulletHit = true;
+        break;
+      }
+    }
+
+    if (bulletHit) {
+      bullets.splice(i, 1);
+      continue;
+    }
+
+    // Bullet vs ship
+    for (const ship of ships) {
+      if (!ship.alive || ship.id === b.owner || ship.invuln > 0) continue;
+      if (dist(b, ship) < ship.r + 4) {
+        ship.hp--;
+        spawnExplosion(b.x, b.y, ship.color, 6, 60);
+        playShipHit();
+        if (ship.hp <= 0) {
+          killShip(ship, b.owner);
+        }
+        bullets.splice(i, 1);
+        break;
+      }
+    }
+  }
+
+  // Ship vs asteroid collision
+  for (const ship of ships) {
+    if (!ship.alive || ship.invuln > 0) continue;
+    for (let j = asteroids.length - 1; j >= 0; j--) {
+      const ast = asteroids[j];
+      if (dist(ship, ast) < ship.r + ast.r * 0.6) {
+        ship.hp--;
+        spawnExplosion(ship.x, ship.y, ship.color, 10, 80);
+        playShipHit();
+        // Destroy asteroid too
+        if (ast.sizeIdx < 3) {
+          const spread = ast.r * 0.4;
+          for (let k = 0; k < 2; k++) {
+            asteroids.push(spawnAsteroid(ast.sizeIdx + 1, ast.x + rand(-spread, spread), ast.y + rand(-spread, spread)));
+          }
+        }
+        asteroids.splice(j, 1);
+        if (ship.hp <= 0) {
+          killShip(ship, -1); // killed by asteroid
+        }
+        break;
+      }
+    }
+  }
+
+  // Ship vs ship collision — both die
+  for (let i = 0; i < ships.length; i++) {
+    const a = ships[i];
+    if (!a.alive) continue;
+    for (let j = i + 1; j < ships.length; j++) {
+      const b = ships[j];
+      if (!b.alive) continue;
+      if (dist(a, b) < a.r + b.r) {
+        const mx = (a.x + b.x) / 2;
+        const my = (a.y + b.y) / 2;
+        spawnExplosion(mx, my, '#fff', 20, 150);
+        spawnExplosion(a.x, a.y, a.color, 15, 100);
+        spawnExplosion(b.x, b.y, b.color, 15, 100);
+        playExplosion();
+        // Kill both — attribute to each other
+        a.hp = 0;
+        b.hp = 0;
+        killShip(a, b.id);
+        killShip(b, a.id);
+      }
+    }
+  }
+
+  // Update asteroids
+  for (const ast of asteroids) {
+    ast.x += ast.vx * dt;
+    ast.y += ast.vy * dt;
+    ast.rot += ast.rotSpeed * dt;
+    // Wrap
+    ast.x = wrap(ast.x, CFG.WORLD_W);
+    ast.y = wrap(ast.y, CFG.WORLD_H);
+  }
+
+  } // end !skipGameplay
+
+  // Update particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vx *= (1 - 3 * dt);
+    p.vy *= (1 - 3 * dt);
+    p.life -= dt;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  // Update shockwaves
+  for (let i = shockwaves.length - 1; i >= 0; i--) {
+    const s = shockwaves[i];
+    s.life -= dt;
+    s.r = s.maxR * (1 - s.life / 0.4);
+    if (s.life <= 0) shockwaves.splice(i, 1);
+  }
+
+  // Camera — follow alive ships centroid, zoom to fit action
+  const alive = ships.filter(s => s.alive);
+  if (alive.length > 0 && !finaleMode) {
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const s of alive) {
+      minX = Math.min(minX, s.x);
+      maxX = Math.max(maxX, s.x);
+      minY = Math.min(minY, s.y);
+      maxY = Math.max(maxY, s.y);
+    }
+    targetCamX = (minX + maxX) / 2;
+    targetCamY = (minY + maxY) / 2;
+
+    const spreadX = maxX - minX + 600;
+    const spreadY = maxY - minY + 600;
+    const needZoomX = W / spreadX;
+    const needZoomY = H / spreadY;
+    targetZoom = Math.min(needZoomX, needZoomY);
+    targetZoom = Math.max(0.15, Math.min(1.5, targetZoom));
+  }
+
+  const camSpeed = finaleMode ? 0.12 : CFG.CAMERA_LERP;
+  const camLerp = 1 - Math.pow(1 - camSpeed, rawDt * 60);
+  cameraX = lerp(cameraX, targetCamX, camLerp);
+  cameraY = lerp(cameraY, targetCamY, camLerp);
+  camZoom = lerp(camZoom, targetZoom, camLerp * 0.7);
+
+  // Finale slow-mo: triggered by the killing blow in killShip
+  if (finaleMode) {
+    finaleTimer += rawDt;
+    // Dramatic slowdown curve: stays near-frozen throughout
+    finaleSlowMo = 0.03 + Math.min(0.05, finaleTimer * 0.02);
+    finaleFlash = Math.max(0, finaleFlash - rawDt * 2.5);
+
+    // Screen shake — intense at first, decays over ~1.5s
+    const shakeIntensity = Math.max(0, 1 - finaleTimer / 1.5);
+    const shakeAmount = shakeIntensity * 12;
+    screenShakeX = (Math.random() - 0.5) * 2 * shakeAmount;
+    screenShakeY = (Math.random() - 0.5) * 2 * shakeAmount;
+
+    // Camera stays where it is — no target override
+
+    if (finaleTimer > 3.5 && !gameOver) {
+      gameOver = true;
+      winner = ships.find(s => s.alive) || null; // null = draw
+      setTimeout(showWinner, 500);
+    }
+  } else {
+    screenShakeX = 0;
+    screenShakeY = 0;
+  }
+
+  // Normal win check (fallback if somehow missed)
+  const aliveCount = ships.filter(s => s.alive).length;
+  document.getElementById('alive-num').textContent = aliveCount;
+  document.getElementById('ast-kill-num').textContent = asteroidKills;
+  if (aliveCount <= 1 && !gameOver && !finaleMode) {
+    gameOver = true;
+    winner = ships.find(s => s.alive) || null;
+    setTimeout(showWinner, 1000);
+  }
+
+  updateScoreboard();
+}
+
+function killShip(ship, killerId) {
+  ship.alive = false;
+  ship.deathTime = gameTime;
+  ship.placement = ships.filter(s => s.alive).length + 1;
+  spawnExplosion(ship.x, ship.y, ship.color, 40, 200);
+  playExplosion();
+
+  const killer = killerId >= 0 ? ships[killerId] : null;
+  if (killer && killer.alive) killer.kills++;
+  if (killerId < 0) asteroidKills++;
+
+  const killerName = killer ? killer.name : 'ASTEROID';
+  const killerColor = killer ? killer.color : '#888';
+  ship.killedBy = killerName;
+  addKillMessage(killerName, killerColor, ship.name, ship.color);
+
+  const aliveCount = ships.filter(s => s.alive).length;
+  if (aliveCount <= 1 && !finaleMode) {
+    finaleMode = true;
+    finaleTimer = 0;
+    finaleFlash = 1;
+    const survivor = ships.find(s => s.alive);
+    // Only grant invuln if there IS a survivor (not a draw)
+    if (survivor) survivor.invuln = Infinity;
+    finaleDeath = {
+      x: ship.x, y: ship.y,
+      color: ship.color,
+      killerColor: killerColor,
+      killerName: killerName,
+    };
+    playFinaleExplosion();
+    spawnExplosion(ship.x, ship.y, '#fff', 60, 300);
+    spawnExplosion(ship.x, ship.y, ship.color, 40, 250);
+    spawnExplosion(ship.x, ship.y, killerColor, 30, 200);
+  }
+  // Detect draw — finaleMode already triggered but now nobody's alive
+  if (aliveCount === 0 && finaleMode && !gameOver) {
+    // Let the finale play out, winner will be null → draw
+  }
+}
+
+// ─── RENDER ───────────────────────────────────────────────────
+function render() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  // Camera transform
+  ctx.translate(W / 2 + screenShakeX, H / 2 + screenShakeY);
+  ctx.scale(camZoom, camZoom);
+  ctx.translate(-cameraX, -cameraY);
+
+  // Stars (parallax)
+  drawStars();
+
+  // World border
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0, 0, CFG.WORLD_W, CFG.WORLD_H);
+
+  // Shockwaves
+  for (const s of shockwaves) {
+    const alpha = s.life / 0.4;
+    ctx.strokeStyle = s.color + Math.floor(alpha * 40).toString(16).padStart(2, '0');
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Asteroids
+  for (const ast of asteroids) {
+    // Visible on screen?
+    const sx = (ast.x - cameraX) * camZoom + W/2;
+    const sy = (ast.y - cameraY) * camZoom + H/2;
+    const sr = ast.r * camZoom;
+    if (sx < -sr*2 || sx > W+sr*2 || sy < -sr*2 || sy > H+sr*2) continue;
+
+    ctx.save();
+    ctx.translate(ast.x, ast.y);
+    ctx.rotate(ast.rot);
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(ast.verts[0].x, ast.verts[0].y);
+    for (let i = 1; i < ast.verts.length; i++) {
+      ctx.lineTo(ast.verts[i].x, ast.verts[i].y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Bullets
+  for (const b of bullets) {
+    ctx.fillStyle = b.color;
+    ctx.shadowColor = b.color;
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  // Ships
+  for (const ship of ships) {
+    if (!ship.alive) continue;
+    drawShipShape(ctx, ship.x, ship.y, ship.ang, ship.r, ship.color, ship.hp, ship.maxHp, ship.invuln, ship.id);
+  }
+
+  // Particles
+  for (const p of particles) {
+    const alpha = p.life / p.maxLife;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+
+  // ── ANIME FINALE EFFECTS ──
+  if (finaleMode && finaleDeath) {
+    const t = finaleTimer;
+
+    // WHITE FLASH on impact
+    if (finaleFlash > 0) {
+      ctx.fillStyle = `rgba(255,255,255,${finaleFlash * 0.9})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Screen-space position of death
+    const dx = (finaleDeath.x - cameraX) * camZoom + W/2;
+    const dy = (finaleDeath.y - cameraY) * camZoom + H/2;
+
+    // SPEED LINES radiating from kill point
+    if (t < 3) {
+      const lineAlpha = Math.max(0, 1 - t / 3);
+      const numLines = 60;
+      ctx.save();
+      ctx.globalAlpha = lineAlpha * 0.6;
+      for (let i = 0; i < numLines; i++) {
+        const a = (i / numLines) * Math.PI * 2 + t * 0.3;
+        const innerR = 40 + t * 100;
+        const outerR = innerR + 200 + Math.random() * 300;
+        const thickness = 1 + Math.random() * 2;
+        ctx.strokeStyle = i % 3 === 0 ? finaleDeath.killerColor : (i % 3 === 1 ? '#fff' : finaleDeath.color);
+        ctx.lineWidth = thickness;
+        ctx.beginPath();
+        ctx.moveTo(dx + Math.cos(a) * innerR, dy + Math.sin(a) * innerR);
+        ctx.lineTo(dx + Math.cos(a) * outerR, dy + Math.sin(a) * outerR);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // IMPACT RINGS
+    if (t < 2) {
+      const numRings = 3;
+      for (let i = 0; i < numRings; i++) {
+        const ringT = t - i * 0.15;
+        if (ringT < 0) continue;
+        const ringR = ringT * 400;
+        const ringAlpha = Math.max(0, 1 - ringT / 1.5);
+        ctx.strokeStyle = i === 0 ? '#fff' : finaleDeath.killerColor;
+        ctx.globalAlpha = ringAlpha * 0.5;
+        ctx.lineWidth = 3 - i;
+        ctx.beginPath();
+        ctx.arc(dx, dy, ringR, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // DRAMATIC VIGNETTE
+    const vGrad = ctx.createRadialGradient(dx, dy, W * 0.1, W / 2, H / 2, W * 0.8);
+    vGrad.addColorStop(0, 'transparent');
+    vGrad.addColorStop(1, `rgba(0,0,0,${Math.min(0.7, t * 0.3)})`);
+    ctx.fillStyle = vGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // MANGA-STYLE BLACK BARS (cinematic letterbox sliding in)
+    const barH = Math.min(H * 0.1, t * 80);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, barH);
+    ctx.fillRect(0, H - barH, W, barH);
+
+    // WINNER TEXT — slides in after a beat
+    if (t > 1.2) {
+      const textT = t - 1.2;
+      const textAlpha = Math.min(1, textT * 2);
+      const slideX = Math.max(0, 30 - textT * 60);
+
+      const w = ships.find(s => s.alive);
+      if (w) {
+        ctx.save();
+        ctx.globalAlpha = textAlpha;
+
+        // Glowing name
+        ctx.font = '900 56px "Orbitron"';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = w.color;
+        ctx.shadowBlur = 40;
+        ctx.fillStyle = w.color;
+        ctx.fillText(w.name, W/2 + slideX, H/2);
+        ctx.shadowBlur = 0;
+
+        // "WINS" subtitle
+        ctx.font = '400 16px "Orbitron"';
+        ctx.fillStyle = `rgba(255,255,255,${textAlpha * 0.6})`;
+        ctx.letterSpacing = '12px';
+        ctx.fillText('W I N S', W/2 + slideX, H/2 + 35);
+
+        ctx.restore();
+      } else {
+        ctx.save();
+        ctx.globalAlpha = textAlpha;
+        ctx.font = '900 56px "Orbitron"';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#888';
+        ctx.shadowBlur = 40;
+        ctx.fillStyle = '#888';
+        ctx.fillText('DRAW', W/2 + slideX, H/2);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      }
+    }
+
+    // Chromatic aberration-style color split on edges during the flash
+    if (t < 0.5) {
+      const abAmount = (0.5 - t) * 8;
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = (0.5 - t) * 0.3;
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(abAmount, 0, W, H);
+      ctx.fillStyle = '#0000ff';
+      ctx.fillRect(-abAmount, 0, W, H);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+    }
+  }
+}
+
+// ─── STARS ────────────────────────────────────────────────────
+let stars = [];
+function initStars() {
+  for (let i = 0; i < 700; i++) {
+    stars.push({
+      x: rand(0, CFG.WORLD_W),
+      y: rand(0, CFG.WORLD_H),
+      s: rand(0.5, 2),
+      b: rand(0.4, 1.0),
+    });
+  }
+}
+
+function drawStars() {
+  for (const star of stars) {
+    ctx.fillStyle = `rgba(255,255,255,${star.b * (0.5 + 0.5 * Math.sin(gameTime * 0.5 + star.x))})`;
+    ctx.fillRect(star.x, star.y, star.s, star.s);
+  }
+}
+
+function buildPregameRoster() {
+  const el = document.getElementById('pregame-roster');
+  el.innerHTML = '';
+  for (let i = 0; i < ships.length; i++) {
+    const ship = ships[i];
+    const tag = document.createElement('div');
+    tag.className = 'roster-tag';
+    tag.style.borderColor = ship.color + '55';
+    tag.style.background = ship.color + '11';
+    tag.style.animationDelay = `${i * 0.06}s`;
+    tag.innerHTML = `<span class="rdot" style="background:${ship.color}"></span><span style="color:${ship.color}">${ship.name}</span>`;
+    el.appendChild(tag);
+  }
+}
+
+document.getElementById('start-btn').addEventListener('click', () => {
+  ensureAudio();
+  // Apply all settings to ships before starting
+  for (let i = 0; i < ships.length; i++) {
+    const ship = ships[i];
+    const p = PRESET_PROFILES[i];
+    ship.hp = settings.shipHP;
+    ship.maxHp = settings.shipHP;
+    ship.aiBehavior = settings.behavior ? p.behavior : randomBehavior();
+    ship.aggroPhase = settings.aggression ? p.aggroPhase : rand(0, Math.PI * 2);
+    ship.aggroSpeed = settings.aggression ? p.aggroSpeed : rand(0.15, 0.4);
+    ship.rockShooter = settings.rockShooter ? p.rockShooter : rand(0.1, 0.9);
+    ship.aimBaseline = settings.aim ? p.aimBaseline : rand(0.3, 0.9);
+    ship.aimRange = settings.aim ? p.aimRange : rand(0.3, 0.5);
+    ship.aimSpeed = settings.aim ? p.aimSpeed : rand(0.3, 0.8);
+    ship.aimPhase = settings.aim ? p.aimPhase : rand(0, Math.PI * 2);
+  }
+  pregame = false;
+  document.getElementById('pregame-overlay').classList.add('hidden');
+  document.getElementById('settings-panel').classList.remove('open');
+});
+
+// ─── SCOREBOARD ───────────────────────────────────────────────
+function buildScoreboard() {
+  const el = document.getElementById('scoreboard');
+  el.innerHTML = '';
+  for (const ship of ships) {
+    const tag = document.createElement('div');
+    tag.className = 'player-tag';
+    tag.id = `tag-${ship.id}`;
+    tag.style.borderColor = ship.color + '44';
+    tag.style.background = ship.color + '11';
+    tag.innerHTML = `<span class="dot" style="background:${ship.color}"></span>
+      <span>${ship.name}</span>
+      <span class="kills" style="color:${ship.color}" id="kills-${ship.id}">0</span>`;
+    el.appendChild(tag);
+  }
+}
+
+function updateScoreboard() {
+  for (const ship of ships) {
+    const tag = document.getElementById(`tag-${ship.id}`);
+    if (!tag) continue;
+    tag.classList.toggle('dead', !ship.alive);
+    document.getElementById(`kills-${ship.id}`).textContent = ship.kills;
+  }
+}
+
+// ─── KILLFEED ─────────────────────────────────────────────────
+function addKillMessage(killerName, killerColor, victimName, victimColor) {
+  const feed = document.getElementById('killfeed');
+  const msg = document.createElement('div');
+  msg.className = 'kill-msg';
+  msg.style.borderLeftColor = killerColor;
+  msg.innerHTML = `<span style="color:${killerColor}">${killerName}</span> <span style="color:rgba(255,255,255,0.3)">▸</span> <span style="color:${victimColor}">${victimName}</span>`;
+  feed.appendChild(msg);
+  setTimeout(() => msg.remove(), 3200);
+}
+
+// ─── WINNER ───────────────────────────────────────────────────
+function showWinner() {
+  const ov = document.getElementById('winner-overlay');
+  ov.classList.add('show');
+  const nameEl = document.getElementById('winner-name');
+  if (winner) {
+    nameEl.textContent = winner.name;
+    nameEl.style.color = winner.color;
+  } else {
+    nameEl.textContent = 'DRAW';
+    nameEl.style.color = '#888';
+  }
+
+  // Build rankings sorted by placement (1st = winner, survived longest)
+  const ranked = [...ships].sort((a, b) => {
+    if (a.alive && !b.alive) return -1;
+    if (!a.alive && b.alive) return 1;
+    if (a.alive && b.alive) return 0;
+    // Both dead — later deathTime = better placement
+    return (b.deathTime || 0) - (a.deathTime || 0);
+  });
+
+  // Assign final placements
+  ranked.forEach((s, i) => s.placement = i + 1);
+
+  const container = document.getElementById('rankings');
+  container.innerHTML = '';
+
+  // Format time as M:SS
+  function fmtTime(t) {
+    if (t === null) return '—';
+    const m = Math.floor(t / 60);
+    const s = Math.floor(t % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  ranked.forEach((ship, i) => {
+    const row = document.createElement('div');
+    row.className = 'rank-row' + (i === 0 ? ' top1' : i === 1 ? ' top2' : i === 2 ? ' top3' : '');
+    row.style.animationDelay = `${i * 0.08}s`;
+    const survivalTime = ship.alive ? gameTime : ship.deathTime;
+    const causeText = ship.alive ? '👑' : (ship.killedBy === 'ASTEROID' ? '☄' : `✕ ${ship.killedBy}`);
+    row.innerHTML = `
+      <span class="rank-num">${i + 1}</span>
+      <span class="rank-dot" style="background:${ship.color}"></span>
+      <span class="rank-name" style="color:${ship.color}">${ship.name}</span>
+      <span class="rank-cause">${causeText}</span>
+      <span class="rank-kills">${ship.kills}</span>
+      <span class="rank-time">${fmtTime(survivalTime)}</span>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// ─── SPEED CONTROLS ───────────────────────────────────────────
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    simSpeed = parseFloat(btn.dataset.speed);
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+document.getElementById('restart-btn').addEventListener('click', init);
+
+// ─── GAME LOOP ────────────────────────────────────────────────
+let lastTime = 0;
+function gameLoop(time) {
+  const rawDt = Math.min((time - lastTime) / 1000, 0.05);
+  lastTime = time;
+  update(rawDt);
+  render();
+  requestAnimationFrame(gameLoop);
+}
+
+initStars();
+init();
+requestAnimationFrame(gameLoop);
+
+// ─── PWA SERVICE WORKER ──────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
