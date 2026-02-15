@@ -127,10 +127,10 @@
     text-decoration: line-through;
   }
 
-  .player-tag .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
+  .player-tag .ship-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
   }
 
   .player-tag .kills {
@@ -232,10 +232,10 @@
     animation: rosterIn 0.3s ease forwards;
   }
 
-  .roster-tag .rdot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
+  .roster-tag .ship-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
   }
 
   @keyframes rosterIn {
@@ -269,14 +269,16 @@
     display: none;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: safe center;
     background: rgba(0,0,0,0.85);
     backdrop-filter: blur(8px);
+    overflow-y: auto;
   }
 
   #winner-overlay.show {
     display: flex;
     animation: fadeOverlay 1s ease;
+    padding: 30px 0;
   }
 
   @keyframes fadeOverlay {
@@ -305,6 +307,8 @@
     gap: 0;
     margin-top: 20px;
     width: 380px;
+    max-height: 50vh;
+    overflow-y: auto;
   }
 
   .rank-row {
@@ -330,10 +334,9 @@
   .rank-row.top2 .rank-num { color: #c0c0c0; }
   .rank-row.top3 .rank-num { color: #cd7f32; }
 
-  .rank-row .rank-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+  .rank-row .ship-icon {
+    width: 24px;
+    height: 24px;
     flex-shrink: 0;
   }
 
@@ -377,6 +380,7 @@
 
   #restart-btn {
     margin-top: 30px;
+    flex-shrink: 0;
     font-family: 'Orbitron', sans-serif;
     font-size: 12px;
     letter-spacing: 4px;
@@ -1023,6 +1027,34 @@ const SHIP_SHAPES = [
   // MAGENTA
   [[1,0],[-.7,-.65],[-.4,0],[-.7,.65],[.1,.3],[-.4,-.35],[.35,.15],[.15,-.25],[.65,.1]],
 ];
+
+// Create a small canvas with a ship sprite for UI elements
+function createShipIcon(shipId, color, size) {
+  const c = document.createElement('canvas');
+  c.width = size;
+  c.height = size;
+  c.className = 'ship-icon';
+  const ctx = c.getContext('2d');
+  const verts = SHIP_SHAPES[shipId] || SHIP_SHAPES[3];
+  const r = size * 0.38;
+  ctx.save();
+  ctx.translate(size / 2, size / 2);
+  ctx.shadowColor = color;
+  ctx.shadowBlur = size * 0.2;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1, size * 0.08);
+  ctx.fillStyle = color + '33';
+  ctx.beginPath();
+  ctx.moveTo(verts[0][0] * r, verts[0][1] * r);
+  for (let i = 1; i < verts.length; i++) {
+    ctx.lineTo(verts[i][0] * r, verts[i][1] * r);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+  return c;
+}
 
 function drawShipShape(ctx, x, y, ang, r, color, hp, maxHp, invuln, shipId) {
   ctx.save();
@@ -2199,7 +2231,11 @@ function buildPregameRoster() {
     tag.style.borderColor = ship.color + '55';
     tag.style.background = ship.color + '11';
     tag.style.animationDelay = `${i * 0.06}s`;
-    tag.innerHTML = `<span class="rdot" style="background:${ship.color}"></span><span style="color:${ship.color}">${ship.name}</span>`;
+    tag.appendChild(createShipIcon(ship.id, ship.color, 22));
+    const nameSpan = document.createElement('span');
+    nameSpan.style.color = ship.color;
+    nameSpan.textContent = ship.name;
+    tag.appendChild(nameSpan);
     el.appendChild(tag);
   }
 }
@@ -2216,9 +2252,16 @@ function buildScoreboard() {
     tag.id = `tag-${ship.id}`;
     tag.style.borderColor = ship.color + '44';
     tag.style.background = ship.color + '11';
-    tag.innerHTML = `<span class="dot" style="background:${ship.color}"></span>
-      <span>${ship.name}</span>
-      <span class="kills" style="color:${ship.color}" id="kills-${ship.id}">0</span>`;
+    tag.appendChild(createShipIcon(ship.id, ship.color, 18));
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = ship.name;
+    tag.appendChild(nameSpan);
+    const killSpan = document.createElement('span');
+    killSpan.className = 'kills';
+    killSpan.style.color = ship.color;
+    killSpan.id = `kills-${ship.id}`;
+    killSpan.textContent = '0';
+    tag.appendChild(killSpan);
     el.appendChild(tag);
   }
 }
@@ -2318,14 +2361,29 @@ function showWinner() {
     row.style.animationDelay = `${i * 0.08}s`;
     const survivalTime = ship.alive ? gameTime : ship.deathTime;
     const causeText = ship.alive ? '👑' : (ship.killedBy === 'ASTEROID' ? '☄' : `✕ ${ship.killedBy}`);
-    row.innerHTML = `
-      <span class="rank-num">${i + 1}</span>
-      <span class="rank-dot" style="background:${ship.color}"></span>
-      <span class="rank-name" style="color:${ship.color}">${ship.name}</span>
-      <span class="rank-cause">${causeText}</span>
-      <span class="rank-kills">${ship.kills}</span>
-      <span class="rank-time">${fmtTime(survivalTime)}</span>
-    `;
+
+    const numSpan = document.createElement('span');
+    numSpan.className = 'rank-num';
+    numSpan.textContent = i + 1;
+    row.appendChild(numSpan);
+    row.appendChild(createShipIcon(ship.id, ship.color, 24));
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'rank-name';
+    nameSpan.style.color = ship.color;
+    nameSpan.textContent = ship.name;
+    row.appendChild(nameSpan);
+    const causeSpan = document.createElement('span');
+    causeSpan.className = 'rank-cause';
+    causeSpan.textContent = causeText;
+    row.appendChild(causeSpan);
+    const killSpan = document.createElement('span');
+    killSpan.className = 'rank-kills';
+    killSpan.textContent = ship.kills;
+    row.appendChild(killSpan);
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'rank-time';
+    timeSpan.textContent = fmtTime(survivalTime);
+    row.appendChild(timeSpan);
     container.appendChild(row);
   });
 
