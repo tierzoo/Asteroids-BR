@@ -29,6 +29,7 @@
     display: block;
     position: fixed;
     top: 0; left: 0;
+    cursor: crosshair;
   }
 
   #hud {
@@ -84,6 +85,38 @@
     font-weight: 900;
     color: #fff;
     text-shadow: 0 0 20px rgba(255,100,100,0.4);
+  }
+
+  #camera-mode {
+    position: fixed;
+    bottom: 12px;
+    left: 16px;
+    z-index: 10;
+    pointer-events: none;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.4);
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    transition: opacity 0.3s;
+  }
+
+  #camera-mode .hint {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.2);
+  }
+
+  #camera-mode.dogfight #camera-mode-text {
+    color: rgba(255,120,60,0.7);
+  }
+
+  #camera-mode.manual #camera-mode-text {
+    color: rgba(100,180,255,0.7);
   }
 
   #scoreboard {
@@ -585,6 +618,11 @@
   <span id="alive-num">12</span>
 </div>
 
+<div id="camera-mode">
+  <span id="camera-mode-text">OVERVIEW</span>
+  <span class="hint">[SPACE]</span>
+</div>
+
 <div id="killfeed"></div>
 <div id="scoreboard"></div>
 
@@ -725,6 +763,13 @@ let targetCamX = cameraX;
 let targetCamY = cameraY;
 let camZoom = 0.15;
 let targetZoom = 0.15;
+let cameraMode = 'overview'; // 'overview', 'dogfight', or 'manual'
+let dogfightPair = null; // [shipA, shipB]
+let dogfightSwitchCooldown = 0; // prevent rapid switching between pairs
+let manualShips = []; // ship ids tracked in manual mode
+let selectBoxStart = null; // {x, y} screen coords
+let selectBoxEnd = null; // {x, y} screen coords
+let isSelecting = false;
 
 // ─── AUDIO ─────────────────────────────────────────────────────
 let audioCtx = null;
@@ -1196,6 +1241,13 @@ function init() {
   cameraY = CFG.WORLD_H / 2;
   camZoom = 0.15;
   targetZoom = 0.15;
+  cameraMode = 'overview';
+  dogfightPair = null;
+  dogfightSwitchCooldown = 0;
+  manualShips = [];
+  selectBoxStart = null;
+  selectBoxEnd = null;
+  isSelecting = false;
 }
 
 // ─── PARTICLES ────────────────────────────────────────────────
@@ -1850,25 +1902,97 @@ function update(rawDt) {
   // Camera — follow alive ships centroid, zoom to fit action
   const alive = ships.filter(s => s.alive);
   if (alive.length > 0 && !finaleMode) {
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    for (const s of alive) {
-      minX = Math.min(minX, s.x);
-      maxX = Math.max(maxX, s.x);
-      minY = Math.min(minY, s.y);
-      maxY = Math.max(maxY, s.y);
-    }
-    targetCamX = (minX + maxX) / 2;
-    targetCamY = (minY + maxY) / 2;
 
-    const spreadX = maxX - minX + 600;
-    const spreadY = maxY - minY + 600;
-    const needZoomX = W / spreadX;
-    const needZoomY = H / spreadY;
-    targetZoom = Math.min(needZoomX, needZoomY);
-    targetZoom = Math.max(0.15, Math.min(1.5, targetZoom));
+    if (cameraMode === 'dogfight') {
+      // Find and track the best dogfight
+      dogfightSwitchCooldown = Math.max(0, dogfightSwitchCooldown - rawDt);
+      const pair = findBestDogfight();
+
+      if (pair) {
+        const a = pair[0], b = pair[1];
+        // Only switch to a new pair if cooldown expired
+        if (!dogfightPair ||
+            (!ships[dogfightPair[0]].alive || !ships[dogfightPair[1]].alive) ||
+            (dogfightSwitchCooldown <= 0 && (dogfightPair[0] !== a.id || dogfightPair[1] !== b.id) && (dogfightPair[0] !== b.id || dogfightPair[1] !== a.id))) {
+          dogfightPair = [a.id, b.id];
+          dogfightSwitchCooldown = 2.0; // hold on a pair for at least 2s
+        }
+      }
+
+      if (dogfightPair && ships[dogfightPair[0]].alive && ships[dogfightPair[1]].alive) {
+        const sa = ships[dogfightPair[0]], sb = ships[dogfightPair[1]];
+        targetCamX = (sa.x + sb.x) / 2;
+        targetCamY = (sa.y + sb.y) / 2;
+        const spread = dist(sa, sb) + 400;
+        const needZoomX = W / spread;
+        const needZoomY = H / spread;
+        targetZoom = Math.min(needZoomX, needZoomY);
+        targetZoom = Math.max(0.4, Math.min(2.5, targetZoom));
+      } else {
+        // No valid dogfight — fall back to overview behavior
+        dogfightPair = null;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const s of alive) {
+          minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x);
+          minY = Math.min(minY, s.y); maxY = Math.max(maxY, s.y);
+        }
+        targetCamX = (minX + maxX) / 2;
+        targetCamY = (minY + maxY) / 2;
+        const spreadX = maxX - minX + 600;
+        const spreadY = maxY - minY + 600;
+        targetZoom = Math.max(0.15, Math.min(1.5, Math.min(W / spreadX, H / spreadY)));
+      }
+
+    } else if (cameraMode === 'manual') {
+      // Track selected ships
+      const tracked = manualShips.filter(id => ships[id] && ships[id].alive);
+      if (tracked.length <= 1) {
+        // Not enough ships left — return to overview
+        cameraMode = 'overview';
+        manualShips = [];
+        updateCameraModeUI();
+      } else {
+        manualShips = tracked;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const id of tracked) {
+          const s = ships[id];
+          minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x);
+          minY = Math.min(minY, s.y); maxY = Math.max(maxY, s.y);
+        }
+        targetCamX = (minX + maxX) / 2;
+        targetCamY = (minY + maxY) / 2;
+        const spreadX = maxX - minX + 400;
+        const spreadY = maxY - minY + 400;
+        const needZoomX = W / spreadX;
+        const needZoomY = H / spreadY;
+        targetZoom = Math.min(needZoomX, needZoomY);
+        targetZoom = Math.max(0.3, Math.min(2.5, targetZoom));
+      }
+
+    } else {
+      // Overview mode — original behavior
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const s of alive) {
+        minX = Math.min(minX, s.x);
+        maxX = Math.max(maxX, s.x);
+        minY = Math.min(minY, s.y);
+        maxY = Math.max(maxY, s.y);
+      }
+      targetCamX = (minX + maxX) / 2;
+      targetCamY = (minY + maxY) / 2;
+
+      const spreadX = maxX - minX + 600;
+      const spreadY = maxY - minY + 600;
+      const needZoomX = W / spreadX;
+      const needZoomY = H / spreadY;
+      targetZoom = Math.min(needZoomX, needZoomY);
+      targetZoom = Math.max(0.15, Math.min(1.5, targetZoom));
+    }
   }
 
-  const camSpeed = finaleMode ? 0.12 : CFG.CAMERA_LERP;
+  const baseCamSpeed = (cameraMode === 'dogfight' || cameraMode === 'manual') ? 0.08 : CFG.CAMERA_LERP;
+  const camSpeed = finaleMode ? 0.12 : baseCamSpeed;
+  if (cameraMode !== 'overview') updateCameraModeUI();
   const camLerp = 1 - Math.pow(1 - camSpeed, rawDt * 60);
   cameraX = lerp(cameraX, targetCamX, camLerp);
   cameraY = lerp(cameraY, targetCamY, camLerp);
@@ -1950,6 +2074,61 @@ function killShip(ship, killerId) {
   if (aliveCount === 0 && finaleMode && !gameOver) {
     // Let the finale play out, winner will be null → draw
   }
+}
+
+// ─── DOGFIGHT DETECTION ──────────────────────────────────────
+function findBestDogfight() {
+  const alive = ships.filter(s => s.alive);
+  if (alive.length < 2) return null;
+
+  let bestPair = null;
+  let bestScore = -Infinity;
+
+  for (let i = 0; i < alive.length; i++) {
+    for (let j = i + 1; j < alive.length; j++) {
+      const a = alive[i], b = alive[j];
+      const d = dist(a, b);
+      if (d > 1200) continue; // too far apart to be a dogfight
+
+      // Proximity score — closer = better, peaks under 400
+      const proxScore = Math.max(0, 1200 - d) / 1200;
+
+      // Check if they're shooting at each other via bullets in flight
+      let aShotsAtB = 0, bShotsAtA = 0;
+      for (const bul of bullets) {
+        if (bul.owner === a.id) {
+          const toBx = b.x - bul.x, toBy = b.y - bul.y;
+          const dot = toBx * bul.vx + toBy * bul.vy;
+          if (dot > 0 && Math.hypot(toBx, toBy) < 800) aShotsAtB++;
+        } else if (bul.owner === b.id) {
+          const toAx = a.x - bul.x, toAy = a.y - bul.y;
+          const dot = toAx * bul.vx + toAy * bul.vy;
+          if (dot > 0 && Math.hypot(toAx, toAy) < 800) bShotsAtA++;
+        }
+      }
+
+      // Mutual engagement bonus — both firing at each other is the best
+      const mutualFire = Math.min(aShotsAtB, bShotsAtA);
+      const anyFire = aShotsAtB + bShotsAtA;
+      const fireScore = mutualFire * 3 + anyFire;
+
+      // Prefer keeping the current pair to avoid camera thrashing
+      let stabilityBonus = 0;
+      if (dogfightPair && (
+        (dogfightPair[0] === a.id && dogfightPair[1] === b.id) ||
+        (dogfightPair[0] === b.id && dogfightPair[1] === a.id))) {
+        stabilityBonus = 2;
+      }
+
+      const score = proxScore * 5 + fireScore + stabilityBonus;
+      if (score > bestScore && anyFire > 0) {
+        bestScore = score;
+        bestPair = [a, b];
+      }
+    }
+  }
+
+  return bestPair;
 }
 
 // ─── RENDER ───────────────────────────────────────────────────
@@ -2094,12 +2273,6 @@ function render() {
     ctx.fillStyle = vGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // MANGA-STYLE BLACK BARS (cinematic letterbox sliding in)
-    const barH = Math.min(H * 0.1, t * 80);
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, W, barH);
-    ctx.fillRect(0, H - barH, W, barH);
-
     // WINNER TEXT — slides in after a beat
     if (t > 1.2) {
       const textT = t - 1.2;
@@ -2153,6 +2326,21 @@ function render() {
       ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = 1;
     }
+  }
+
+  // ── SELECTION BOX ──
+  if (isSelecting && selectBoxStart && selectBoxEnd) {
+    const x = Math.min(selectBoxStart.x, selectBoxEnd.x);
+    const y = Math.min(selectBoxStart.y, selectBoxEnd.y);
+    const w = Math.abs(selectBoxEnd.x - selectBoxStart.x);
+    const h = Math.abs(selectBoxEnd.y - selectBoxStart.y);
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(x, y, w, h);
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fillRect(x, y, w, h);
   }
 }
 
@@ -2374,6 +2562,109 @@ document.querySelectorAll('#speed-selector button').forEach(btn => {
 document.getElementById('restart-btn').addEventListener('click', () => {
   clearAutoRestart();
   init();
+});
+
+// ─── CAMERA MODE TOGGLE ──────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && !pregame) {
+    e.preventDefault();
+    if (cameraMode === 'manual') {
+      cameraMode = 'overview';
+      manualShips = [];
+    } else {
+      cameraMode = cameraMode === 'overview' ? 'dogfight' : 'overview';
+    }
+    dogfightPair = null;
+    dogfightSwitchCooldown = 0;
+    updateCameraModeUI();
+  }
+});
+
+function updateCameraModeUI() {
+  const el = document.getElementById('camera-mode');
+  const text = document.getElementById('camera-mode-text');
+  if (cameraMode === 'dogfight') {
+    el.classList.add('dogfight');
+    el.classList.remove('manual');
+    if (dogfightPair && ships[dogfightPair[0]].alive && ships[dogfightPair[1]].alive) {
+      const a = ships[dogfightPair[0]], b = ships[dogfightPair[1]];
+      text.textContent = `${a.name} vs ${b.name}`;
+    } else {
+      text.textContent = 'DOGFIGHT — scanning...';
+    }
+  } else if (cameraMode === 'manual') {
+    el.classList.remove('dogfight');
+    el.classList.add('manual');
+    const tracked = manualShips.filter(id => ships[id] && ships[id].alive);
+    if (tracked.length > 0) {
+      text.textContent = tracked.map(id => ships[id].name).join(' · ');
+    } else {
+      text.textContent = 'MANUAL — select ships';
+    }
+  } else {
+    el.classList.remove('dogfight');
+    el.classList.remove('manual');
+    text.textContent = 'OVERVIEW';
+  }
+}
+
+// ─── MANUAL SELECTION ────────────────────────────────────────
+function screenToWorld(sx, sy) {
+  return {
+    x: (sx - W / 2) / camZoom + cameraX,
+    y: (sy - H / 2) / camZoom + cameraY
+  };
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  if (pregame || gameOver) return;
+  if (e.button !== 0) return; // left click only
+  isSelecting = true;
+  selectBoxStart = { x: e.clientX, y: e.clientY };
+  selectBoxEnd = { x: e.clientX, y: e.clientY };
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!isSelecting) return;
+  selectBoxEnd = { x: e.clientX, y: e.clientY };
+});
+
+canvas.addEventListener('mouseup', (e) => {
+  if (!isSelecting) return;
+  isSelecting = false;
+  selectBoxEnd = { x: e.clientX, y: e.clientY };
+
+  // Convert screen box to world coords
+  const w1 = screenToWorld(selectBoxStart.x, selectBoxStart.y);
+  const w2 = screenToWorld(selectBoxEnd.x, selectBoxEnd.y);
+  const minWX = Math.min(w1.x, w2.x), maxWX = Math.max(w1.x, w2.x);
+  const minWY = Math.min(w1.y, w2.y), maxWY = Math.max(w1.y, w2.y);
+
+  // Require a minimum drag size to avoid accidental clicks
+  const screenDist = Math.hypot(selectBoxEnd.x - selectBoxStart.x, selectBoxEnd.y - selectBoxStart.y);
+  if (screenDist < 20) {
+    selectBoxStart = null;
+    selectBoxEnd = null;
+    return;
+  }
+
+  // Find alive ships inside the box
+  const selected = [];
+  for (const ship of ships) {
+    if (!ship.alive) continue;
+    if (ship.x >= minWX && ship.x <= maxWX && ship.y >= minWY && ship.y <= maxWY) {
+      selected.push(ship.id);
+    }
+  }
+
+  selectBoxStart = null;
+  selectBoxEnd = null;
+
+  if (selected.length >= 2) {
+    manualShips = selected;
+    cameraMode = 'manual';
+    updateCameraModeUI();
+  }
 });
 
 // ─── GAME LOOP ────────────────────────────────────────────────
