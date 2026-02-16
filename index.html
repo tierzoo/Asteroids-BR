@@ -119,72 +119,7 @@
     color: rgba(100,180,255,0.7);
   }
 
-  .scoreboard-bar {
-    position: fixed;
-    left: 0;
-    right: 0;
-    z-index: 10;
-    pointer-events: none;
-    display: flex;
-    justify-content: center;
-    gap: 4px;
-    padding: 6px 12px;
-    flex-wrap: wrap;
-  }
-
-  #scoreboard-top {
-    top: 0;
-    padding-top: 14px;
-  }
-
-  #scoreboard-bottom {
-    bottom: 0;
-    padding-bottom: 14px;
-  }
-
-  .player-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 8px;
-    border-radius: 3px;
-    font-size: 10px;
-    letter-spacing: 1px;
-    transition: opacity 0.5s;
-    border: 1px solid;
-  }
-
-  .player-tag.dead {
-    opacity: 0.2;
-    text-decoration: line-through;
-  }
-
-  .player-tag .ship-icon {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-  }
-
-  .player-tag .kills {
-    font-family: 'Orbitron', sans-serif;
-    font-weight: 700;
-    font-size: 9px;
-  }
-
-  .player-tag .hp-bar-wrap {
-    width: 32px;
-    height: 3px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 1px;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-
-  .player-tag .hp-bar-fill {
-    height: 100%;
-    border-radius: 1px;
-    transition: width 0.2s;
-  }
+  /* Scoreboard drawn on canvas */
 
   #killfeed {
     position: fixed;
@@ -334,35 +269,35 @@
 
   #winner-overlay h2 {
     font-family: 'Orbitron', sans-serif;
-    font-size: 14px;
-    letter-spacing: 8px;
+    font-size: 18px;
+    letter-spacing: 10px;
     color: rgba(255,255,255,0.4);
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
 
   #winner-name {
     font-family: 'Orbitron', sans-serif;
-    font-size: 48px;
+    font-size: 64px;
     font-weight: 900;
     text-shadow: 0 0 60px currentColor;
-    margin-bottom: 6px;
+    margin-bottom: 10px;
   }
 
   #rankings {
     display: flex;
     flex-direction: column;
     gap: 0;
-    margin-top: 20px;
-    width: 380px;
-    max-height: 50vh;
+    margin-top: 24px;
+    width: 560px;
+    max-height: 60vh;
     overflow-y: auto;
   }
 
   .rank-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 6px 12px;
+    gap: 12px;
+    padding: 8px 16px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     opacity: 0;
     animation: rankSlide 0.4s ease forwards;
@@ -370,9 +305,9 @@
 
   .rank-row .rank-num {
     font-family: 'Orbitron', sans-serif;
-    font-size: 14px;
+    font-size: 18px;
     font-weight: 900;
-    width: 28px;
+    width: 32px;
     text-align: right;
     color: rgba(255,255,255,0.3);
   }
@@ -382,27 +317,27 @@
   .rank-row.top3 .rank-num { color: #cd7f32; }
 
   .rank-row .ship-icon {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     flex-shrink: 0;
   }
 
   .rank-row .rank-name {
     font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
+    font-size: 15px;
     letter-spacing: 2px;
     flex: 1;
   }
 
   .rank-row .rank-time {
     font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
+    font-size: 12px;
     color: rgba(255,255,255,0.3);
   }
 
   .rank-row .rank-cause {
     font-family: 'Share Tech Mono', monospace;
-    font-size: 9px;
+    font-size: 11px;
     color: rgba(255,255,255,0.3);
     text-align: right;
     flex-shrink: 0;
@@ -410,11 +345,11 @@
 
   .rank-row .rank-kills {
     font-family: 'Orbitron', sans-serif;
-    font-size: 9px;
+    font-size: 12px;
     font-weight: 700;
     color: rgba(255,255,255,0.5);
     flex-shrink: 0;
-    width: 24px;
+    width: 28px;
     text-align: right;
   }
 
@@ -429,9 +364,9 @@
     margin-top: 30px;
     flex-shrink: 0;
     font-family: 'Orbitron', sans-serif;
-    font-size: 12px;
-    letter-spacing: 4px;
-    padding: 12px 32px;
+    font-size: 14px;
+    letter-spacing: 5px;
+    padding: 14px 40px;
     background: transparent;
     border: 1px solid rgba(255,255,255,0.3);
     color: #fff;
@@ -659,8 +594,7 @@
 </div>
 
 <div id="killfeed"></div>
-<div id="scoreboard-top" class="scoreboard-bar"></div>
-<div id="scoreboard-bottom" class="scoreboard-bar"></div>
+
 
 <div id="pregame-overlay">
   <div id="pregame-title">BLAST BELT ROYALE</div>
@@ -890,7 +824,7 @@ function fireWeapon(ship) {
       bullets.push(makeBullet(ship, bx, by,
         Math.cos(ang)*w.speed + ship.vx*0.3,
         Math.sin(ang)*w.speed + ship.vy*0.3,
-        {sineAmp: 4, sineFreq: 14}));
+        {sineAmp: 8, sineFreq: 14}));
       break;
 
     case 'gatling':
@@ -899,7 +833,11 @@ function fireWeapon(ship) {
       break;
   }
   const lowSoundWeapons = ['shotgun', 'scrap'];
+  const riseSoundWeapons = ['chaotic', 'snake'];
   if (lowSoundWeapons.includes(w.type)) playShootLow();
+  else if (riseSoundWeapons.includes(w.type)) playShootRise();
+  else if (w.type === 'sniper') playShootSniper();
+  else if (w.type === 'alternating') playShootAlt();
   else playShoot();
 }
 
@@ -935,7 +873,7 @@ function processBurstQueue(ship) {
         break;
       }
     }
-    if (burst.type === 'flamethrower') playShootLow();
+    if (burst.type === 'flamethrower') playShootFlame();
     else playShoot();
   }
 }
@@ -1140,6 +1078,99 @@ function playShootLow() {
   osc.type = 'square';
   osc.frequency.setValueAtTime(400, t);
   osc.frequency.exponentialRampToValueAtTime(120, t + 0.1);
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  osc.start(t);
+  osc.stop(t + 0.1);
+}
+
+let lastShootRiseTime = 0;
+function playShootRise() {
+  ensureAudio();
+  const t = audioCtx.currentTime;
+  if (t - lastShootRiseTime < 0.04) return;
+  lastShootRiseTime = t;
+  const vol = getZoomVolume() * 0.06;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(150, t);
+  osc.frequency.exponentialRampToValueAtTime(500, t + 0.1);
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  osc.start(t);
+  osc.stop(t + 0.12);
+}
+
+let lastShootAltTime = 0;
+function playShootAlt() {
+  ensureAudio();
+  const t = audioCtx.currentTime;
+  if (t - lastShootAltTime < 0.04) return;
+  lastShootAltTime = t;
+  const vol = getZoomVolume() * 0.05;
+  // Two detuned oscillators for beating/wobble effect
+  const osc1 = audioCtx.createOscillator();
+  const osc2 = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc1.connect(gain);
+  osc2.connect(gain);
+  gain.connect(masterGain);
+  osc1.type = 'square';
+  osc2.type = 'square';
+  // Rapid wobble between frequencies
+  osc1.frequency.setValueAtTime(600, t);
+  osc1.frequency.setValueAtTime(300, t + 0.03);
+  osc1.frequency.setValueAtTime(600, t + 0.06);
+  osc1.frequency.setValueAtTime(300, t + 0.09);
+  osc2.frequency.setValueAtTime(620, t);
+  osc2.frequency.setValueAtTime(310, t + 0.03);
+  osc2.frequency.setValueAtTime(620, t + 0.06);
+  osc2.frequency.setValueAtTime(310, t + 0.09);
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  osc1.start(t);
+  osc2.start(t);
+  osc1.stop(t + 0.12);
+  osc2.stop(t + 0.12);
+}
+
+let lastShootFlameTime = 0;
+function playShootFlame() {
+  ensureAudio();
+  const t = audioCtx.currentTime;
+  if (t - lastShootFlameTime < 0.04) return;
+  lastShootFlameTime = t;
+  const vol = getZoomVolume() * 0.025;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(300, t);
+  osc.frequency.exponentialRampToValueAtTime(100, t + 0.08);
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+  osc.start(t);
+  osc.stop(t + 0.08);
+}
+
+let lastShootSniperTime = 0;
+function playShootSniper() {
+  ensureAudio();
+  const t = audioCtx.currentTime;
+  if (t - lastShootSniperTime < 0.04) return;
+  lastShootSniperTime = t;
+  const vol = getZoomVolume() * 0.1;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(1200, t);
+  osc.frequency.exponentialRampToValueAtTime(400, t + 0.1);
   gain.gain.setValueAtTime(vol, t);
   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
   osc.start(t);
@@ -1744,6 +1775,7 @@ function init() {
   }
 
   document.getElementById('winner-overlay').classList.remove('show');
+  showScoreboard = false;
   document.getElementById('alive-num').textContent = settings.numShips;
   buildScoreboard();
   buildPregameRoster();
@@ -2328,7 +2360,78 @@ function update(rawDt) {
     }
 
     // Bullet trail particle
-    if (Math.random() < 0.5) {
+    if (b.sineAmp) {
+      // Snake bullets: dense, long-lasting glowing trail
+      for (let tp = 0; tp < 2; tp++) {
+        const tLife = rand(0.4, 0.8);
+        particles.push({
+          x: b.x + rand(-3, 3),
+          y: b.y + rand(-3, 3),
+          vx: -b.vx * 0.02 + rand(-6, 6),
+          vy: -b.vy * 0.02 + rand(-6, 6),
+          life: tLife,
+          maxLife: tLife,
+          color: b.color,
+          size: rand(1.5, 3),
+        });
+      }
+    } else if (b.type === 'alternating') {
+      // Alternating lasers: small, lingering trail
+      if (Math.random() < 0.7) {
+        const tLife = rand(0.2, 0.4);
+        particles.push({
+          x: b.x + rand(-1, 1),
+          y: b.y + rand(-1, 1),
+          vx: -b.vx * 0.03 + rand(-3, 3),
+          vy: -b.vy * 0.03 + rand(-3, 3),
+          life: tLife,
+          maxLife: tLife,
+          color: b.color,
+          size: rand(0.8, 1.5),
+        });
+      }
+    } else if (b.type === 'sniper') {
+      // Sniper: store trail positions for beam effect
+      if (!b.trail) b.trail = [];
+      b.trail.push({x: b.x, y: b.y, life: 0.35});
+      // Age and prune trail
+      for (let t = b.trail.length - 1; t >= 0; t--) {
+        b.trail[t].life -= dt;
+        if (b.trail[t].life <= 0) b.trail.splice(t, 1);
+      }
+    } else if (b.type === 'homing' && !b.isShrapnel) {
+      // Homing missiles: smoky particle trail
+      const tLife = rand(0.25, 0.5);
+      particles.push({
+        x: b.x + rand(-2, 2),
+        y: b.y + rand(-2, 2),
+        vx: -b.vx * 0.04 + rand(-10, 10),
+        vy: -b.vy * 0.04 + rand(-10, 10),
+        life: tLife,
+        maxLife: tLife,
+        color: b.color,
+        size: rand(1, 2.5),
+      });
+      // Intermittent mini shockwaves
+      if (Math.random() < 0.1) {
+        shockwaves.push({
+          x: b.x, y: b.y,
+          r: 0, maxR: rand(10, 18),
+          life: 0.4,
+          color: b.color
+        });
+      }
+    } else if (b.type === 'chaotic') {
+      // Chaotic: store trail for perpendicular line effect
+      if (!b.trail) b.trail = [];
+      if (Math.random() < 0.4) {
+        b.trail.push({x: b.x, y: b.y, life: 0.25, ang: Math.atan2(b.vy, b.vx)});
+      }
+      for (let t = b.trail.length - 1; t >= 0; t--) {
+        b.trail[t].life -= dt;
+        if (b.trail[t].life <= 0) b.trail.splice(t, 1);
+      }
+    } else if (Math.random() < 0.5) {
       const tLife = rand(0.08, 0.15);
       particles.push({
         x: b.x + rand(-2, 2),
@@ -2850,13 +2953,46 @@ function render() {
     ctx.shadowColor = b.color;
     ctx.shadowBlur = 14;
     if (b.type === 'sniper') {
-      // Elongated bright line for sniper
+      // Beam trail
+      if (b.trail && b.trail.length > 1) {
+        ctx.shadowBlur = 8;
+        for (let t = 1; t < b.trail.length; t++) {
+          const alpha = b.trail[t].life / 0.35;
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = b.color;
+          ctx.lineWidth = 2.5 * alpha;
+          ctx.beginPath();
+          ctx.moveTo(b.trail[t-1].x, b.trail[t-1].y);
+          ctx.lineTo(b.trail[t].x, b.trail[t].y);
+          ctx.stroke();
+        }
+        // Connect last trail point to bullet
+        const last = b.trail[b.trail.length - 1];
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      // Elongated bright line for sniper bullet head
+      ctx.shadowBlur = 14;
       const bAng = Math.atan2(b.vy, b.vx);
       ctx.strokeStyle = b.color;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.moveTo(b.x - Math.cos(bAng)*10, b.y - Math.sin(bAng)*10);
       ctx.lineTo(b.x + Math.cos(bAng)*10, b.y + Math.sin(bAng)*10);
+      ctx.stroke();
+    } else if (b.type === 'alternating') {
+      // Parallel laser lines
+      const bAng = Math.atan2(b.vy, b.vx);
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(b.x - Math.cos(bAng)*7, b.y - Math.sin(bAng)*7);
+      ctx.lineTo(b.x + Math.cos(bAng)*7, b.y + Math.sin(bAng)*7);
       ctx.stroke();
     } else if (b.type === 'homing' && !b.isShrapnel) {
       // Diamond shape for missiles
@@ -2868,6 +3004,25 @@ function render() {
       ctx.lineTo(b.x - Math.cos(bAng)*sz*0.6, b.y - Math.sin(bAng)*sz*0.6);
       ctx.lineTo(b.x + Math.cos(bAng-Math.PI/2)*sz*0.4, b.y + Math.sin(bAng-Math.PI/2)*sz*0.4);
       ctx.closePath();
+      ctx.fill();
+    } else if (b.type === 'chaotic' && b.trail && b.trail.length > 0) {
+      // Chaotic: perpendicular line trails
+      for (const tp of b.trail) {
+        const alpha = tp.life / 0.25;
+        const perp = tp.ang + Math.PI / 2;
+        const len = 6 + 4 * alpha;
+        ctx.globalAlpha = alpha * 0.7;
+        ctx.strokeStyle = b.color;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(tp.x - Math.cos(perp) * len, tp.y - Math.sin(perp) * len);
+        ctx.lineTo(tp.x + Math.cos(perp) * len, tp.y + Math.sin(perp) * len);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      // Bullet dot
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.size || 3, 0, Math.PI * 2);
       ctx.fill();
     } else {
       ctx.beginPath();
@@ -3023,6 +3178,9 @@ function render() {
     ctx.fillStyle = 'rgba(255,255,255,0.05)';
     ctx.fillRect(x, y, w, h);
   }
+
+  // ── SCOREBOARD HUD ──
+  drawScoreboard(ctx);
 }
 
 // ─── STARS ────────────────────────────────────────────────────
@@ -3068,61 +3226,105 @@ function buildPregameRoster() {
 document.getElementById('start-btn').addEventListener('click', startMatch);
 
 // ─── SCOREBOARD ───────────────────────────────────────────────
-function buildScoreboard() {
-  const topEl = document.getElementById('scoreboard-top');
-  const botEl = document.getElementById('scoreboard-bottom');
-  topEl.innerHTML = '';
-  botEl.innerHTML = '';
-  const half = Math.ceil(ships.length / 2);
-  for (let si = 0; si < ships.length; si++) {
-    const ship = ships[si];
-    const tag = document.createElement('div');
-    tag.className = 'player-tag';
-    tag.id = `tag-${ship.id}`;
-    tag.style.borderColor = ship.color + '44';
-    tag.style.background = ship.color + '11';
-    tag.appendChild(createShipIcon(ship.id, ship.color, 18));
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = ship.name;
-    tag.appendChild(nameSpan);
-    // HP bar (only when maxHp > 1)
-    if (ship.maxHp > 1) {
-      const hpWrap = document.createElement('div');
-      hpWrap.className = 'hp-bar-wrap';
-      const hpFill = document.createElement('div');
-      hpFill.className = 'hp-bar-fill';
-      hpFill.id = `hp-${ship.id}`;
-      hpFill.style.width = '100%';
-      hpFill.style.background = ship.color;
-      hpWrap.appendChild(hpFill);
-      tag.appendChild(hpWrap);
-    }
-    const killSpan = document.createElement('span');
-    killSpan.className = 'kills';
-    killSpan.style.color = ship.color;
-    killSpan.id = `kills-${ship.id}`;
-    killSpan.textContent = '0';
-    tag.appendChild(killSpan);
-    (si < half ? topEl : botEl).appendChild(tag);
-  }
-}
+function buildScoreboard() {} // no-op, drawn on canvas now
 
-function updateScoreboard() {
-  for (const ship of ships) {
-    const tag = document.getElementById(`tag-${ship.id}`);
-    if (!tag) continue;
-    tag.classList.toggle('dead', !ship.alive);
-    document.getElementById(`kills-${ship.id}`).textContent = ship.kills;
-    // Update HP bar
-    const hpFill = document.getElementById(`hp-${ship.id}`);
-    if (hpFill) {
-      const pct = Math.max(0, ship.hp / ship.maxHp) * 100;
-      hpFill.style.width = pct + '%';
-      const color = (ship.hp / ship.maxHp) > 0.5 ? ship.color :
-                    (ship.hp / ship.maxHp) > 0.25 ? '#ffaa22' : '#ff4444';
-      hpFill.style.background = color;
+function updateScoreboard() {} // no-op, drawn on canvas now
+
+let showScoreboard = false;
+
+function drawScoreboard(ctx) {
+  if (!showScoreboard) return;
+
+  const half = Math.ceil(ships.length / 2);
+  const tagW = 140;
+  const tagH = 18;
+  const gap = 6;
+  const hasHP = ships[0] && ships[0].maxHp > 1;
+
+  // Draw a row of player tags
+  function drawRow(list, y) {
+    const totalW = list.length * tagW + (list.length - 1) * gap;
+    let x = (W - totalW) / 2;
+
+    for (const ship of list) {
+      const alpha = ship.alive ? 1.0 : 0.25;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
+      // Background
+      ctx.fillStyle = ship.color + '18';
+      ctx.strokeStyle = ship.color + '55';
+      ctx.lineWidth = 1;
+      ctx.fillRect(x, y, tagW, tagH);
+      ctx.strokeRect(x, y, tagW, tagH);
+
+      // Ship shape icon
+      const iconSize = 12;
+      const iconX = x + 10;
+      const iconY = y + tagH / 2;
+      const verts = SHIP_SHAPES[ship.id] || SHIP_SHAPES[3];
+      const ir = iconSize * 0.38;
+      ctx.save();
+      ctx.translate(iconX, iconY);
+      ctx.strokeStyle = ship.color;
+      ctx.lineWidth = 1.2;
+      ctx.fillStyle = ship.color + '44';
+      ctx.beginPath();
+      ctx.moveTo(verts[0][0] * ir, verts[0][1] * ir);
+      for (let i = 1; i < verts.length; i++) ctx.lineTo(verts[i][0] * ir, verts[i][1] * ir);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      // Name
+      ctx.font = '9px "Share Tech Mono", monospace';
+      ctx.fillStyle = ship.alive ? ship.color : 'rgba(255,255,255,0.4)';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      const nameX = x + 20;
+      if (ship.alive) {
+        ctx.fillText(ship.name, nameX, y + tagH / 2);
+      } else {
+        // Strikethrough for dead
+        const text = ship.name;
+        ctx.fillText(text, nameX, y + tagH / 2);
+        const tw = ctx.measureText(text).width;
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(nameX, y + tagH / 2);
+        ctx.lineTo(nameX + tw, y + tagH / 2);
+        ctx.stroke();
+      }
+
+      // HP bar (if multi-HP)
+      if (hasHP) {
+        const barX = x + 68;
+        const barW = 52;
+        const barH = 3;
+        const barY = y + tagH / 2 - barH / 2;
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.fillRect(barX, barY, barW, barH);
+        const pct = Math.max(0, ship.hp / ship.maxHp);
+        const hpColor = pct > 0.5 ? ship.color : pct > 0.25 ? '#ffaa22' : '#ff4444';
+        ctx.fillStyle = hpColor;
+        ctx.fillRect(barX, barY, barW * pct, barH);
+      }
+
+      // Kill count
+      ctx.font = '700 9px "Orbitron", sans-serif';
+      ctx.fillStyle = ship.color;
+      ctx.textAlign = 'right';
+      ctx.fillText(ship.kills, x + tagW - 5, y + tagH / 2);
+
+      ctx.restore();
+      x += tagW + gap;
     }
   }
+
+  drawRow(ships.slice(0, half), 8);
+  drawRow(ships.slice(half), H - tagH - 8);
 }
 
 // ─── KILLFEED ─────────────────────────────────────────────────
@@ -3176,12 +3378,14 @@ function startMatch() {
   }
   pregame = false;
   document.getElementById('pregame-overlay').classList.add('hidden');
+  showScoreboard = true;
   document.getElementById('settings-panel').classList.remove('open');
 }
 
 function showWinner() {
   const ov = document.getElementById('winner-overlay');
   ov.classList.add('show');
+  showScoreboard = false;
   const nameEl = document.getElementById('winner-name');
   if (winner) {
     nameEl.textContent = winner.name;
@@ -3225,7 +3429,7 @@ function showWinner() {
     numSpan.className = 'rank-num';
     numSpan.textContent = i + 1;
     row.appendChild(numSpan);
-    row.appendChild(createShipIcon(ship.id, ship.color, 24));
+    row.appendChild(createShipIcon(ship.id, ship.color, 32));
     const nameSpan = document.createElement('span');
     nameSpan.className = 'rank-name';
     nameSpan.style.color = ship.color;
