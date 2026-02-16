@@ -1110,31 +1110,29 @@ function playShootAlt() {
   const t = audioCtx.currentTime;
   if (t - lastShootAltTime < 0.04) return;
   lastShootAltTime = t;
-  const vol = getZoomVolume() * 0.05;
-  // Two detuned oscillators for beating/wobble effect
+  const vol = getZoomVolume() * 0.045;
+  // Two detuned oscillators sweeping down for TIE-fighter zap
   const osc1 = audioCtx.createOscillator();
   const osc2 = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc1.connect(gain);
   osc2.connect(gain);
   gain.connect(masterGain);
-  osc1.type = 'square';
+  osc1.type = 'sawtooth';
   osc2.type = 'square';
-  // Rapid wobble between frequencies
-  osc1.frequency.setValueAtTime(600, t);
-  osc1.frequency.setValueAtTime(300, t + 0.03);
-  osc1.frequency.setValueAtTime(600, t + 0.06);
-  osc1.frequency.setValueAtTime(300, t + 0.09);
-  osc2.frequency.setValueAtTime(620, t);
-  osc2.frequency.setValueAtTime(310, t + 0.03);
-  osc2.frequency.setValueAtTime(620, t + 0.06);
-  osc2.frequency.setValueAtTime(310, t + 0.09);
+  // Fast sweep down with second osc slightly offset for beating
+  osc1.frequency.setValueAtTime(900, t);
+  osc1.frequency.exponentialRampToValueAtTime(120, t + 0.08);
+  osc2.frequency.setValueAtTime(950, t);
+  osc2.frequency.exponentialRampToValueAtTime(130, t + 0.08);
   gain.gain.setValueAtTime(vol, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  gain.gain.setValueAtTime(vol * 0.3, t + 0.025);
+  gain.gain.setValueAtTime(vol * 0.9, t + 0.04);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
   osc1.start(t);
   osc2.start(t);
-  osc1.stop(t + 0.12);
-  osc2.stop(t + 0.12);
+  osc1.stop(t + 0.09);
+  osc2.stop(t + 0.09);
 }
 
 let lastShootFlameTime = 0;
