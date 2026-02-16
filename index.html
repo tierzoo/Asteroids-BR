@@ -161,6 +161,21 @@
     font-size: 9px;
   }
 
+  .player-tag .hp-bar-wrap {
+    width: 32px;
+    height: 3px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 1px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .player-tag .hp-bar-fill {
+    height: 100%;
+    border-radius: 1px;
+    transition: width 0.2s;
+  }
+
   #killfeed {
     position: fixed;
     top: 60px;
@@ -580,12 +595,20 @@
     <span class="setting-label">Rock Shooting</span>
     <div class="setting-toggle" data-setting="rockShooter" onclick="toggleSetting(this)"></div>
   </div>
+  <div class="setting-row">
+    <span class="setting-label">Unique Weapons</span>
+    <div class="setting-toggle on" data-setting="weapons" onclick="toggleSetting(this)"></div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Random Weapons</span>
+    <div class="setting-toggle" data-setting="randomWeapons" onclick="toggleSetting(this)"></div>
+  </div>
   <h3 style="margin-top:12px">SHIP HP</h3>
   <div class="setting-row">
     <div id="hp-selector" style="display:flex;gap:4px;width:100%;">
-      <button class="hp-btn active" data-hp="1">1</button>
+      <button class="hp-btn" data-hp="1">1</button>
       <button class="hp-btn" data-hp="2">2</button>
-      <button class="hp-btn" data-hp="3">3</button>
+      <button class="hp-btn active" data-hp="3">3</button>
       <button class="hp-btn" data-hp="5">5</button>
       <button class="hp-btn" data-hp="10">10</button>
     </div>
@@ -598,10 +621,10 @@
   <h3 style="margin-top:12px">SIM SPEED</h3>
   <div class="setting-row">
     <div id="speed-selector" style="display:flex;gap:4px;width:100%;">
-      <button class="hp-btn" data-speed="0.5">0.5x</button>
-      <button class="hp-btn active" data-speed="1">1x</button>
-      <button class="hp-btn" data-speed="2">2x</button>
-      <button class="hp-btn" data-speed="4">4x</button>
+      <button class="spd-btn hp-btn" data-speed="0.5">0.5x</button>
+      <button class="spd-btn hp-btn active" data-speed="1">1x</button>
+      <button class="spd-btn hp-btn" data-speed="2">2x</button>
+      <button class="spd-btn hp-btn" data-speed="4">4x</button>
     </div>
   </div>
 </div>
@@ -695,7 +718,7 @@ const PRESET_PROFILES = [
   // LIME:    Twitchy scrapper — fast aggression cycles, chaotic aim
   { behavior: 'hunter',     aggroSpeed: 0.4,  aggroPhase: 5.5,   aimBaseline: 0.5, aimRange: 0.5, aimSpeed: 0.8, aimPhase: 1.8,  rockShooter: 0.7 },
   // CORAL:   Bloodthirsty bruiser — ignores asteroids when locked onto a target
-  { behavior: 'bloodthirsty', aggroSpeed: 0.15, aggroPhase: 1.0,   aimBaseline: 0.3, aimRange: 0.3, aimSpeed: 0.3, aimPhase: 5.0,  rockShooter: 0.6 },
+  { behavior: 'bloodthirsty', aggroSpeed: 0.25, aggroPhase: 1.0,   aimBaseline: 0.3, aimRange: 0.65, aimSpeed: 0.3, aimPhase: 5.0,  rockShooter: 0.6 },
   // PURPLE:  Ghost — evasive navigator, rarely shoots rocks, precise aim
   { behavior: 'evasive',    aggroSpeed: 0.28, aggroPhase: 2.0,   aimBaseline: 0.75, aimRange: 0.4, aimSpeed: 0.5, aimPhase: 3.5, rockShooter: 0.1 },
   // WHITE:   Wildcard — cautious but with dramatic aggro swings
@@ -706,13 +729,257 @@ const PRESET_PROFILES = [
   { behavior: 'cautious',   aggroSpeed: 0.2,  aggroPhase: 3.8,   aimBaseline: 0.95, aimRange: 0.3, aimSpeed: 0.35, aimPhase: 4.5, rockShooter: 0.25 },
 ];
 
+// ─── WEAPON DEFINITIONS ──────────────────────────────────────
+const WEAPON_DEFS = {
+  basic:        { name:'Basic Laser',    speed:400, life:1.8, fireRate:0.28, damage:3, type:'basic' },
+  shotgun:      { name:'Shotgun',        speed:400, life:1.5, fireRate:1.0,  damage:1, type:'shotgun',    pellets:5, spread:16 },
+  grenade:      { name:'Grenade',        speed:400, life:1.3, fireRate:2.0,  damage:2, type:'grenade',    fuseTime:0.65, shrapCount:16, shrapDmg:2, shrapLife:0.4, shrapSpeed:300 },
+  triple:       { name:'Triple-guns',    speed:400, life:1.8, fireRate:0.6,  damage:2, type:'triple',     burstCount:3, burstDelay:0.1 },
+  homing:       { name:'Homing Missiles',speed:300, life:2.4, fireRate:4.0,  damage:2, type:'homing',     launchSpeed:50, boostDelay:0.15 },
+  alternating:  { name:'Alt. Blasters',  speed:400, life:1.8, fireRate:0.28, damage:2, type:'alternating', offset:6 },
+  flamethrower: { name:'Flamethrower',   speed:250, life:2.0, fireRate:2.5,  damage:1, type:'flamethrower',burstCount:30, amplitude:15 },
+  sniper:       { name:'Sniper',         speed:650, life:2.0, fireRate:1.25, damage:5, type:'sniper' },
+  chaotic:      { name:'Chaotic Shot',   speed:400, life:1.8, fireRate:0.23, damage:3, type:'chaotic' },
+  scrap:        { name:'Scrap Shot',     speed:400, life:1.8, fireRate:1.0,  damage:2, type:'scrap',      fuseTime:0.4, shrapCount:5, shrapSpread:20, shrapSpeed:400 },
+  snake:        { name:'Snake Shot',     speed:400, life:1.8, fireRate:0.4,  damage:3, type:'snake' },
+  gatling:      { name:'Gatling Gun',    speed:400, life:1.8, fireRate:3.0,  damage:1, type:'gatling',    burstCount:15, burstDelay:0.08, spread:4 },
+};
+
+// Ship index → weapon key mapping
+// RED=alternating, GREEN=chaotic, BLUE=grenade, ORANGE=flamethrower,
+// PINK=gatling, CYAN=homing, LIME=snake, CORAL=shotgun,
+// PURPLE=scrap, WHITE=basic, YELLOW=triple, MAGENTA=sniper
+const SHIP_WEAPONS = ['alternating','chaotic','grenade','flamethrower','gatling','homing','snake','shotgun','scrap','basic','triple','sniper'];
+
+const WEAPON_KEYS = Object.keys(WEAPON_DEFS);
+
+function getWeapon(shipIdx) {
+  if (!settings.weapons && !settings.randomWeapons) return {...WEAPON_DEFS.basic};
+  if (settings.randomWeapons) {
+    const key = WEAPON_KEYS[randInt(0, WEAPON_KEYS.length - 1)];
+    return {...WEAPON_DEFS[key]};
+  }
+  return {...WEAPON_DEFS[SHIP_WEAPONS[shipIdx]]};
+}
+
+// ─── WEAPON FIRE SYSTEM ─────────────────────────────────────
+function makeBullet(ship, x, y, vx, vy, opts) {
+  const o = opts || {};
+  return {
+    x, y, vx, vy,
+    life: o.life ?? ship.weapon.life,
+    owner: ship.id, color: o.color ?? ship.color,
+    damage: o.damage ?? ship.weapon.damage,
+    type: o.type ?? ship.weapon.type,
+    size: o.size ?? 3,
+    detonateTime: o.detonateTime ?? null,
+    contactDetonate: o.contactDetonate ?? false,
+    isShrapnel: o.isShrapnel ?? false,
+    armed: o.armed ?? true,
+    armTime: o.armTime ?? 0,
+    fireAng: o.fireAng ?? ship.ang,
+    spawnTime: gameTime,
+    curveRate: o.curveRate ?? 0,
+    sineAmp: o.sineAmp ?? 0,
+    sineFreq: o.sineFreq ?? 0,
+  };
+}
+
+function fireWeapon(ship) {
+  const w = ship.weapon;
+  const ang = ship.ang;
+  const bx = ship.x + Math.cos(ang) * ship.r * 1.2;
+  const by = ship.y + Math.sin(ang) * ship.r * 1.2;
+
+  switch (w.type) {
+    case 'basic':
+      bullets.push(makeBullet(ship, bx, by,
+        Math.cos(ang)*w.speed + ship.vx*0.3,
+        Math.sin(ang)*w.speed + ship.vy*0.3));
+      break;
+
+    case 'shotgun': {
+      const sr = (w.spread/2) * Math.PI/180;
+      for (let i = 0; i < w.pellets; i++) {
+        const off = (i/(w.pellets-1) - 0.5) * 2 * sr;
+        const a = ang + off;
+        bullets.push(makeBullet(ship, bx, by,
+          Math.cos(a)*w.speed + ship.vx*0.3,
+          Math.sin(a)*w.speed + ship.vy*0.3, {size:2}));
+      }
+      break;
+    }
+
+    case 'grenade':
+      bullets.push(makeBullet(ship, bx, by,
+        Math.cos(ang)*w.speed + ship.vx*0.3,
+        Math.sin(ang)*w.speed + ship.vy*0.3,
+        {detonateTime: w.fuseTime, contactDetonate: true, size:5}));
+      break;
+
+    case 'triple':
+      for (let i = 0; i < w.burstCount; i++)
+        ship.burstQueue.push({time: gameTime + i*w.burstDelay, type:'triple'});
+      break;
+
+    case 'homing': {
+      const perp = ang + Math.PI/2;
+      const sOff = ship.r * 1.5;
+      for (const side of [-1, 1]) {
+        const mx = ship.x + Math.cos(perp)*sOff*side;
+        const my = ship.y + Math.sin(perp)*sOff*side;
+        bullets.push(makeBullet(ship, mx, my,
+          Math.cos(perp)*w.launchSpeed*side,
+          Math.sin(perp)*w.launchSpeed*side,
+          {armed:false, armTime:w.boostDelay, fireAng:ang, size:4}));
+      }
+      break;
+    }
+
+    case 'alternating': {
+      const perp = ang + Math.PI/2;
+      for (const side of [-1, 1]) {
+        const ox = bx + Math.cos(perp)*w.offset*side;
+        const oy = by + Math.sin(perp)*w.offset*side;
+        bullets.push(makeBullet(ship, ox, oy,
+          Math.cos(ang)*w.speed + ship.vx*0.3,
+          Math.sin(ang)*w.speed + ship.vy*0.3));
+      }
+      break;
+    }
+
+    case 'flamethrower':
+      for (let i = 0; i < w.burstCount; i++)
+        ship.burstQueue.push({time: gameTime + i*0.027, type:'flamethrower', idx:i, total:w.burstCount});
+      break;
+
+    case 'sniper':
+      bullets.push(makeBullet(ship, bx, by,
+        Math.cos(ang)*w.speed + ship.vx*0.3,
+        Math.sin(ang)*w.speed + ship.vy*0.3, {size:2}));
+      break;
+
+    case 'chaotic':
+      bullets.push(makeBullet(ship, bx, by,
+        Math.cos(ang)*w.speed + ship.vx*0.3,
+        Math.sin(ang)*w.speed + ship.vy*0.3,
+        {curveRate: rand(-4, 4)}));
+      break;
+
+    case 'scrap':
+      bullets.push(makeBullet(ship, bx, by,
+        Math.cos(ang)*w.speed + ship.vx*0.3,
+        Math.sin(ang)*w.speed + ship.vy*0.3,
+        {detonateTime: w.fuseTime, contactDetonate: false, size:4}));
+      break;
+
+    case 'snake':
+      bullets.push(makeBullet(ship, bx, by,
+        Math.cos(ang)*w.speed + ship.vx*0.3,
+        Math.sin(ang)*w.speed + ship.vy*0.3,
+        {sineAmp: 4, sineFreq: 14}));
+      break;
+
+    case 'gatling':
+      for (let i = 0; i < w.burstCount; i++)
+        ship.burstQueue.push({time: gameTime + i*w.burstDelay, type:'gatling'});
+      break;
+  }
+  const lowSoundWeapons = ['shotgun', 'scrap'];
+  if (lowSoundWeapons.includes(w.type)) playShootLow();
+  else playShoot();
+}
+
+function processBurstQueue(ship) {
+  while (ship.burstQueue.length > 0 && gameTime >= ship.burstQueue[0].time) {
+    const burst = ship.burstQueue.shift();
+    const w = ship.weapon;
+    const ang = ship.ang;
+    const bx = ship.x + Math.cos(ang)*ship.r*1.2;
+    const by = ship.y + Math.sin(ang)*ship.r*1.2;
+    switch (burst.type) {
+      case 'triple':
+        bullets.push(makeBullet(ship, bx, by,
+          Math.cos(ang)*w.speed + ship.vx*0.3,
+          Math.sin(ang)*w.speed + ship.vy*0.3));
+        break;
+      case 'flamethrower': {
+        const t = burst.idx / burst.total;
+        const sOff = Math.sin(t * Math.PI * 4) * (w.amplitude * Math.PI/180);
+        const a = ang + sOff;
+        bullets.push(makeBullet(ship, bx, by,
+          Math.cos(a)*w.speed + ship.vx*0.3,
+          Math.sin(a)*w.speed + ship.vy*0.3,
+          {life: rand(1.5, 2.5), size: rand(2, 3.5)}));
+        break;
+      }
+      case 'gatling': {
+        const sr = (w.spread/2) * Math.PI/180;
+        const a = ang + rand(-sr, sr);
+        bullets.push(makeBullet(ship, bx, by,
+          Math.cos(a)*w.speed + ship.vx*0.3,
+          Math.sin(a)*w.speed + ship.vy*0.3, {size:2}));
+        break;
+      }
+    }
+    if (burst.type === 'flamethrower') playShootLow();
+    else playShoot();
+  }
+}
+
+function detonateBullet(b) {
+  if (b.isShrapnel) return;
+  if (b.type === 'grenade') {
+    // Particles only, no shockwave
+    for (let i = 0; i < 12; i++) {
+      const a = rand(0, Math.PI * 2);
+      const sp = rand(20, 80);
+      particles.push({ x:b.x, y:b.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:rand(0.3,1.2), maxLife:1.2, color:b.color, size:rand(1,3) });
+    }
+    playExplosion();
+    for (let i = 0; i < 16; i++) {
+      const a = (i/16) * Math.PI * 2;
+      bullets.push({
+        x:b.x, y:b.y, vx:Math.cos(a)*300, vy:Math.sin(a)*300,
+        life:0.4, owner:b.owner, color:b.color, damage:2, type:'grenade',
+        size:2, isShrapnel:true, contactDetonate:false, detonateTime:null,
+        armed:true, armTime:0, fireAng:a, spawnTime:gameTime,
+        curveRate:0, sineAmp:0, sineFreq:0,
+      });
+    }
+  } else if (b.type === 'scrap') {
+    // Particles only, no shockwave
+    for (let i = 0; i < 6; i++) {
+      const a = rand(0, Math.PI * 2);
+      const sp = rand(15, 50);
+      particles.push({ x:b.x, y:b.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:rand(0.2,0.8), maxLife:0.8, color:b.color, size:rand(1,2.5) });
+    }
+    playShootLow();
+    const baseAng = Math.atan2(b.vy, b.vx);
+    const sr = (20/2) * Math.PI/180;
+    for (let i = 0; i < 5; i++) {
+      const off = (i/4 - 0.5) * 2 * sr;
+      const a = baseAng + off;
+      bullets.push({
+        x:b.x, y:b.y, vx:Math.cos(a)*400, vy:Math.sin(a)*400,
+        life:b.life, owner:b.owner, color:b.color, damage:2, type:'scrap',
+        size:2, isShrapnel:true, contactDetonate:false, detonateTime:null,
+        armed:true, armTime:0, fireAng:a, spawnTime:gameTime,
+        curveRate:0, sineAmp:0, sineFreq:0,
+      });
+    }
+  }
+}
+
 // Settings state — false = random, true = predetermined
 const settings = {
   behavior: false,
   aggression: false,
   aim: false,
   rockShooter: false,
-  shipHP: 1,
+  weapons: true,
+  randomWeapons: false,
+  shipHP: 3,
   autoRestart: false,
 };
 
@@ -720,11 +987,32 @@ function toggleSetting(el) {
   const key = el.dataset.setting;
   settings[key] = !settings[key];
   el.classList.toggle('on', settings[key]);
+
+  const wpnToggle = document.querySelector('[data-setting="weapons"]');
+  const rndToggle = document.querySelector('[data-setting="randomWeapons"]');
+
+  // Enabling random weapons → also enable unique weapons
+  if (key === 'randomWeapons' && settings.randomWeapons) {
+    settings.weapons = true;
+    wpnToggle.classList.add('on');
+  }
+  // Disabling unique weapons → also disable random weapons
+  if (key === 'weapons' && !settings.weapons) {
+    settings.randomWeapons = false;
+    rndToggle.classList.remove('on');
+  }
+  // Auto-select 3HP when any weapon mode enabled
+  if ((key === 'weapons' || key === 'randomWeapons') && (settings.weapons || settings.randomWeapons)) {
+    settings.shipHP = 3;
+    document.querySelectorAll('#hp-selector .hp-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.hp) === 3);
+    });
+  }
 }
 
-document.querySelectorAll('.hp-btn').forEach(btn => {
+document.querySelectorAll('#hp-selector .hp-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.hp-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#hp-selector .hp-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     settings.shipHP = parseInt(btn.dataset.hp);
   });
@@ -816,6 +1104,26 @@ function playShoot() {
   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
   osc.start(t);
   osc.stop(t + 0.08);
+}
+
+let lastShootLowTime = 0;
+function playShootLow() {
+  ensureAudio();
+  const t = audioCtx.currentTime;
+  if (t - lastShootLowTime < 0.04) return;
+  lastShootLowTime = t;
+  const vol = getZoomVolume() * 0.08;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(400, t);
+  osc.frequency.exponentialRampToValueAtTime(120, t + 0.1);
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  osc.start(t);
+  osc.stop(t + 0.1);
 }
 
 function playAsteroidBreak() {
@@ -1006,29 +1314,29 @@ function randomBehavior() {
 // ─── CUSTOM SHIP SHAPES ──────────────────────────────────────
 const SHIP_SHAPES = [
   // RED
-  [[-.075,-.1],[-.45,-.4],[-.2,-.4],[0,-.45],[-.2,-.55],[-.725,-.55],[-.275,0],[-.725,.55],[-.5,.55],[-.2,.55],[0,.5],[-.2,.4],[-.45,.4],[-.075,.1],[.45,.15],[.6,.1],[.65,.05],[.75,.05],[.925,0],[.75,-.05],[.65,-.05],[.6,-.1],[.45,-.15]],
+  [[-.1,-.15],[-.45,-.4],[-.2,-.4],[0,-.5],[-.2,-.65],[-.7,-.65],[-.7,-.4],[-.4,0],[-.75,.4],[-.75,.6],[-.5,.6],[-.2,.6],[0,.5],[-.2,.4],[-.45,.4],[-.1,.15],[.45,.2],[.6,.15],[.65,.1],[.75,.1],[.925,0],[.75,-.1],[.65,-.1],[.6,-.15],[.45,-.2]],
   // GREEN
-  [[-.7,0],[-.7,-.4],[-.35,-.85],[-.2,-.7],[-.25,-.15],[.05,-.5],[.35,-.25],[.25,0],[.6,-.15],[1,0],[.25,.45],[-.15,.25],[-.15,.65],[-.35,.8],[-.65,.45]],
+  [[-1,0],[-.7,-.1],[-.75,-.4],[-.4,-.85],[-.25,-.7],[-.3,-.15],[0,-.5],[.3,-.25],[.2,0],[.5,-.15],[1,0],[.2,.45],[-.15,.25],[-.25,.65],[-.4,.8],[-.7,.45],[-.7,.1]],
   // BLUE
-  [[1,0],[0,-.85],[.1,-.4],[-.1,-.25],[-.25,0],[-.1,.25],[.1,.45],[0,.85],[.75,.2]],
+  [[1,0],[.75,-.2],[-.15,-1],[-.05,-.4],[-.35,-.25],[-.55,0],[-.35,.25],[-.05,.45],[-.15,1],[.75,.2]],
   // ORANGE
-  [[1,0],[-.7,-.65],[-.6,-.15],[.2,0],[-.6,.15],[-.7,.65]],
+  [[1,0],[-.8,-.7],[-.65,-.2],[.1,0],[-.65,.2],[-.8,.7]],
   // PINK
-  [[-.7,-.65],[-.5,-.75],[1,0],[.25,.35],[-.5,.75],[-.7,.65],[-.45,0]],
+  [[-.7,-.65],[-.5,-.75],[.15,-.55],[1,0],[.15,.55],[-.5,.75],[-.7,.65],[-.75,.35],[-.5,.1],[-.35,0],[-.5,-.1],[-.75,-.4]],
   // CYAN
-  [[-.2,-.65],[-.7,-.65],[-.4,0],[-.7,.65],[-.25,.6],[-.5,.4],[1,0],[-.5,-.45]],
+  [[-.15,-.65],[-.8,-.65],[-.4,0],[-.8,.65],[-.2,.6],[-.45,.4],[1,0],[-.45,-.45]],
   // LIME
-  [[.8,-.55],[.4,-1],[-.75,-.7],[-.8,-.2],[-.15,0],[-.75,.25],[-.7,.75],[.5,.95],[.75,.55],[.35,.7],[-.25,.6],[.2,.3],[1,0],[.2,-.25],[-.25,-.6],[.3,-.7]],
+  [[.7,-.55],[.3,-1],[-.75,-.7],[-.85,-.2],[-.5,0],[-.85,.25],[-.7,.75],[.4,.95],[.65,.55],[.25,.7],[-.35,.5],[.2,.3],[1.1,0],[.2,-.25],[-.35,-.55],[.2,-.7]],
   // CORAL
   [[.55,-.25],[.1,-.65],[.1,-.2],[-.65,-.9],[-.45,-.1],[-1,0],[-.45,.15],[-.65,.9],[.1,.15],[.1,.6],[.55,.2],[.6,.5],[1,0],[.6,-.6]],
   // PURPLE
-  [[-.6,-.8],[.1,-.5],[-.75,-.2],[0,0],[-.75,.25],[0,.45],[-.55,.8],[.1,.75],[.6,.3],[1,0],[.65,-.25],[.1,-.7]],
+  [[-.75,-.8],[.1,-.5],[-.85,-.2],[.2,0],[-.85,.25],[.1,.55],[-.75,.8],[.1,.75],[.6,.3],[1,0],[.6,-.3],[.1,-.7]],
   // WHITE
   [[1,0],[-.7,-.65],[-.4,0],[-.7,.65]],
   // YELLOW
-  [[1,0],[-.4,-.55],[-.6,-.45],[-.7,-.65],[-.2,-.2],[-.2,-.1],[-.85,0],[-.25,.05],[-.25,.2],[-.55,.4],[-.45,.65],[-.7,.65],[0,.3],[.2,-.2],[.25,.2],[.65,0],[.75,.1],[.85,0]],
+  [[1.2,0],[-.4,-.55],[-.6,-.45],[-.7,-.65],[-.2,-.2],[-.2,-.1],[-.85,0],[-.25,.05],[-.25,.2],[-.55,.4],[-.45,.65],[-.7,.65],[0,.3],[.15,-.05],[.25,.2],[.55,-.05],[.75,.25],[.85,.05]],
   // MAGENTA
-  [[1,0],[-.7,-.65],[-.4,0],[-.7,.65],[.1,.3],[-.4,-.35],[.35,.15],[.15,-.25],[.65,.1]],
+  [[.95,0],[-.9,-.7],[-.5,0],[-.9,.65],[.05,.3],[-.4,-.3],[.3,.15],[.15,-.2],[.6,.1]],
 ];
 
 // Create a small canvas with a ship sprite for UI elements
@@ -1059,7 +1367,7 @@ function createShipIcon(shipId, color, size) {
   return c;
 }
 
-function drawShipShape(ctx, x, y, ang, r, color, hp, maxHp, invuln, shipId) {
+function drawShipShape(ctx, x, y, ang, r, color, hp, maxHp, invuln, shipId, hpBarTimer) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(ang);
@@ -1086,18 +1394,20 @@ function drawShipShape(ctx, x, y, ang, r, color, hp, maxHp, invuln, shipId) {
   ctx.fillStyle = color + '22';
   ctx.fill();
 
-  // HP bar — only show when ships have more than 1 HP
-  if (maxHp > 1) {
+  // HP bar — only show when hit (fades after 1.5s)
+  if (maxHp > 1 && hpBarTimer > 0) {
+    const barAlpha = Math.min(1, hpBarTimer / 0.4); // fade out over last 0.4s
     ctx.rotate(-ang); // un-rotate so bar is always horizontal
     const barW = r * 2.2;
     const barH = 3;
     const barY = -r - 8;
     // Background
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.fillStyle = `rgba(255,255,255,${0.15 * barAlpha})`;
     ctx.fillRect(-barW/2, barY, barW, barH);
     // Fill
     const pct = hp / maxHp;
     const barColor = pct > 0.5 ? color : pct > 0.25 ? '#ffaa22' : '#ff4444';
+    ctx.globalAlpha = (invuln && isFinite(invuln)) ? (0.3 + 0.3 * Math.sin(gameTime * 15)) * barAlpha : barAlpha;
     ctx.fillStyle = barColor;
     ctx.fillRect(-barW/2, barY, barW * pct, barH);
   }
@@ -1157,26 +1467,159 @@ function init() {
   asteroidKills = 0;
   document.getElementById('settings-panel').classList.remove('open');
 
-  // Spawn ships in a circle — randomize positions
+  // Spawn layout system — randomly selects a formation and adds jitter
   const cx = CFG.WORLD_W / 2;
   const cy = CFG.WORLD_H / 2;
-  const spawnRx = 3200;
-  const spawnRy = 1800;
-  const spawnSlots = Array.from({length: CFG.NUM_SHIPS}, (_, i) => i);
-  for (let i = spawnSlots.length - 1; i > 0; i--) {
-    const j = randInt(0, i);
-    [spawnSlots[i], spawnSlots[j]] = [spawnSlots[j], spawnSlots[i]];
+
+  function generateSpawnPositions() {
+    const positions = [];
+    // Slight offset for the whole formation so it's not dead center every time
+    const fmtOffX = rand(-1600, 1600);
+    const fmtOffY = rand(-1000, 1000);
+    const fcx = cx + fmtOffX;
+    const fcy = cy + fmtOffY;
+    const jitter = rand(120, 360);
+
+    const type = randInt(0, 7);
+
+    if (type === 0) {
+      // STANDARD 4×3 grid
+      const spacingX = rand(1000, 1800);
+      const spacingY = rand(800, 1400);
+      for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 4; col++) {
+          positions.push({
+            x: fcx + (col - 1.5) * spacingX + rand(-jitter, jitter),
+            y: fcy + (row - 1) * spacingY + rand(-jitter, jitter)
+          });
+        }
+      }
+    } else if (type === 1) {
+      // STAGGERED 4×3 — alternating rows offset by half a column
+      const spacingX = rand(1000, 1800);
+      const spacingY = rand(800, 1400);
+      for (let row = 0; row < 3; row++) {
+        const stagger = (row % 2 === 1) ? spacingX * 0.5 : 0;
+        for (let col = 0; col < 4; col++) {
+          positions.push({
+            x: fcx + (col - 1.5) * spacingX + stagger + rand(-jitter, jitter),
+            y: fcy + (row - 1) * spacingY + rand(-jitter, jitter)
+          });
+        }
+      }
+    } else if (type === 2) {
+      // TALL 3×4 grid
+      const spacingX = rand(2400, 4000);
+      const spacingY = rand(1400, 2400);
+      for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 3; col++) {
+          positions.push({
+            x: fcx + (col - 1) * spacingX + rand(-jitter, jitter),
+            y: fcy + (row - 1.5) * spacingY + rand(-jitter, jitter)
+          });
+        }
+      }
+    } else if (type === 3) {
+      // DIAMOND — 3-4-3-2 rows centered
+      const spacingX = rand(2000, 3400);
+      const spacingY = rand(1600, 2600);
+      const rowCounts = [3, 4, 3, 2];
+      for (let row = 0; row < rowCounts.length; row++) {
+        const cols = rowCounts[row];
+        for (let col = 0; col < cols; col++) {
+          positions.push({
+            x: fcx + (col - (cols - 1) / 2) * spacingX + rand(-jitter, jitter),
+            y: fcy + (row - 1.5) * spacingY + rand(-jitter, jitter)
+          });
+        }
+      }
+    } else if (type === 4) {
+      // ARROW — 1-2-3-4-2 pointing in a random direction
+      const spacingX = rand(1800, 3000);
+      const spacingY = rand(1600, 2600);
+      const rowCounts = [1, 2, 3, 4, 2];
+      const rotation = rand(0, Math.PI * 2);
+      const cos = Math.cos(rotation), sin = Math.sin(rotation);
+      for (let row = 0; row < rowCounts.length; row++) {
+        const cols = rowCounts[row];
+        for (let col = 0; col < cols; col++) {
+          const lx = (col - (cols - 1) / 2) * spacingX;
+          const ly = (row - 2) * spacingY;
+          positions.push({
+            x: fcx + lx * cos - ly * sin + rand(-jitter, jitter),
+            y: fcy + lx * sin + ly * cos + rand(-jitter, jitter)
+          });
+        }
+      }
+    } else if (type === 5) {
+      // COMPACT RING — small circle, everyone close
+      const radius = rand(2000, 3600);
+      const rotOff = rand(0, Math.PI * 2);
+      for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * Math.PI * 2 + rotOff;
+        positions.push({
+          x: fcx + Math.cos(a) * radius + rand(-jitter, jitter),
+          y: fcy + Math.sin(a) * radius + rand(-jitter, jitter)
+        });
+      }
+    } else if (type === 6) {
+      // TIGHT SCATTER — random but constrained to a small area
+      const scatterW = rand(2400, 4000);
+      const scatterH = rand(1800, 3000);
+      for (let i = 0; i < 12; i++) {
+        positions.push({
+          x: fcx + rand(-scatterW / 2, scatterW / 2),
+          y: fcy + rand(-scatterH / 2, scatterH / 2)
+        });
+      }
+    } else {
+      // STAGGERED 4×3 with wide variance — loose grid feel
+      const spacingX = rand(1200, 2000);
+      const spacingY = rand(1000, 1600);
+      const bigJitter = rand(300, 600);
+      for (let row = 0; row < 3; row++) {
+        const stagger = (row % 2 === 1) ? spacingX * rand(0.3, 0.6) : 0;
+        for (let col = 0; col < 4; col++) {
+          positions.push({
+            x: fcx + (col - 1.5) * spacingX + stagger + rand(-bigJitter, bigJitter),
+            y: fcy + (row - 1) * spacingY + rand(-bigJitter, bigJitter)
+          });
+        }
+      }
+    }
+
+    // Clamp all positions to stay inside world bounds with margin
+    const margin = 300;
+    for (const p of positions) {
+      p.x = Math.max(margin, Math.min(CFG.WORLD_W - margin, p.x));
+      p.y = Math.max(margin, Math.min(CFG.WORLD_H - margin, p.y));
+    }
+
+    return { positions, center: { x: fcx, y: fcy } };
   }
+
+  const spawn = generateSpawnPositions();
+  const spawnPositions = spawn.positions;
+  const spawnCenter = spawn.center;
+
+  // Shuffle positions so ship assignment is random
+  for (let i = spawnPositions.length - 1; i > 0; i--) {
+    const j = randInt(0, i);
+    [spawnPositions[i], spawnPositions[j]] = [spawnPositions[j], spawnPositions[i]];
+  }
+
   for (let i = 0; i < CFG.NUM_SHIPS; i++) {
-    const a = (spawnSlots[i] / CFG.NUM_SHIPS) * Math.PI * 2;
+    const sp = spawnPositions[i];
+    // Face toward center of formation
+    const faceAng = Math.atan2(spawnCenter.y - sp.y, spawnCenter.x - sp.x);
     ships.push({
       id: i,
       name: PILOT_NAMES[i],
       color: PILOT_COLORS[i],
-      x: cx + Math.cos(a) * spawnRx,
-      y: cy + Math.sin(a) * spawnRy,
+      x: sp.x,
+      y: sp.y,
       vx: 0, vy: 0,
-      ang: a + Math.PI, // face center
+      ang: faceAng, // face center of formation
       r: CFG.SHIP_RADIUS,
       hp: settings.shipHP,
       maxHp: settings.shipHP,
@@ -1207,6 +1650,9 @@ function init() {
       strafeFuel: 5,       // seconds of strafe available
       strafeDepleted: false, // lockout when fully drained
       thrustOn: false,
+      weapon: getWeapon(i),
+      burstQueue: [],
+      hpBarTimer: 0,
     });
   }
 
@@ -1413,6 +1859,9 @@ function updateAI(ship, dt) {
   // Bloodthirsty check: reckless only if target isn't firing back
   let bloodthirstyInCombat = false;
   if (ship.aiBehavior === 'bloodthirsty' && closestEnemy && closestEnemyDist < 1400) {
+    // As the match progresses, bloodthirsty cares less about return fire
+    // bloodthirstyRage: 0.35 at start → 1 by ~90s (reckless from the beginning, fully unhinged late)
+    const bloodthirstyRage = Math.min(1, 0.35 + gameTime / 120);
     // Check if the target has any bullets heading our way
     let targetFiringBack = false;
     for (const b of bullets) {
@@ -1422,16 +1871,17 @@ function updateAI(ship, dt) {
       const dot = (ship.x - b.x) * b.vx + (ship.y - b.y) * b.vy;
       if (dot > 0) { targetFiringBack = true; break; }
     }
-    bloodthirstyInCombat = !targetFiringBack;
+    // Early game: only reckless vs passive targets. Late game: reckless regardless.
+    bloodthirstyInCombat = !targetFiringBack || Math.random() < bloodthirstyRage;
   }
 
-  // PRIORITY 1: Imminent asteroid collision (< 1s away) — bloodthirsty ignores when in combat
+  // PRIORITY 1: Imminent asteroid collision (< 1s away) — bloodthirsty now dodges rocks but ignores bullets
   const urgentCollision = collisions.length > 0 && collisions[0].t < 1.0;
 
   // PRIORITY 2: Bullet dodge
   const urgentBullet = bulletThreat && bulletThreat.time < 0.4;
 
-  if ((urgentCollision || urgentBullet) && !bloodthirstyInCombat) {
+  if (urgentCollision || (urgentBullet && !bloodthirstyInCombat)) {
     // Build a combined avoidance vector from all imminent threats
     let avoidX = 0, avoidY = 0;
     const strafeDir = (ship.id % 2 === 0) ? 1 : -1;
@@ -1509,11 +1959,14 @@ function updateAI(ship, dt) {
   // PRIORITY 5: Combat
   else if (closestEnemy) {
     // Aggression oscillation — each ship periodically surges toward more aggressive behavior
+    const aliveCount = ships.filter(s => s.alive).length;
+    // Evasive ships shift to hunter-level aggression in top 3 — survival instinct kicks in
+    const evasiveEndgame = ship.aiBehavior === 'evasive' && aliveCount <= 3;
     const aggroBase = ship.aiBehavior === 'aggressive' || ship.aiBehavior === 'bloodthirsty' ? 0.85 :
-                      ship.aiBehavior === 'hunter' ? 0.6 :
+                      ship.aiBehavior === 'hunter' || evasiveEndgame ? 0.6 :
                       ship.aiBehavior === 'cautious' ? 0.35 : 0.2;
     const aggroSwing = ship.aiBehavior === 'aggressive' || ship.aiBehavior === 'bloodthirsty' ? 0.15 :
-                       ship.aiBehavior === 'hunter' ? 0.25 :
+                       ship.aiBehavior === 'hunter' || evasiveEndgame ? 0.25 :
                        ship.aiBehavior === 'cautious' ? 0.3 : 0.35;
     const aggro = Math.max(0, Math.min(1, aggroBase + Math.sin(gameTime * ship.aggroSpeed + ship.aggroPhase) * aggroSwing));
 
@@ -1526,7 +1979,8 @@ function updateAI(ship, dt) {
     if (closestEnemyDist < aggressionRange) {
       if (ship.aiBehavior === 'bloodthirsty') ship._bloodthirstyCombat = bloodthirstyInCombat;
       const toEnemy = angle(ship, closestEnemy);
-      const travelTime = closestEnemyDist / CFG.BULLET_SPEED;
+      const wSpeed = ship.weapon.speed;
+      const travelTime = closestEnemyDist / wSpeed;
       // Oscillating lead factor — smoothly drifts between direct and leading shots
       const rawLead = ship.aimBaseline + Math.sin(gameTime * ship.aimSpeed + ship.aimPhase) * ship.aimRange;
       const leadFactor = Math.max(0.05, Math.min(1.3, rawLead));
@@ -1535,7 +1989,8 @@ function updateAI(ship, dt) {
       const leadAng = Math.atan2(leadY - ship.y, leadX - ship.x);
 
       // Evasive flee — only when aggro is low enough (bloodthirsty never flees when reckless)
-      const fleeThreshold = ship.aiBehavior === 'evasive' ? 300 : 150;
+      // In top 3, evasive ships stop running and fight
+      const fleeThreshold = (ship.aiBehavior === 'evasive' && !evasiveEndgame) ? 300 : 150;
       if (!(ship.aiBehavior === 'bloodthirsty' && bloodthirstyInCombat) && aggro < 0.4 && closestEnemyDist < fleeThreshold) {
         const fleeAng = toEnemy + Math.PI;
         desiredAng = findSafeDirection(ship, fleeAng, Math.max(shipSpeed, 120));
@@ -1573,9 +2028,11 @@ function updateAI(ship, dt) {
         desiredAng = combatAng;
         wantThrust = closestEnemyDist > 150;
         const da = Math.abs(shortAngleDist(ship.ang, leadAng));
-        const bulletRange = CFG.BULLET_SPEED * CFG.BULLET_LIFE;
+        const bulletRange = ship.weapon.speed * ship.weapon.life;
         const fireRangeMult = lerp(0.75, 1.2, aggro);
-        wantShoot = da < 0.35 && closestEnemyDist < bulletRange * fireRangeMult;
+        const aimCone = ship.weapon.type === 'homing' ? 0.6 :
+                        ship.weapon.type === 'shotgun' || ship.weapon.type === 'flamethrower' ? 0.45 : 0.35;
+        wantShoot = da < aimCone && closestEnemyDist < bulletRange * fireRangeMult;
       }
     } else {
       // Roam — head toward center-ish via safe path
@@ -1633,6 +2090,7 @@ function update(rawDt) {
 
     ship.invuln = Math.max(0, ship.invuln - dt);
     ship.fireCooldown = Math.max(0, ship.fireCooldown - dt);
+    ship.hpBarTimer = Math.max(0, ship.hpBarTimer - dt);
 
     // AI
     updateAI(ship, dt);
@@ -1675,12 +2133,11 @@ function update(rawDt) {
     if (emergCount > 0) {
       emergency = true;
       const escapeAng = Math.atan2(emergAvoidY, emergAvoidX);
-      // Bloodthirsty in combat: only lateral strafe, don't override heading
-      if (!ship._bloodthirstyCombat) {
-        // Gentle turn toward escape angle
-        const turnNeeded = shortAngleDist(ship.ang, escapeAng);
-        ship.ang += Math.sign(turnNeeded) * Math.min(Math.abs(turnNeeded), CFG.SHIP_TURN_SPEED * 1.5 * dt);
-      }
+      // Bloodthirsty in combat: dodge strength fades as rage builds (0.45 early → 0.25 late)
+      const btRage = ship._bloodthirstyCombat ? Math.min(1, 0.35 + gameTime / 120) : 0;
+      const turnMult = ship._bloodthirstyCombat ? lerp(0.45, 0.25, btRage) : 1.5;
+      const turnNeeded = shortAngleDist(ship.ang, escapeAng);
+      ship.ang += Math.sign(turnNeeded) * Math.min(Math.abs(turnNeeded), CFG.SHIP_TURN_SPEED * turnMult * dt);
       // Lateral strafe push — nudge velocity perpendicular to the threat
       const strafeDir = (ship.id % 2 === 0) ? 1 : -1;
       const perpAng = ship.ang + Math.PI * 0.5 * strafeDir;
@@ -1729,29 +2186,82 @@ function update(rawDt) {
     if (ship.y < 0) { ship.y = 0; ship.vy = Math.abs(ship.vy) * 0.5; }
     if (ship.y > CFG.WORLD_H) { ship.y = CFG.WORLD_H; ship.vy = -Math.abs(ship.vy) * 0.5; }
 
+    // Process burst queue (triple-guns, gatling, flamethrower)
+    processBurstQueue(ship);
     // Shoot
     if (ship._aiShoot && ship.fireCooldown <= 0) {
-      ship.fireCooldown = CFG.FIRE_RATE;
-      const bx = ship.x + Math.cos(ship.ang) * ship.r * 1.2;
-      const by = ship.y + Math.sin(ship.ang) * ship.r * 1.2;
-      bullets.push({
-        x: bx, y: by,
-        vx: Math.cos(ship.ang) * CFG.BULLET_SPEED + ship.vx * 0.3,
-        vy: Math.sin(ship.ang) * CFG.BULLET_SPEED + ship.vy * 0.3,
-        life: CFG.BULLET_LIFE,
-        owner: ship.id,
-        color: ship.color,
-      });
-      playShoot();
+      ship.fireCooldown = ship.weapon.fireRate;
+      fireWeapon(ship);
     }
   }
 
   // Update bullets
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
+    // ── Special bullet behaviors ──
+    // Homing missiles
+    if (b.type === 'homing') {
+      if (!b.armed) {
+        b.armTime -= dt;
+        if (b.armTime <= 0) {
+          b.armed = true;
+          b.vx = Math.cos(b.fireAng) * 300;
+          b.vy = Math.sin(b.fireAng) * 300;
+        }
+      } else {
+        let closest = null, cDist = Infinity;
+        for (const s of ships) {
+          if (!s.alive || s.id === b.owner) continue;
+          const d = dist(b, s);
+          if (d < cDist) { cDist = d; closest = s; }
+        }
+        if (closest) {
+          const tAng = angle(b, closest);
+          const cAng = Math.atan2(b.vy, b.vx);
+          const daTurn = shortAngleDist(cAng, tAng);
+          const turnRate = 1.5;
+          const turn = Math.sign(daTurn) * Math.min(Math.abs(daTurn), turnRate * dt);
+          const nAng = cAng + turn;
+          const spd = Math.hypot(b.vx, b.vy);
+          b.vx = Math.cos(nAng) * spd;
+          b.vy = Math.sin(nAng) * spd;
+        }
+      }
+    }
+    // Chaotic shot — random walk angular velocity
+    if (b.curveRate) {
+      const spd = Math.hypot(b.vx, b.vy);
+      const cAng = Math.atan2(b.vy, b.vx);
+      b.curveRate += rand(-10, 10) * dt;
+      b.curveRate *= 0.97;
+      const nAng = cAng + b.curveRate * dt;
+      b.vx = Math.cos(nAng) * spd;
+      b.vy = Math.sin(nAng) * spd;
+    }
+    // Snake shot — sine wave oscillation
+    if (b.sineAmp) {
+      const age = gameTime - b.spawnTime;
+      const angVel = b.sineAmp * Math.cos(age * b.sineFreq);
+      const spd = Math.hypot(b.vx, b.vy);
+      const cAng = Math.atan2(b.vy, b.vx);
+      const nAng = cAng + angVel * dt;
+      b.vx = Math.cos(nAng) * spd;
+      b.vy = Math.sin(nAng) * spd;
+    }
+
     b.x += b.vx * dt;
     b.y += b.vy * dt;
     b.life -= dt;
+
+    // Detonation timer (grenade fuse, scrap split)
+    if (b.detonateTime !== null && !b.isShrapnel) {
+      b.detonateTime -= dt;
+      if (b.detonateTime <= 0) {
+        detonateBullet(b);
+        bullets.splice(i, 1);
+        continue;
+      }
+    }
 
     // Bullet trail particle
     if (Math.random() < 0.5) {
@@ -1778,17 +2288,15 @@ function update(rawDt) {
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const ast = asteroids[j];
       if (dist(b, ast) < ast.r) {
-        const explodeScale = ast.r / 50; // bigger asteroids = bigger boom
+        const explodeScale = ast.r / 50;
         spawnExplosion(ast.x, ast.y, 'rgba(255,255,255,0.6)', Math.floor(8 * explodeScale), 100 * explodeScale);
         playAsteroidBreak();
-        // Split
         if (ast.sizeIdx < 3) {
           const spread = ast.r * 0.4;
           for (let k = 0; k < 2; k++) {
             asteroids.push(spawnAsteroid(ast.sizeIdx + 1, ast.x + rand(-spread, spread), ast.y + rand(-spread, spread)));
           }
         } else if (CFG.RESPAWN_ASTEROIDS && asteroids.length < CFG.NUM_ASTEROIDS * 1.3) {
-          // Spawn rate increases over time — edges get more dangerous
           const spawnChance = 0.25 + Math.min(0.35, gameTime / 90);
           if (Math.random() < spawnChance) {
             const edge = randInt(0, 3);
@@ -1798,6 +2306,8 @@ function update(rawDt) {
           }
         }
         asteroids.splice(j, 1);
+        // Grenade contact detonation on asteroid
+        if (b.contactDetonate && !b.isShrapnel) detonateBullet(b);
         bulletHit = true;
         break;
       }
@@ -1812,12 +2322,16 @@ function update(rawDt) {
     for (const ship of ships) {
       if (!ship.alive || ship.id === b.owner || ship.invuln > 0) continue;
       if (dist(b, ship) < ship.r + 4) {
-        ship.hp--;
-        spawnExplosion(b.x, b.y, ship.color, 6, 60);
+        ship.hp -= (b.damage || 1);
+        ship.hpBarTimer = 1.5;
+        const explodeSize = Math.min(12, 4 + (b.damage || 1) * 2);
+        spawnExplosion(b.x, b.y, ship.color, explodeSize, 60 + (b.damage || 1) * 10);
         playShipHit();
         if (ship.hp <= 0) {
           killShip(ship, b.owner);
         }
+        // Grenade contact detonation on ship
+        if (b.contactDetonate && !b.isShrapnel) detonateBullet(b);
         bullets.splice(i, 1);
         break;
       }
@@ -1829,9 +2343,10 @@ function update(rawDt) {
     if (!ship.alive || ship.invuln > 0) continue;
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const ast = asteroids[j];
-      if (dist(ship, ast) < ship.r + ast.r * 0.6) {
+      if (dist(ship, ast) < ship.r + ast.r * 0.85) {
         ship.hp--;
-        spawnExplosion(ship.x, ship.y, ship.color, 10, 80);
+        ship.hpBarTimer = 1.5;
+        spawnExplosion(ship.x, ship.y, 'rgba(255,255,255,0.6)', 10, 80);
         playShipHit();
         // Destroy asteroid too
         if (ast.sizeIdx < 3) {
@@ -1859,7 +2374,12 @@ function update(rawDt) {
       if (dist(a, b) < a.r + b.r) {
         const mx = (a.x + b.x) / 2;
         const my = (a.y + b.y) / 2;
-        spawnExplosion(mx, my, '#fff', 20, 150);
+        // White particles at midpoint, no shockwave
+        for (let k = 0; k < 20; k++) {
+          const pa = rand(0, Math.PI * 2);
+          const sp = rand(20, 150);
+          particles.push({ x:mx, y:my, vx:Math.cos(pa)*sp, vy:Math.sin(pa)*sp, life:rand(0.3,1.2), maxLife:1.2, color:'#fff', size:rand(1,3) });
+        }
         spawnExplosion(a.x, a.y, a.color, 15, 100);
         spawnExplosion(b.x, b.y, b.color, 15, 100);
         playExplosion();
@@ -2143,7 +2663,7 @@ function killShip(ship, killerId) {
       killerName: killerName,
     };
     playFinaleExplosion();
-    spawnExplosion(ship.x, ship.y, '#fff', 60, 300);
+    spawnExplosion(ship.x, ship.y, killerColor, 60, 300);
     spawnExplosion(ship.x, ship.y, ship.color, 40, 250);
     spawnExplosion(ship.x, ship.y, killerColor, 30, 200);
   }
@@ -2222,19 +2742,17 @@ function render() {
   // Stars (parallax)
   drawStars();
 
-  // World border
-  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(0, 0, CFG.WORLD_W, CFG.WORLD_H);
-
   // Shockwaves
   for (const s of shockwaves) {
     const alpha = s.life / 0.4;
-    ctx.strokeStyle = s.color + Math.floor(alpha * 40).toString(16).padStart(2, '0');
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.6;
+    ctx.strokeStyle = s.color;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.restore();
   }
 
   // Asteroids
@@ -2267,16 +2785,38 @@ function render() {
     ctx.fillStyle = b.color;
     ctx.shadowColor = b.color;
     ctx.shadowBlur = 14;
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, 3, 0, Math.PI * 2);
-    ctx.fill();
+    if (b.type === 'sniper') {
+      // Elongated bright line for sniper
+      const bAng = Math.atan2(b.vy, b.vx);
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(b.x - Math.cos(bAng)*10, b.y - Math.sin(bAng)*10);
+      ctx.lineTo(b.x + Math.cos(bAng)*10, b.y + Math.sin(bAng)*10);
+      ctx.stroke();
+    } else if (b.type === 'homing' && !b.isShrapnel) {
+      // Diamond shape for missiles
+      const bAng = Math.atan2(b.vy, b.vx);
+      const sz = b.armed ? 5 : 3;
+      ctx.beginPath();
+      ctx.moveTo(b.x + Math.cos(bAng)*sz, b.y + Math.sin(bAng)*sz);
+      ctx.lineTo(b.x + Math.cos(bAng+Math.PI/2)*sz*0.4, b.y + Math.sin(bAng+Math.PI/2)*sz*0.4);
+      ctx.lineTo(b.x - Math.cos(bAng)*sz*0.6, b.y - Math.sin(bAng)*sz*0.6);
+      ctx.lineTo(b.x + Math.cos(bAng-Math.PI/2)*sz*0.4, b.y + Math.sin(bAng-Math.PI/2)*sz*0.4);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.size || 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.shadowBlur = 0;
   }
 
   // Ships
   for (const ship of ships) {
     if (!ship.alive) continue;
-    drawShipShape(ctx, ship.x, ship.y, ship.ang, ship.r, ship.color, ship.hp, ship.maxHp, ship.invuln, ship.id);
+    drawShipShape(ctx, ship.x, ship.y, ship.ang, ship.r, ship.color, ship.hp, ship.maxHp, ship.invuln, ship.id, ship.hpBarTimer);
   }
 
   // Particles
@@ -2454,6 +2994,7 @@ function buildPregameRoster() {
     tag.appendChild(createShipIcon(ship.id, ship.color, 22));
     const nameSpan = document.createElement('span');
     nameSpan.style.color = ship.color;
+    if (ship.name === 'MAGENTA') nameSpan.style.marginLeft = '2px';
     nameSpan.textContent = ship.name;
     tag.appendChild(nameSpan);
     el.appendChild(tag);
@@ -2476,6 +3017,18 @@ function buildScoreboard() {
     const nameSpan = document.createElement('span');
     nameSpan.textContent = ship.name;
     tag.appendChild(nameSpan);
+    // HP bar (only when maxHp > 1)
+    if (ship.maxHp > 1) {
+      const hpWrap = document.createElement('div');
+      hpWrap.className = 'hp-bar-wrap';
+      const hpFill = document.createElement('div');
+      hpFill.className = 'hp-bar-fill';
+      hpFill.id = `hp-${ship.id}`;
+      hpFill.style.width = '100%';
+      hpFill.style.background = ship.color;
+      hpWrap.appendChild(hpFill);
+      tag.appendChild(hpWrap);
+    }
     const killSpan = document.createElement('span');
     killSpan.className = 'kills';
     killSpan.style.color = ship.color;
@@ -2492,6 +3045,15 @@ function updateScoreboard() {
     if (!tag) continue;
     tag.classList.toggle('dead', !ship.alive);
     document.getElementById(`kills-${ship.id}`).textContent = ship.kills;
+    // Update HP bar
+    const hpFill = document.getElementById(`hp-${ship.id}`);
+    if (hpFill) {
+      const pct = Math.max(0, ship.hp / ship.maxHp) * 100;
+      hpFill.style.width = pct + '%';
+      const color = (ship.hp / ship.maxHp) > 0.5 ? ship.color :
+                    (ship.hp / ship.maxHp) > 0.25 ? '#ffaa22' : '#ff4444';
+      hpFill.style.background = color;
+    }
   }
 }
 
@@ -2534,6 +3096,8 @@ function startMatch() {
     ship.aimRange = settings.aim ? p.aimRange : rand(0.3, 0.5);
     ship.aimSpeed = settings.aim ? p.aimSpeed : rand(0.3, 0.8);
     ship.aimPhase = settings.aim ? p.aimPhase : rand(0, Math.PI * 2);
+    ship.weapon = getWeapon(i);
+    ship.burstQueue = [];
   }
   pregame = false;
   document.getElementById('pregame-overlay').classList.add('hidden');
