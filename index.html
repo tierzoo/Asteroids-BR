@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>ASTEROIDS: Battle Royale</title>
+<title>Blast Belt Royale</title>
 <meta name="description" content="12-ship AI battle royale in an asteroid field. Watch, spectate, and enjoy the chaos.">
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="Asteroids BR">
+<meta name="apple-mobile-web-app-title" content="Blast Belt Royale">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -119,17 +119,27 @@
     color: rgba(100,180,255,0.7);
   }
 
-  #scoreboard {
+  .scoreboard-bar {
     position: fixed;
-    top: 50px;
-    left: 12px;
-    bottom: 12px;
+    left: 0;
+    right: 0;
     z-index: 10;
     pointer-events: none;
     display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 2px;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 12px;
+    flex-wrap: wrap;
+  }
+
+  #scoreboard-top {
+    top: 0;
+    padding-top: 14px;
+  }
+
+  #scoreboard-bottom {
+    bottom: 0;
+    padding-bottom: 14px;
   }
 
   .player-tag {
@@ -580,20 +590,8 @@
 <div id="settings-panel">
   <h3>PERSONALITY</h3>
   <div class="setting-row">
-    <span class="setting-label">Combat Style</span>
-    <div class="setting-toggle" data-setting="behavior" onclick="toggleSetting(this)"></div>
-  </div>
-  <div class="setting-row">
-    <span class="setting-label">Aggression Cycle</span>
-    <div class="setting-toggle" data-setting="aggression" onclick="toggleSetting(this)"></div>
-  </div>
-  <div class="setting-row">
-    <span class="setting-label">Aim Style</span>
-    <div class="setting-toggle" data-setting="aim" onclick="toggleSetting(this)"></div>
-  </div>
-  <div class="setting-row">
-    <span class="setting-label">Rock Shooting</span>
-    <div class="setting-toggle" data-setting="rockShooter" onclick="toggleSetting(this)"></div>
+    <span class="setting-label">Random Personalities</span>
+    <div class="setting-toggle" data-setting="randomPersonalities" onclick="toggleSetting(this)"></div>
   </div>
   <div class="setting-row">
     <span class="setting-label">Unique Weapons</span>
@@ -613,10 +611,24 @@
       <button class="hp-btn" data-hp="10">10</button>
     </div>
   </div>
+  <h3 style="margin-top:12px">PLAYERS</h3>
+  <div class="setting-row">
+    <div id="ship-count-selector" style="display:flex;gap:4px;width:100%;">
+      <button class="hp-btn" data-ships="4">4</button>
+      <button class="hp-btn" data-ships="6">6</button>
+      <button class="hp-btn" data-ships="8">8</button>
+      <button class="hp-btn" data-ships="10">10</button>
+      <button class="hp-btn active" data-ships="12">12</button>
+    </div>
+  </div>
   <h3 style="margin-top:12px">MATCH</h3>
   <div class="setting-row">
     <span class="setting-label">Auto Restart</span>
     <div class="setting-toggle" data-setting="autoRestart" onclick="toggleSetting(this)"></div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Chaos Mode</span>
+    <div class="setting-toggle" data-setting="chaosMode" onclick="toggleSetting(this)"></div>
   </div>
   <h3 style="margin-top:12px">SIM SPEED</h3>
   <div class="setting-row">
@@ -631,8 +643,8 @@
 
 <div id="hud">
   <div id="title-block">
-    <h1>ASTEROIDS</h1>
-    <div class="subtitle">Battle Royale</div>
+    <h1>BLAST BELT</h1>
+    <div class="subtitle">Royale</div>
   </div>
 </div>
 
@@ -647,11 +659,12 @@
 </div>
 
 <div id="killfeed"></div>
-<div id="scoreboard"></div>
+<div id="scoreboard-top" class="scoreboard-bar"></div>
+<div id="scoreboard-bottom" class="scoreboard-bar"></div>
 
 <div id="pregame-overlay">
-  <div id="pregame-title">ASTEROIDS</div>
-  <div id="pregame-sub">BATTLE ROYALE</div>
+  <div id="pregame-title">BLAST BELT ROYALE</div>
+  <div id="pregame-sub">PREPARE FOR COMBAT</div>
   <div id="pregame-roster"></div>
   <button id="start-btn">START MATCH</button>
 </div>
@@ -736,13 +749,13 @@ const WEAPON_DEFS = {
   grenade:      { name:'Grenade',        speed:400, life:1.3, fireRate:2.0,  damage:2, type:'grenade',    fuseTime:0.65, shrapCount:16, shrapDmg:2, shrapLife:0.4, shrapSpeed:300 },
   triple:       { name:'Triple-guns',    speed:400, life:1.8, fireRate:0.6,  damage:2, type:'triple',     burstCount:3, burstDelay:0.1 },
   homing:       { name:'Homing Missiles',speed:300, life:2.4, fireRate:4.0,  damage:2, type:'homing',     launchSpeed:50, boostDelay:0.15 },
-  alternating:  { name:'Alt. Blasters',  speed:400, life:1.8, fireRate:0.28, damage:2, type:'alternating', offset:6 },
+  alternating:  { name:'Alt. Blasters',  speed:400, life:1.65, fireRate:0.28, damage:2, type:'alternating', offset:6 },
   flamethrower: { name:'Flamethrower',   speed:250, life:2.0, fireRate:2.5,  damage:1, type:'flamethrower',burstCount:30, amplitude:15 },
-  sniper:       { name:'Sniper',         speed:650, life:2.0, fireRate:1.25, damage:5, type:'sniper' },
-  chaotic:      { name:'Chaotic Shot',   speed:400, life:1.8, fireRate:0.23, damage:3, type:'chaotic' },
-  scrap:        { name:'Scrap Shot',     speed:400, life:1.8, fireRate:1.0,  damage:2, type:'scrap',      fuseTime:0.4, shrapCount:5, shrapSpread:20, shrapSpeed:400 },
+  sniper:       { name:'Sniper',         speed:650, life:2.0, fireRate:1.05, damage:5, type:'sniper' },
+  chaotic:      { name:'Chaotic Shot',   speed:400, life:1.8, fireRate:0.28, damage:3, type:'chaotic' },
+  scrap:        { name:'Scrap Shot',     speed:400, life:1.75, fireRate:1.0,  damage:2, type:'scrap',      fuseTime:0.4, shrapCount:5, shrapSpread:20, shrapSpeed:400 },
   snake:        { name:'Snake Shot',     speed:400, life:1.8, fireRate:0.4,  damage:3, type:'snake' },
-  gatling:      { name:'Gatling Gun',    speed:400, life:1.8, fireRate:3.0,  damage:1, type:'gatling',    burstCount:15, burstDelay:0.08, spread:4 },
+  gatling:      { name:'Gatling Gun',    speed:400, life:1.8, fireRate:2.6,  damage:1, type:'gatling',    burstCount:15, burstDelay:0.08, spread:4 },
 };
 
 // Ship index → weapon key mapping
@@ -973,14 +986,13 @@ function detonateBullet(b) {
 
 // Settings state — false = random, true = predetermined
 const settings = {
-  behavior: false,
-  aggression: false,
-  aim: false,
-  rockShooter: false,
+  randomPersonalities: false,
   weapons: true,
   randomWeapons: false,
   shipHP: 3,
+  numShips: 12,
   autoRestart: false,
+  chaosMode: false,
 };
 
 function toggleSetting(el) {
@@ -1015,6 +1027,14 @@ document.querySelectorAll('#hp-selector .hp-btn').forEach(btn => {
     document.querySelectorAll('#hp-selector .hp-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     settings.shipHP = parseInt(btn.dataset.hp);
+  });
+});
+
+document.querySelectorAll('#ship-count-selector .hp-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#ship-count-selector .hp-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    settings.numShips = parseInt(btn.dataset.ships);
   });
 });
 
@@ -1448,6 +1468,37 @@ function spawnAsteroid(sizeIdx, x, y) {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
+function applyChaosMode() {
+  if (!settings.chaosMode) return;
+
+  const shipOptions = [4, 6, 8, 10, 12];
+
+  settings.randomPersonalities = Math.random() < 0.5;
+  // Weapon modes: 40% unique, 30% random, 30% basic
+  const wpnRoll = Math.random();
+  if (wpnRoll < 0.4) {
+    settings.weapons = true;
+    settings.randomWeapons = false;
+  } else if (wpnRoll < 0.7) {
+    settings.weapons = true;
+    settings.randomWeapons = true;
+  } else {
+    settings.weapons = false;
+    settings.randomWeapons = false;
+  }
+  settings.numShips = shipOptions[randInt(0, shipOptions.length - 1)];
+
+  // Sync UI toggles
+  document.querySelector('[data-setting="randomPersonalities"]').classList.toggle('on', settings.randomPersonalities);
+  document.querySelector('[data-setting="weapons"]').classList.toggle('on', settings.weapons);
+  document.querySelector('[data-setting="randomWeapons"]').classList.toggle('on', settings.randomWeapons);
+
+  // Sync ship count buttons
+  document.querySelectorAll('#ship-count-selector .hp-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.ships) === settings.numShips);
+  });
+}
+
 function init() {
   ships = [];
   asteroids = [];
@@ -1472,6 +1523,7 @@ function init() {
   const cy = CFG.WORLD_H / 2;
 
   function generateSpawnPositions() {
+    const numShips = settings.numShips;
     const positions = [];
     // Slight offset for the whole formation so it's not dead center every time
     const fmtOffX = rand(-1600, 1600);
@@ -1555,8 +1607,8 @@ function init() {
       // COMPACT RING — small circle, everyone close
       const radius = rand(2000, 3600);
       const rotOff = rand(0, Math.PI * 2);
-      for (let i = 0; i < 12; i++) {
-        const a = (i / 12) * Math.PI * 2 + rotOff;
+      for (let i = 0; i < numShips; i++) {
+        const a = (i / numShips) * Math.PI * 2 + rotOff;
         positions.push({
           x: fcx + Math.cos(a) * radius + rand(-jitter, jitter),
           y: fcy + Math.sin(a) * radius + rand(-jitter, jitter)
@@ -1566,7 +1618,7 @@ function init() {
       // TIGHT SCATTER — random but constrained to a small area
       const scatterW = rand(2400, 4000);
       const scatterH = rand(1800, 3000);
-      for (let i = 0; i < 12; i++) {
+      for (let i = 0; i < numShips; i++) {
         positions.push({
           x: fcx + rand(-scatterW / 2, scatterW / 2),
           y: fcy + rand(-scatterH / 2, scatterH / 2)
@@ -1595,6 +1647,9 @@ function init() {
       p.y = Math.max(margin, Math.min(CFG.WORLD_H - margin, p.y));
     }
 
+    // Truncate to requested ship count (grid formations may generate more)
+    while (positions.length > numShips) positions.pop();
+
     return { positions, center: { x: fcx, y: fcy } };
   }
 
@@ -1608,8 +1663,17 @@ function init() {
     [spawnPositions[i], spawnPositions[j]] = [spawnPositions[j], spawnPositions[i]];
   }
 
-  for (let i = 0; i < CFG.NUM_SHIPS; i++) {
-    const sp = spawnPositions[i];
+  // Pick which ships participate (randomized when fewer than 12)
+  const allIndices = Array.from({length: 12}, (_, i) => i);
+  for (let i = allIndices.length - 1; i > 0; i--) {
+    const j = randInt(0, i);
+    [allIndices[i], allIndices[j]] = [allIndices[j], allIndices[i]];
+  }
+  const activeShips = allIndices.slice(0, settings.numShips).sort((a, b) => a - b);
+
+  for (let si = 0; si < activeShips.length; si++) {
+    const i = activeShips[si];
+    const sp = spawnPositions[si];
     // Face toward center of formation
     const faceAng = Math.atan2(spawnCenter.y - sp.y, spawnCenter.x - sp.x);
     ships.push({
@@ -1635,18 +1699,17 @@ function init() {
       aiTarget: null,
       aiEvade: null,
       // Combat personality — preset or random
-      aiBehavior: settings.behavior ? PRESET_PROFILES[i].behavior :
-        randomBehavior(),
+      aiBehavior: settings.randomPersonalities ? randomBehavior() : PRESET_PROFILES[i].behavior,
       // Aggression oscillation
-      aggroPhase: settings.aggression ? PRESET_PROFILES[i].aggroPhase : rand(0, Math.PI * 2),
-      aggroSpeed: settings.aggression ? PRESET_PROFILES[i].aggroSpeed : rand(0.15, 0.4),
+      aggroPhase: settings.randomPersonalities ? rand(0, Math.PI * 2) : PRESET_PROFILES[i].aggroPhase,
+      aggroSpeed: settings.randomPersonalities ? rand(0.15, 0.4) : PRESET_PROFILES[i].aggroSpeed,
       // Rock shooting preference
-      rockShooter: settings.rockShooter ? PRESET_PROFILES[i].rockShooter : rand(0.1, 0.9),
+      rockShooter: settings.randomPersonalities ? rand(0.1, 0.9) : PRESET_PROFILES[i].rockShooter,
       // Aim style
-      aimBaseline: settings.aim ? PRESET_PROFILES[i].aimBaseline : rand(0.3, 0.9),
-      aimRange: settings.aim ? PRESET_PROFILES[i].aimRange : rand(0.3, 0.5),
-      aimSpeed: settings.aim ? PRESET_PROFILES[i].aimSpeed : rand(0.3, 0.8),
-      aimPhase: settings.aim ? PRESET_PROFILES[i].aimPhase : rand(0, Math.PI * 2),
+      aimBaseline: settings.randomPersonalities ? rand(0.3, 0.9) : PRESET_PROFILES[i].aimBaseline,
+      aimRange: settings.randomPersonalities ? rand(0.3, 0.5) : PRESET_PROFILES[i].aimRange,
+      aimSpeed: settings.randomPersonalities ? rand(0.3, 0.8) : PRESET_PROFILES[i].aimSpeed,
+      aimPhase: settings.randomPersonalities ? rand(0, Math.PI * 2) : PRESET_PROFILES[i].aimPhase,
       strafeFuel: 5,       // seconds of strafe available
       strafeDepleted: false, // lockout when fully drained
       thrustOn: false,
@@ -1681,6 +1744,7 @@ function init() {
   }
 
   document.getElementById('winner-overlay').classList.remove('show');
+  document.getElementById('alive-num').textContent = settings.numShips;
   buildScoreboard();
   buildPregameRoster();
   pregame = true;
@@ -3005,9 +3069,13 @@ document.getElementById('start-btn').addEventListener('click', startMatch);
 
 // ─── SCOREBOARD ───────────────────────────────────────────────
 function buildScoreboard() {
-  const el = document.getElementById('scoreboard');
-  el.innerHTML = '';
-  for (const ship of ships) {
+  const topEl = document.getElementById('scoreboard-top');
+  const botEl = document.getElementById('scoreboard-bottom');
+  topEl.innerHTML = '';
+  botEl.innerHTML = '';
+  const half = Math.ceil(ships.length / 2);
+  for (let si = 0; si < ships.length; si++) {
+    const ship = ships[si];
     const tag = document.createElement('div');
     tag.className = 'player-tag';
     tag.id = `tag-${ship.id}`;
@@ -3035,7 +3103,7 @@ function buildScoreboard() {
     killSpan.id = `kills-${ship.id}`;
     killSpan.textContent = '0';
     tag.appendChild(killSpan);
-    el.appendChild(tag);
+    (si < half ? topEl : botEl).appendChild(tag);
   }
 }
 
@@ -3082,21 +3150,28 @@ function clearAutoRestart() {
 }
 
 function startMatch() {
+  // Chaos mode: randomize settings and reinit
+  if (settings.chaosMode) {
+    applyChaosMode();
+    init();
+  } else if (ships.length !== settings.numShips) {
+    init();
+  }
   ensureAudio();
   for (let i = 0; i < ships.length; i++) {
     const ship = ships[i];
-    const p = PRESET_PROFILES[i];
+    const p = PRESET_PROFILES[ship.id];
     ship.hp = settings.shipHP;
     ship.maxHp = settings.shipHP;
-    ship.aiBehavior = settings.behavior ? p.behavior : randomBehavior();
-    ship.aggroPhase = settings.aggression ? p.aggroPhase : rand(0, Math.PI * 2);
-    ship.aggroSpeed = settings.aggression ? p.aggroSpeed : rand(0.15, 0.4);
-    ship.rockShooter = settings.rockShooter ? p.rockShooter : rand(0.1, 0.9);
-    ship.aimBaseline = settings.aim ? p.aimBaseline : rand(0.3, 0.9);
-    ship.aimRange = settings.aim ? p.aimRange : rand(0.3, 0.5);
-    ship.aimSpeed = settings.aim ? p.aimSpeed : rand(0.3, 0.8);
-    ship.aimPhase = settings.aim ? p.aimPhase : rand(0, Math.PI * 2);
-    ship.weapon = getWeapon(i);
+    ship.aiBehavior = settings.randomPersonalities ? randomBehavior() : p.behavior;
+    ship.aggroPhase = settings.randomPersonalities ? rand(0, Math.PI * 2) : p.aggroPhase;
+    ship.aggroSpeed = settings.randomPersonalities ? rand(0.15, 0.4) : p.aggroSpeed;
+    ship.rockShooter = settings.randomPersonalities ? rand(0.1, 0.9) : p.rockShooter;
+    ship.aimBaseline = settings.randomPersonalities ? rand(0.3, 0.9) : p.aimBaseline;
+    ship.aimRange = settings.randomPersonalities ? rand(0.3, 0.5) : p.aimRange;
+    ship.aimSpeed = settings.randomPersonalities ? rand(0.3, 0.8) : p.aimSpeed;
+    ship.aimPhase = settings.randomPersonalities ? rand(0, Math.PI * 2) : p.aimPhase;
+    ship.weapon = getWeapon(ship.id);
     ship.burstQueue = [];
   }
   pregame = false;
@@ -3182,7 +3257,7 @@ function showWinner() {
       remaining--;
       if (remaining <= 0) {
         clearAutoRestart();
-        init();
+        if (!settings.chaosMode) init();
         startMatch();
       } else {
         cdEl.innerHTML = `NEXT MATCH IN <span class="countdown-num">${remaining}</span>`;
@@ -3202,6 +3277,7 @@ document.querySelectorAll('#speed-selector button').forEach(btn => {
 
 document.getElementById('restart-btn').addEventListener('click', () => {
   clearAutoRestart();
+  applyChaosMode();
   init();
 });
 
