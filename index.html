@@ -715,7 +715,7 @@ const PRESET_PROFILES = [
   // LIME:    Twitchy scrapper — fast aggression cycles, chaotic aim
   { behavior: 'hunter',     aggroSpeed: 0.4,  aggroPhase: 5.5,   aimBaseline: 0.5, aimRange: 0.5, aimSpeed: 0.8, aimPhase: 1.8,  rockShooter: 0.7 },
   // CORAL:   Bloodthirsty bruiser — ignores asteroids when locked onto a target
-  { behavior: 'bloodthirsty', aggroSpeed: 0.25, aggroPhase: 1.0,   aimBaseline: 0.3, aimRange: 0.65, aimSpeed: 0.3, aimPhase: 5.0,  rockShooter: 0.6 },
+  { behavior: 'bloodthirsty', aggroSpeed: 0.25, aggroPhase: 1.0,   aimBaseline: 0.15, aimRange: 0.35, aimSpeed: 0.3, aimPhase: 5.0,  rockShooter: 0.6 },
   // PURPLE:  Ghost — evasive navigator, rarely shoots rocks, precise aim
   { behavior: 'evasive',    aggroSpeed: 0.28, aggroPhase: 2.0,   aimBaseline: 0.75, aimRange: 0.4, aimSpeed: 0.5, aimPhase: 3.5, rockShooter: 0.1 },
   // WHITE:   Wildcard — cautious but with dramatic aggro swings
@@ -1160,13 +1160,15 @@ function startManeuver(ship) {
   }
 
   if (ship.maneuver === 'repulsor') {
-    // Immediate powerful shockwave that affects projectiles
+    // Expanding shockwave that affects projectiles as it passes
     ship._repulsorX = ship.x;
     ship._repulsorY = ship.y;
-    ship._repulsorTimer = 0.2; // active push duration
-    ship._repulsorRadius = 350; // push radius
+    ship._repulsorLife = 0.5;    // matches shockwave maxLife
+    ship._repulsorMaxLife = 0.5;
+    ship._repulsorRadius = 350;  // matches shockwave maxR
     shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: 350, life: 0.5, maxLife: 0.5, color: ship.color });
     spawnExplosion(ship.x, ship.y, ship.color, 15, 80);
+    playShootRise();
   }
 
   if (ship.maneuver === 'shockPulse') {
@@ -1174,6 +1176,7 @@ function startManeuver(ship) {
     const pulseRadius = 700;
     shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: pulseRadius, life: 0.6, maxLife: 0.6, color: '#ffff44' });
     spawnExplosion(ship.x, ship.y, '#ffff44', 20, 120);
+    playShootRise();
     // Stun all enemy ships in range
     let stunHit = false;
     for (const target of ships) {
@@ -1713,8 +1716,8 @@ function fireWeapon(ship) {
     case 'grenade': {
       const grenSpd = wSpd * rand(0.35, 1.6);
       bullets.push(makeBullet(ship, bx, by,
-        Math.cos(ang)*grenSpd + ship.vx*0.3,
-        Math.sin(ang)*grenSpd + ship.vy*0.3,
+        Math.cos(ang)*grenSpd + ship.vx*0.7,
+        Math.sin(ang)*grenSpd + ship.vy*0.7,
         {detonateTime: w.fuseTime, contactDetonate: true, size:5}));
       break;
     }
@@ -2872,8 +2875,8 @@ function init() {
     const numShips = settings.numShips;
     const positions = [];
     // Slight offset for the whole formation so it's not dead center every time
-    const fmtOffX = rand(-1600, 1600);
-    const fmtOffY = rand(-1000, 1000);
+    const fmtOffX = rand(-800, 800);
+    const fmtOffY = rand(-500, 500);
     const fcx = cx + fmtOffX;
     const fcy = cy + fmtOffY;
     const jitter = rand(120, 360);
@@ -2996,11 +2999,14 @@ function init() {
       });
     }
 
-    // Clamp all positions to stay inside world bounds with margin
-    const margin = 300;
+    // Soft push positions away from borders (15% margin) — avoids hard boxy edges
+    const marginX = CFG.WORLD_W * 0.15;
+    const marginY = CFG.WORLD_H * 0.15;
     for (const p of positions) {
-      p.x = Math.max(margin, Math.min(CFG.WORLD_W - margin, p.x));
-      p.y = Math.max(margin, Math.min(CFG.WORLD_H - margin, p.y));
+      if (p.x < marginX) p.x = marginX + rand(0, 200);
+      if (p.x > CFG.WORLD_W - marginX) p.x = CFG.WORLD_W - marginX - rand(0, 200);
+      if (p.y < marginY) p.y = marginY + rand(0, 200);
+      if (p.y > CFG.WORLD_H - marginY) p.y = CFG.WORLD_H - marginY - rand(0, 200);
     }
 
     // Truncate to requested ship count (grid formations may generate more)
@@ -3101,7 +3107,7 @@ function init() {
       _reversePhase: null,
       _smokestealthTimer: 0,
       _reflectorAngle: 0,
-      _repulsorX: 0, _repulsorY: 0, _repulsorTimer: 0, _repulsorRadius: 0,
+      _repulsorX: 0, _repulsorY: 0, _repulsorLife: 0, _repulsorMaxLife: 0, _repulsorRadius: 0,
       _minesDropped: 0, _mineDropTimer: 0,
       _droneWasActive: false,
       _bioRegenTimer: 0,
@@ -3168,6 +3174,22 @@ function init() {
       tries++;
     } while (tries < 20 && ships.some(s => dist(s, ast) < 200));
     asteroids.push(ast);
+  }
+  // Border asteroids — outside play zone to disguise edges
+  const border = 600;
+  for (let i = 0; i < 60; i++) {
+    const side = randInt(0, 3);
+    let bx, by;
+    if (side === 0) { bx = rand(-border, 0); by = rand(-border, CFG.WORLD_H + border); }
+    else if (side === 1) { bx = rand(CFG.WORLD_W, CFG.WORLD_W + border); by = rand(-border, CFG.WORLD_H + border); }
+    else if (side === 2) { bx = rand(-border, CFG.WORLD_W + border); by = rand(-border, 0); }
+    else { bx = rand(-border, CFG.WORLD_W + border); by = rand(CFG.WORLD_H, CFG.WORLD_H + border); }
+    const sizeIdx = Math.random() < 0.15 ? 0 : Math.random() < 0.3 ? 2 : 1;
+    const bAst = spawnAsteroid(sizeIdx, bx, by);
+    bAst.isBorder = true;
+    bAst.vx *= 0.2; // slow drift
+    bAst.vy *= 0.2;
+    asteroids.push(bAst);
   }
 
   document.getElementById('winner-overlay').classList.remove('show');
@@ -4767,9 +4789,11 @@ function update(rawDt) {
     ast.x += ast.vx * dt;
     ast.y += ast.vy * dt;
     ast.rot += ast.rotSpeed * dt;
-    // Wrap
-    ast.x = wrap(ast.x, CFG.WORLD_W);
-    ast.y = wrap(ast.y, CFG.WORLD_H);
+    // Wrap (skip border decoration asteroids)
+    if (!ast.isBorder) {
+      ast.x = wrap(ast.x, CFG.WORLD_W);
+      ast.y = wrap(ast.y, CFG.WORLD_H);
+    }
   }
 
   } // end !skipGameplay
@@ -4976,30 +5000,34 @@ function update(rawDt) {
 
   // Update repulsor pushes — tick down timer and push bullets
   for (const ship of ships) {
-    if (ship._repulsorTimer > 0) {
-      ship._repulsorTimer -= dt;
-      // Erase all enemy projectiles in radius
+    if (ship._repulsorLife > 0) {
+      const prevR = ship._repulsorRadius * (1 - ship._repulsorLife / ship._repulsorMaxLife);
+      ship._repulsorLife -= dt;
+      const curR = ship._repulsorRadius * (1 - Math.max(0, ship._repulsorLife) / ship._repulsorMaxLife);
+      const bandInner = prevR;
+      const bandOuter = curR + 30; // slight thickness to catch fast bullets
+      // Erase enemy projectiles the wavefront passes over
       for (let bi = bullets.length - 1; bi >= 0; bi--) {
         const b = bullets[bi];
         if (b.owner === ship.id) continue;
         const dx = b.x - ship._repulsorX, dy = b.y - ship._repulsorY;
         const d = Math.sqrt(dx * dx + dy * dy);
-        if (d < ship._repulsorRadius) {
+        if (d >= bandInner && d < bandOuter) {
           spawnExplosion(b.x, b.y, '#fff', 3, 20);
           bullets.splice(bi, 1);
         }
       }
-      // Push all particles away fast
+      // Push particles the wavefront passes over
       for (const p of particles) {
         const dx = p.x - ship._repulsorX, dy = p.y - ship._repulsorY;
         const d = Math.sqrt(dx * dx + dy * dy);
-        if (d < ship._repulsorRadius && d > 1) {
+        if (d >= bandInner && d < bandOuter && d > 1) {
           const nx = dx / d, ny = dy / d;
-          const falloff = 1 - d / ship._repulsorRadius;
-          p.vx += nx * 800 * falloff;
-          p.vy += ny * 800 * falloff;
+          p.vx += nx * 600;
+          p.vy += ny * 600;
         }
       }
+      if (ship._repulsorLife <= 0) ship._repulsorLife = 0;
     }
   }
 
