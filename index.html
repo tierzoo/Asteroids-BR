@@ -553,6 +553,10 @@
     <span class="setting-label">Unique Passives</span>
     <div class="setting-toggle on" data-setting="passives" onclick="toggleSetting(this)"></div>
   </div>
+  <div class="setting-row">
+    <span class="setting-label">Maneuvers</span>
+    <div class="setting-toggle on" data-setting="maneuvers" onclick="toggleSetting(this)"></div>
+  </div>
   <h3 style="margin-top:12px">SHIP HP</h3>
   <div class="setting-row">
     <div id="hp-selector" style="display:flex;gap:4px;width:100%;">
@@ -581,6 +585,31 @@
   <div class="setting-row">
     <span class="setting-label">Chaos Mode</span>
     <div class="setting-toggle" data-setting="chaosMode" onclick="toggleSetting(this)"></div>
+  </div>
+  <h3 style="margin-top:12px">MATCH LOGGER</h3>
+  <div class="setting-row">
+    <span class="setting-label">Log Results</span>
+    <div class="setting-toggle" data-setting="matchLogger" onclick="toggleSetting(this)"></div>
+  </div>
+  <div class="setting-row" style="flex-direction:column;gap:6px;">
+    <span id="log-count" style="font-size:11px;color:#888;">0 matches logged</span>
+    <div style="display:flex;gap:4px;width:100%;">
+      <button class="hp-btn" id="log-export" onclick="exportMatchLog()" style="flex:1;">Export CSV</button>
+      <button class="hp-btn" id="log-clear" onclick="clearMatchLog()" style="flex:0.6;color:#ff6666;">Clear</button>
+    </div>
+  </div>
+  <h3 style="margin-top:12px">SCORECARD</h3>
+  <div class="setting-row">
+    <span class="setting-label">Show Weapons</span>
+    <div class="setting-toggle on" data-setting="showWeaponTag" onclick="toggleSetting(this)"></div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Show Passives</span>
+    <div class="setting-toggle on" data-setting="showPassiveTag" onclick="toggleSetting(this)"></div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Show Maneuvers</span>
+    <div class="setting-toggle on" data-setting="showManeuverTag" onclick="toggleSetting(this)"></div>
   </div>
   <h3 style="margin-top:12px">SIM SPEED</h3>
   <div class="setting-row">
@@ -713,6 +742,7 @@ const WEAPON_DEFS = {
   crossshot:    { name:'Cross-Shot',    speed:540, life:1.05, fireRate:0.4, damage:1.5, type:'crossshot',  offset:12, convergeDist:250 },
   lightning:    { name:'Lightning Bolt', speed:1600, life:0.34, fireRate:0.77, damage:3, type:'lightning' },
   concussive:   { name:'Scatterburst',    speed:400, life:1.5, fireRate:0.374, damage:3, type:'concussive', splitCount:4, splitDmg:2, splitLife:0.2, splitSpeed:300 },
+  drone:        { name:'Drone Array',     speed:350, life:6.0, fireRate:4.0,   damage:1.5, type:'drone', droneCount:6, armTime:3.0, launchInterval:0.5, orbitSpeed:100, turnRate:0.375 },
 };
 
 // Ship index → weapon key mapping
@@ -735,17 +765,17 @@ function getWeapon(shipIdx) {
 // ─── PASSIVE ABILITIES ──────────────────────────────────────
 const PASSIVE_DEFS = {
   none:        { name: 'None',         desc: '' },
-  scrapRepair: { name: 'Scrap Repair', desc: '+1 HP on kill' },
-  tanky:       { name: 'Tanky',        desc: '+2 max HP' },
-  nitro:       { name: 'Nitro',        desc: '+20% acceleration' },
-  gyro:        { name: 'Gyro',         desc: '+20% turn speed' },
+  scrapRepair: { name: 'Scrap Armor', desc: '+1.5 HP on kill (can overheal)' },
+  bioHull:     { name: 'Bio-Hull',     desc: '+2 HP, regen 0.1/2s, -10% accel' },
+  nitro:       { name: 'Nitro',        desc: '+20% accel, +30% top speed' },
+  gyro:        { name: 'Gyro',         desc: '+30% turn speed' },
   shield:      { name: 'Shield',       desc: 'Ignore first hit' },
   piercing:    { name: 'Piercing',     desc: 'Shots pierce targets' },
   fierce:      { name: 'Fierce',       desc: '+35% damage' },
-  hitInvuln:   { name: 'Hit Invuln',   desc: '2s invincibility on hit' },
+  hitInvuln:   { name: 'Phase-Out',   desc: '2s invincibility on hit' },
   scope:       { name: 'Scope',        desc: '+20% weapon range' },
   titanium:    { name: 'Titanium',     desc: '-25% incoming damage' },
-  stealth:     { name: 'Stealth',      desc: 'Perceived as 2x distance' },
+  stealth:     { name: 'Stealth',      desc: 'Perceived as 1.5x distance' },
   sparkDrive:  { name: 'Spark Drive',  desc: '+20% projectile speed' },
   drillbore:   { name: 'Drillbore',    desc: 'Survives collisions' },
   iceRounds:   { name: 'Ice Rounds',   desc: 'Slows hit targets' },
@@ -757,6 +787,8 @@ const PASSIVE_DEFS = {
   stunShock:   { name: 'Stun Shock',   desc: 'Hits freeze target turning' },
   override:    { name: 'Override',     desc: 'Hits hijack target controls' },
   cryoCoolant: { name: 'Fast Cycling', desc: '-20% fire cooldown' },
+  flagship:    { name: 'Flagship',     desc: '+7 HP, 2.5x size, no maneuvers' },
+  blindRounds: { name: 'Blinding Rounds', desc: 'Hits blind enemy detection for 6s' },
 };
 const PASSIVE_KEYS = Object.keys(PASSIVE_DEFS).filter(k => k !== 'none');
 
@@ -764,24 +796,739 @@ const PASSIVE_KEYS = Object.keys(PASSIVE_DEFS).filter(k => k !== 'none');
 // RED=nitro, GREEN=scope, BLUE=obliterator, ORANGE=incendiary,
 // PINK=sparkDrive, CYAN=shield, LIME=absorber, CORAL=drillbore,
 // PURPLE=stealth, WHITE=hitInvuln, YELLOW=gyro, MAGENTA=piercing
-const SHIP_PASSIVES = ['nitro','scope','stealth','incendiary','sparkDrive','shield','absorber','drillbore','obliterator','hitInvuln','gyro','piercing'];
+const SHIP_PASSIVES = ['nitro','piercing','stealth','incendiary','sparkDrive','shield','absorber','drillbore','obliterator','hitInvuln','stunShock','scope'];
+
+// Passives that are useless in one-hit-kill (no unique weapons) matches
+const ONESHOT_USELESS_PASSIVES = ['hitInvuln'];
 
 function getPassive(shipIdx) {
+  const pool = (!settings.weapons)
+    ? PASSIVE_KEYS.filter(k => !ONESHOT_USELESS_PASSIVES.includes(k))
+    : PASSIVE_KEYS;
   // Chaos mode always randomizes
   if (settings.chaosMode) {
-    return PASSIVE_KEYS[randInt(0, PASSIVE_KEYS.length - 1)];
+    return pool[randInt(0, pool.length - 1)];
   }
   // Passives disabled → none
   if (!settings.passives) return 'none';
   // Random weapons → random passives too
   if (settings.randomWeapons) {
-    return PASSIVE_KEYS[randInt(0, PASSIVE_KEYS.length - 1)];
+    return pool[randInt(0, pool.length - 1)];
   }
   // Unique passives from preset map
   if (shipIdx != null) {
     return SHIP_PASSIVES[shipIdx] || 'none';
   }
   return 'none';
+}
+
+// ─── MANEUVER ABILITIES ──────────────────────────────────────
+const MANEUVER_DEFS = {
+  hyperSpeed: {
+    name: 'Hyper-Speed', desc: '3x speed burst for 0.75s',
+    cooldown: 10, duration: 0.75,
+    triggers: { random: 0.01, underFire: 0.05, damaged: 0.06, attacking: 0.025 },
+  },
+  barrelRoll: {
+    name: 'Barrel Roll', desc: 'Fast loop, +30% fire rate during',
+    cooldown: 6, duration: 0.5,
+    triggers: { random: 0.01, underFire: 0.06, damaged: 0.04, attacking: 0.025 },
+  },
+  quickTurn: {
+    name: 'Quick-Turn', desc: '180° snap turn at 2x thrust',
+    cooldown: 8, duration: 0.4,
+    triggers: { random: 0.005, underFire: 0.06, damaged: 0.075 },
+  },
+  turretMode: {
+    name: 'Turret Mode', desc: 'Stop and fire at 2x rate, +accuracy',
+    cooldown: 8, duration: 3.0,
+    triggers: { random: 0.01, underFire: 0.05, damaged: 0.03, attacking: 0.04 },
+  },
+  serpentine: {
+    name: 'Serpentine', desc: '3x speed strafing, 3 sweeps',
+    cooldown: 8, duration: 0.9,
+    triggers: { random: 0.015, underFire: 0.05, damaged: 0.04, attacking: 0.02 },
+  },
+  panic: {
+    name: 'Panic', desc: 'Wild spin with 3x fire rate',
+    cooldown: 10, duration: 0.8,
+    triggers: { random: 0.0, underFire: 0.06, damaged: 0.09 },
+  },
+  rapidFire: {
+    name: 'Rapid Fire', desc: '3x fire rate for 1s, reduced accuracy',
+    cooldown: 12, duration: 1.0,
+    triggers: { random: 0.01, underFire: 0.02, damaged: 0.01, attacking: 0.06 },
+  },
+  spinOut: {
+    name: 'Spin Out', desc: 'Drift turn into accuracy+speed boost',
+    cooldown: 10, duration: 1.2,
+    triggers: { random: 0.01, underFire: 0.05, damaged: 0.06, attacking: 0.04 },
+    afterDuration: 2.0, // bonus lasts 2s after maneuver ends
+  },
+  reverse: {
+    name: 'Reverse', desc: 'Fly backwards while firing',
+    cooldown: 10, duration: 1.2,
+    triggers: { random: 0.0, underFire: 0.05, damaged: 0.03, attacking: 0.04 },
+  },
+  smokescreen: {
+    name: 'Smokescreen', desc: 'Particle cloud + near-invisibility',
+    cooldown: 20, duration: 5.0,
+    triggers: { random: 0.0, underFire: 0.04, damaged: 0.06 },
+  },
+  doubleTeam: {
+    name: 'Double Team', desc: 'Two decoy clones fly in formation',
+    cooldown: 20, duration: 8.0,
+    triggers: { random: 0.01, underFire: 0.04, damaged: 0.05, attacking: 0.02 },
+  },
+  dumpDebris: {
+    name: 'Dump Debris', desc: 'Drop projectile-absorbing debris cloud',
+    cooldown: 12, duration: 0.1,
+    triggers: { random: 0.0, underFire: 0.05, damaged: 0.06 },
+    minSpeedPct: 0.3,
+  },
+  reflectorShields: {
+    name: 'Reflector Shields', desc: 'Orbiting shields reflect projectiles',
+    cooldown: 20, duration: 6.0,
+    triggers: { random: 0.0, underFire: 0.05, damaged: 0.06 },
+  },
+  repulsor: {
+    name: 'Repulsor', desc: 'Shockwave pushes back projectiles',
+    cooldown: 16, duration: 0.1,
+    triggers: { random: 0.01, underFire: 0.04, damaged: 0.05, attacking: 0.02 },
+  },
+  mineField: {
+    name: 'Mine Field', desc: 'Drop 3 proximity mines',
+    cooldown: 30, duration: 2.5,
+    triggers: { random: 0.02, underFire: 0.04, damaged: 0.05 },
+    minGameTime: 8, // not usable in first 8 seconds
+  },
+};
+const MANEUVER_KEYS = Object.keys(MANEUVER_DEFS);
+
+// RED=rapidFire, GREEN=reverse, BLUE=mineField, ORANGE=smokescreen,
+// PINK=serpentine, CYAN=barrelRoll, LIME=repulsor, CORAL=hyperSpeed,
+// PURPLE=dumpDebris, WHITE=reflectorShields, YELLOW=doubleTeam, MAGENTA=turretMode
+const SHIP_MANEUVERS = ['rapidFire','reverse','mineField','smokescreen','serpentine','barrelRoll','repulsor','hyperSpeed','dumpDebris','reflectorShields','doubleTeam','turretMode'];
+
+function getManeuver(shipIdx) {
+  if (!settings.maneuvers) return 'none';
+  // Chaos mode always randomizes
+  if (settings.chaosMode) {
+    return MANEUVER_KEYS[randInt(0, MANEUVER_KEYS.length - 1)];
+  }
+  // Random weapons → random maneuvers too
+  if (settings.randomWeapons) {
+    return MANEUVER_KEYS[randInt(0, MANEUVER_KEYS.length - 1)];
+  }
+  // Preset assignment
+  if (shipIdx != null) {
+    return SHIP_MANEUVERS[shipIdx] || MANEUVER_KEYS[randInt(0, MANEUVER_KEYS.length - 1)];
+  }
+  return MANEUVER_KEYS[randInt(0, MANEUVER_KEYS.length - 1)];
+}
+
+// Check if a maneuver should trigger this AI tick
+function checkManeuverTrigger(ship) {
+  if (ship.maneuver === 'none' || ship.maneuverCooldown > 0 || ship.maneuverActive) return false;
+  const def = MANEUVER_DEFS[ship.maneuver];
+  if (!def) return false;
+
+  // Determine active contexts
+  const recentlyDamaged = ship.lastAttacker >= 0 && (gameTime - ship.lastAttackerTime) < 2;
+  const underFire = !!ship._bulletThreat;
+  const attacking = !!ship._aiShoot;
+
+  // Incoming homing missile — always trigger if off cooldown (except turret mode)
+  if (ship.maneuver !== 'turretMode') {
+    for (const b of bullets) {
+      if (b.type === 'homing' && !b.isShrapnel && b.owner !== ship.id) {
+        const d = dist(ship, b);
+        if (d < 300) return true;
+      }
+    }
+  }
+
+  // Accumulate trigger chance from all active contexts
+  let chance = def.triggers.random || 0;
+  if (underFire) chance = Math.max(chance, def.triggers.underFire || 0);
+  if (recentlyDamaged) chance = Math.max(chance, def.triggers.damaged || 0);
+  if (attacking) chance = Math.max(chance, def.triggers.attacking || 0);
+
+  // Minimum speed requirement (e.g. Dump Debris)
+  if (def.minSpeedPct) {
+    const spd = Math.sqrt(ship.vx * ship.vx + ship.vy * ship.vy);
+    const maxSpd = CFG.SHIP_MAX_SPEED * (ship.passive === 'nitro' ? 1.3 : 1);
+    if (spd < maxSpd * def.minSpeedPct) return false;
+  }
+
+  // Minimum game time requirement (e.g. Mine Field)
+  if (def.minGameTime && gameTime < def.minGameTime) return false;
+
+  return Math.random() < chance;
+}
+
+// Activate a maneuver
+function startManeuver(ship) {
+  const def = MANEUVER_DEFS[ship.maneuver];
+  if (!def) return;
+  ship.maneuverActive = true;
+  ship.maneuverTimer = def.duration;
+  ship.maneuverCooldown = def.cooldown;
+
+  if (ship.maneuver === 'hyperSpeed') {
+    // Moderate initial kick in current facing direction (ramps up each frame)
+    const curSpeed = Math.hypot(ship.vx, ship.vy);
+    const kickSpeed = Math.max(curSpeed, CFG.SHIP_MAX_SPEED * 1.5);
+    ship.vx = Math.cos(ship.ang) * kickSpeed;
+    ship.vy = Math.sin(ship.ang) * kickSpeed;
+    // Visual: shockwave + bright trail burst
+    spawnExplosion(ship.x, ship.y, ship.color, 10, 60);
+    shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: 40, life: 0.3, color: ship.color });
+  }
+
+  if (ship.maneuver === 'teleport') {
+    // Phase 1: charging — ship visible, emitting shockwaves for 0.5s
+    ship._teleportPhase = 'charging';
+    // Pick a random dash direction
+    ship._teleportAng = rand(0, Math.PI * 2);
+    ship._teleportShockTimer = 0;
+  }
+
+  if (ship.maneuver === 'barrelRoll') {
+    ship._rollDir = Math.random() < 0.5 ? 1 : -1;
+    // Boost speed slightly
+    const boostSpeed = CFG.SHIP_MAX_SPEED * 1.5;
+    const curSpeed = Math.hypot(ship.vx, ship.vy);
+    if (curSpeed < boostSpeed) {
+      ship.vx = Math.cos(ship.ang) * boostSpeed;
+      ship.vy = Math.sin(ship.ang) * boostSpeed;
+    }
+    spawnExplosion(ship.x, ship.y, ship.color, 6, 40);
+  }
+
+  if (ship.maneuver === 'quickTurn') {
+    // Store target angle (180 from current)
+    ship._quickTurnTarget = ship.ang + Math.PI;
+    ship._quickTurnDone = false;
+    spawnExplosion(ship.x, ship.y, ship.color, 6, 40);
+  }
+
+  if (ship.maneuver === 'turretMode') {
+    // Halt movement
+    spawnExplosion(ship.x, ship.y, ship.color, 6, 30);
+    shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: 25, life: 0.3, color: ship.color });
+  }
+
+  if (ship.maneuver === 'serpentine') {
+    ship._serpDir = Math.random() < 0.5 ? 1 : -1;
+    ship._serpSweep = 0; // counts completed direction changes
+    ship._serpTimer = 0;
+    spawnExplosion(ship.x, ship.y, ship.color, 5, 30);
+  }
+
+  if (ship.maneuver === 'panic') {
+    // Random spin between 270-540 degrees
+    const spinDeg = rand(270, 540);
+    ship._panicSpinTotal = spinDeg * Math.PI / 180;
+    ship._panicSpinDone = 0;
+    ship._panicDir = Math.random() < 0.5 ? 1 : -1;
+    spawnExplosion(ship.x, ship.y, ship.color, 8, 50);
+  }
+
+  if (ship.maneuver === 'rapidFire') {
+    ship.fireCooldown = 0; // start shooting immediately
+    spawnExplosion(ship.x, ship.y, ship.color, 5, 30);
+  }
+
+  if (ship.maneuver === 'spinOut') {
+    // Phase 1: forward acceleration (0.4s), Phase 2: sharp drift turn (0.8s)
+    ship._spinOutPhase = 'accel';
+    ship._spinOutDir = Math.random() < 0.5 ? 1 : -1;
+    ship._spinOutBoostTimer = 0; // set when maneuver ends
+    spawnExplosion(ship.x, ship.y, ship.color, 6, 40);
+  }
+
+  if (ship.maneuver === 'reverse') {
+    // Phase 1: decel (0.2s), Phase 2: reverse thrust (1.0s)
+    ship._reversePhase = 'decel';
+    spawnExplosion(ship.x, ship.y, ship.color, 5, 30);
+  }
+
+  if (ship.maneuver === 'smokescreen') {
+    // Emit a big cloud of particles at current position
+    for (let i = 0; i < 40; i++) {
+      const a = rand(0, Math.PI * 2);
+      const sp = rand(20, 120);
+      particles.push({
+        x: ship.x + rand(-15, 15), y: ship.y + rand(-15, 15),
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        life: rand(1.5, 3.0), maxLife: 3.0,
+        color: ship.color, size: rand(3, 7),
+      });
+    }
+    shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: 60, life: 0.4, color: ship.color });
+    ship._smokestealthTimer = 5.0; // total duration tracked separately
+    // Spawn a decoy at the smoke location that enemies will target for 2s
+    smokeDecoys.push({ x: ship.x, y: ship.y, ownerId: ship.id, life: 2.0 });
+  }
+
+  if (ship.maneuver === 'doubleTeam') {
+    // Spawn two clones directly on top of the ship
+    const offsetDist = ship.r * 6; // target lateral offset
+    for (const side of [-1, 1]) {
+      shipClones.push({
+        ownerId: ship.id,
+        shipId: ship.id, // for shape/color lookup
+        x: ship.x, y: ship.y,
+        ang: ship.ang,
+        r: ship.r,
+        color: ship.color,
+        side: side, // -1 = left, 1 = right
+        offsetTarget: offsetDist,
+        offsetCurrent: 0,
+        life: 8.0,
+        hit: false,
+        hitTimer: 0, // 1s flash countdown after hit
+        alive: true,
+      });
+    }
+    spawnExplosion(ship.x, ship.y, ship.color, 10, 50);
+  }
+
+  if (ship.maneuver === 'dumpDebris') {
+    // Spawn 120 debris squares behind the ship
+    const backAng = ship.ang + Math.PI;
+    for (let i = 0; i < 120; i++) {
+      // Cone behind the ship, ±60 degrees
+      const a = backAng + rand(-1.05, 1.05);
+      const sp = rand(30, 200);
+      debrisField.push({
+        x: ship.x + Math.cos(backAng) * ship.r + rand(-20, 20),
+        y: ship.y + Math.sin(backAng) * ship.r + rand(-20, 20),
+        vx: Math.cos(a) * sp + ship.vx * 0.3,
+        vy: Math.sin(a) * sp + ship.vy * 0.3,
+        size: rand(3, 7),
+        life: rand(4.0, 8.0),
+        color: ship.color,
+        ownerId: ship.id,
+      });
+    }
+    shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: 80, life: 0.4, color: ship.color });
+  }
+
+  if (ship.maneuver === 'reflectorShields') {
+    // Spawn 3 orbiting shield panels
+    ship._reflectorAngle = 0;
+    for (let i = 0; i < 3; i++) {
+      reflectorShields.push({
+        ownerId: ship.id,
+        index: i,
+        baseAngle: (Math.PI * 2 / 3) * i, // evenly spaced 120° apart
+        orbitRadius: ship.r * 2.5,
+        halfLength: ship.r * 0.9, // ~half ship length
+        color: ship.color,
+        life: 6.0,
+      });
+    }
+    spawnExplosion(ship.x, ship.y, ship.color, 8, 40);
+  }
+
+  if (ship.maneuver === 'repulsor') {
+    // Immediate powerful shockwave that affects projectiles
+    ship._repulsorX = ship.x;
+    ship._repulsorY = ship.y;
+    ship._repulsorTimer = 0.4; // active push duration
+    ship._repulsorRadius = 350; // push radius
+    shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: 350, life: 0.5, maxLife: 0.5, color: ship.color });
+    spawnExplosion(ship.x, ship.y, ship.color, 15, 80);
+  }
+
+  if (ship.maneuver === 'mineField') {
+    ship._minesDropped = 0;
+    ship._mineDropTimer = 0; // drop first mine immediately
+  }
+}
+
+// Process active maneuver each frame
+function updateManeuver(ship, dt) {
+  if (!ship.maneuverActive) return;
+  ship.maneuverTimer -= dt;
+
+  if (ship.maneuver === 'hyperSpeed') {
+    // Allow speed to exceed normal cap during maneuver (3x)
+    ship._hyperSpeedActive = true;
+    if (ship.maneuverTimer > 0.25) {
+      // Accelerating phase: heavy thrust
+      ship.vx += Math.cos(ship.ang) * CFG.SHIP_THRUST * 8 * dt;
+      ship.vy += Math.sin(ship.ang) * CFG.SHIP_THRUST * 8 * dt;
+    } else {
+      // Decelerating phase: heavy drag to bleed speed
+      const brakeFactor = 1 - 3.5 * dt;
+      ship.vx *= Math.max(0, brakeFactor);
+      ship.vy *= Math.max(0, brakeFactor);
+    }
+    ship.thrustOn = true;
+    // Spawn speed trail particles — center + two rear corners
+    const backAng = ship.ang + Math.PI;
+    const perpAng = ship.ang + Math.PI * 0.5;
+    if (Math.random() < 0.7) {
+      particles.push({
+        x: ship.x + Math.cos(backAng) * ship.r + rand(-8, 8),
+        y: ship.y + Math.sin(backAng) * ship.r + rand(-8, 8),
+        vx: Math.cos(backAng) * rand(100, 200), vy: Math.sin(backAng) * rand(100, 200),
+        life: rand(0.3, 0.6), maxLife: 0.6, color: ship.color, size: rand(2, 5),
+      });
+    }
+    // Left rear corner trail
+    if (Math.random() < 0.6) {
+      const cx = ship.x + Math.cos(backAng) * ship.r * 0.7 + Math.cos(perpAng) * ship.r * 0.6;
+      const cy = ship.y + Math.sin(backAng) * ship.r * 0.7 + Math.sin(perpAng) * ship.r * 0.6;
+      particles.push({
+        x: cx + rand(-3, 3), y: cy + rand(-3, 3),
+        vx: Math.cos(backAng) * rand(80, 160) + rand(-15, 15),
+        vy: Math.sin(backAng) * rand(80, 160) + rand(-15, 15),
+        life: rand(0.25, 0.5), maxLife: 0.5, color: ship.color, size: rand(1.5, 3.5),
+      });
+    }
+    // Right rear corner trail
+    if (Math.random() < 0.6) {
+      const cx = ship.x + Math.cos(backAng) * ship.r * 0.7 - Math.cos(perpAng) * ship.r * 0.6;
+      const cy = ship.y + Math.sin(backAng) * ship.r * 0.7 - Math.sin(perpAng) * ship.r * 0.6;
+      particles.push({
+        x: cx + rand(-3, 3), y: cy + rand(-3, 3),
+        vx: Math.cos(backAng) * rand(80, 160) + rand(-15, 15),
+        vy: Math.sin(backAng) * rand(80, 160) + rand(-15, 15),
+        life: rand(0.25, 0.5), maxLife: 0.5, color: ship.color, size: rand(1.5, 3.5),
+      });
+    }
+  }
+
+  if (ship.maneuver === 'teleport') {
+    const phaseDuration = 1.0; // phasing lasts 1s
+    const chargeDuration = 0.5; // charging lasts 0.5s
+    const phaseStart = phaseDuration; // timer value when phasing begins
+
+    if (ship._teleportPhase === 'charging') {
+      // Emit concentric shockwaves during charge-up
+      ship._teleportShockTimer -= dt;
+      if (ship._teleportShockTimer <= 0) {
+        ship._teleportShockTimer = 0.1;
+        shockwaves.push({
+          x: ship.x, y: ship.y, r: 0,
+          maxR: rand(25, 50), life: 0.3, maxLife: 0.3, color: ship.color,
+        });
+      }
+      // Transition to phasing at 1.0s remaining
+      if (ship.maneuverTimer <= phaseStart) {
+        ship._teleportPhase = 'phasing';
+        ship.invuln = phaseDuration + 0.3;
+        spawnExplosion(ship.x, ship.y, ship.color, 15, 80);
+        shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: 50, life: 0.4, color: ship.color });
+        // Set initial dash velocity
+        ship.vx = Math.cos(ship._teleportAng) * CFG.SHIP_MAX_SPEED * 1.7;
+        ship.vy = Math.sin(ship._teleportAng) * CFG.SHIP_MAX_SPEED * 1.7;
+      }
+    }
+
+    if (ship._teleportPhase === 'phasing') {
+      // First half: accelerate. Second half: decelerate.
+      const phaseElapsed = phaseStart - ship.maneuverTimer;
+      const phaseT = phaseElapsed / phaseDuration; // 0→1
+      if (phaseT < 0.5) {
+        // Accelerate in dash direction
+        ship.vx += Math.cos(ship._teleportAng) * CFG.SHIP_THRUST * 4 * dt;
+        ship.vy += Math.sin(ship._teleportAng) * CFG.SHIP_THRUST * 4 * dt;
+      } else {
+        // Heavy drag to decelerate
+        const brakeFactor = 1 - 4.0 * dt;
+        ship.vx *= Math.max(0, brakeFactor);
+        ship.vy *= Math.max(0, brakeFactor);
+      }
+
+      // Asteroid evasion while invisible — steer away from imminent collisions
+      if (ship.passive !== 'drillbore') {
+        let evadeX = 0, evadeY = 0, evadeN = 0;
+        for (const ast of asteroids) {
+          const d = dist(ship, ast);
+          if (d > ast.r + 400) continue;
+          const col = predictCollision(ship, ast, 1.0);
+          if (col) {
+            const toAst = angle(ship, ast);
+            const urgency = 1 / (col.t + 0.05);
+            evadeX -= Math.cos(toAst) * urgency;
+            evadeY -= Math.sin(toAst) * urgency;
+            evadeN++;
+          }
+        }
+        if (evadeN > 0) {
+          const evadeAng = Math.atan2(evadeY, evadeX);
+          ship.vx += Math.cos(evadeAng) * CFG.SHIP_THRUST * 3 * dt;
+          ship.vy += Math.sin(evadeAng) * CFG.SHIP_THRUST * 3 * dt;
+        }
+      }
+
+      // Faint particle trail (visible but subtle)
+      if (Math.random() < 0.4) {
+        particles.push({
+          x: ship.x + rand(-5, 5), y: ship.y + rand(-5, 5),
+          vx: rand(-20, 20), vy: rand(-20, 20),
+          life: rand(0.3, 0.5), maxLife: 0.5,
+          color: ship.color, size: rand(1, 2.5),
+        });
+      }
+    }
+  }
+
+  if (ship.maneuver === 'barrelRoll') {
+    // Force rapid turn
+    ship.ang += ship._rollDir * CFG.SHIP_TURN_SPEED * 4 * dt;
+    // Thrust forward during roll
+    ship.vx += Math.cos(ship.ang) * CFG.SHIP_THRUST * 1.5 * dt;
+    ship.vy += Math.sin(ship.ang) * CFG.SHIP_THRUST * 1.5 * dt;
+    ship.thrustOn = true;
+    // Trail
+    if (Math.random() < 0.5) {
+      particles.push({
+        x: ship.x + rand(-6, 6), y: ship.y + rand(-6, 6),
+        vx: rand(-40, 40), vy: rand(-40, 40),
+        life: 0.25, maxLife: 0.25, color: ship.color, size: rand(1, 3),
+      });
+    }
+  }
+
+  if (ship.maneuver === 'quickTurn') {
+    // Rapid turn toward target angle
+    const turnNeeded = shortAngleDist(ship.ang, ship._quickTurnTarget);
+    const turnRate = CFG.SHIP_TURN_SPEED * 6;
+    ship.ang += Math.sign(turnNeeded) * Math.min(Math.abs(turnNeeded), turnRate * dt);
+    // 2x thrust
+    ship.vx += Math.cos(ship.ang) * CFG.SHIP_THRUST * 2 * dt;
+    ship.vy += Math.sin(ship.ang) * CFG.SHIP_THRUST * 2 * dt;
+    ship.thrustOn = true;
+    if (Math.abs(turnNeeded) < 0.2) ship._quickTurnDone = true;
+  }
+
+  if (ship.maneuver === 'turretMode') {
+    // Rapidly decelerate to 0 — but allow turning
+    const brakeFactor = 1 - 8.0 * dt;
+    ship.vx *= Math.max(0, brakeFactor);
+    ship.vy *= Math.max(0, brakeFactor);
+    ship._aiThrust = false; // suppress forward thrust
+    ship.thrustOn = false;
+    // Force firing
+    ship._aiShoot = true;
+    // Subtle anchor particles
+    if (Math.random() < 0.3) {
+      particles.push({
+        x: ship.x + rand(-8, 8), y: ship.y + rand(-8, 8),
+        vx: rand(-15, 15), vy: rand(-15, 15),
+        life: 0.2, maxLife: 0.2, color: ship.color, size: rand(1, 2),
+      });
+    }
+  }
+
+  if (ship.maneuver === 'serpentine') {
+    // 3 sweeps, alternating direction, each 0.3s
+    const sweepDur = 0.3;
+    ship._serpTimer += dt;
+    if (ship._serpTimer >= sweepDur) {
+      ship._serpTimer -= sweepDur;
+      ship._serpDir *= -1;
+      ship._serpSweep++;
+    }
+    // Strong lateral strafe at 3x normal speed
+    const perpAng = ship.ang + Math.PI * 0.5 * ship._serpDir;
+    const strafeForce = CFG.SHIP_THRUST * 3;
+    ship.vx += Math.cos(perpAng) * strafeForce * dt;
+    ship.vy += Math.sin(perpAng) * strafeForce * dt;
+    // Slight forward thrust to maintain momentum
+    ship.vx += Math.cos(ship.ang) * CFG.SHIP_THRUST * 0.5 * dt;
+    ship.vy += Math.sin(ship.ang) * CFG.SHIP_THRUST * 0.5 * dt;
+    ship.thrustOn = true;
+    // Trail
+    if (Math.random() < 0.4) {
+      particles.push({
+        x: ship.x + rand(-5, 5), y: ship.y + rand(-5, 5),
+        vx: rand(-30, 30), vy: rand(-30, 30),
+        life: 0.2, maxLife: 0.2, color: ship.color, size: rand(1, 2.5),
+      });
+    }
+  }
+
+  if (ship.maneuver === 'panic') {
+    // Spin rapidly — no forward thrust
+    const spinRate = ship._panicSpinTotal / MANEUVER_DEFS.panic.duration;
+    const spinStep = spinRate * dt;
+    ship.ang += ship._panicDir * spinStep;
+    ship._panicSpinDone += spinStep;
+    // Force rapid fire
+    ship._aiShoot = true;
+    // Frantic particles
+    if (Math.random() < 0.5) {
+      const a = rand(0, Math.PI * 2);
+      particles.push({
+        x: ship.x + Math.cos(a) * ship.r, y: ship.y + Math.sin(a) * ship.r,
+        vx: Math.cos(a) * rand(40, 80), vy: Math.sin(a) * rand(40, 80),
+        life: 0.25, maxLife: 0.25, color: ship.color, size: rand(1, 3),
+      });
+    }
+  }
+
+  if (ship.maneuver === 'rapidFire') {
+    // Force firing, movement handled by normal AI
+    ship._aiShoot = true;
+    // Subtle muzzle flash particles
+    if (Math.random() < 0.3) {
+      const fx = ship.x + Math.cos(ship.ang) * ship.r;
+      const fy = ship.y + Math.sin(ship.ang) * ship.r;
+      particles.push({
+        x: fx, y: fy,
+        vx: Math.cos(ship.ang) * rand(30, 60) + rand(-20, 20),
+        vy: Math.sin(ship.ang) * rand(30, 60) + rand(-20, 20),
+        life: 0.15, maxLife: 0.15, color: ship.color, size: rand(1, 2),
+      });
+    }
+  }
+
+  if (ship.maneuver === 'spinOut') {
+    const totalDur = MANEUVER_DEFS.spinOut.duration; // 1.2s
+    const elapsed = totalDur - ship.maneuverTimer;
+    if (elapsed < 0.4) {
+      // Phase 1: Forward acceleration, no shooting
+      ship._aiShoot = false;
+      ship.vx += Math.cos(ship.ang) * CFG.SHIP_THRUST * 10 * dt;
+      ship.vy += Math.sin(ship.ang) * CFG.SHIP_THRUST * 10 * dt;
+      ship.thrustOn = true;
+    } else {
+      // Phase 2: Sharp drift turn + deceleration
+      ship._spinOutPhase = 'turn';
+      ship.ang += ship._spinOutDir * CFG.SHIP_TURN_SPEED * 3.5 * dt;
+      const brakeFactor = 1 - 3.0 * dt;
+      ship.vx *= Math.max(0, brakeFactor);
+      ship.vy *= Math.max(0, brakeFactor);
+      // Tire-smoke style particles
+      if (Math.random() < 0.5) {
+        const backAng = ship.ang + Math.PI;
+        particles.push({
+          x: ship.x + Math.cos(backAng) * ship.r + rand(-6, 6),
+          y: ship.y + Math.sin(backAng) * ship.r + rand(-6, 6),
+          vx: Math.cos(backAng) * rand(30, 60) + rand(-20, 20),
+          vy: Math.sin(backAng) * rand(30, 60) + rand(-20, 20),
+          life: rand(0.3, 0.6), maxLife: 0.6, color: '#aaaaaa', size: rand(2, 4),
+        });
+      }
+    }
+  }
+
+  if (ship.maneuver === 'reverse') {
+    const elapsed = MANEUVER_DEFS.reverse.duration - ship.maneuverTimer;
+    if (elapsed < 0.2) {
+      // Phase 1: rapid deceleration
+      ship._reversePhase = 'decel';
+      const brakeFactor = 1 - 10.0 * dt;
+      ship.vx *= Math.max(0, brakeFactor);
+      ship.vy *= Math.max(0, brakeFactor);
+      ship._aiThrust = false;
+      ship.thrustOn = false;
+    } else {
+      // Phase 2: reverse thrust — accelerate backwards while AI aims normally
+      ship._reversePhase = 'reverse';
+      const backAng = ship.ang + Math.PI;
+      ship.vx += Math.cos(backAng) * CFG.SHIP_THRUST * dt;
+      ship.vy += Math.sin(backAng) * CFG.SHIP_THRUST * dt;
+      ship._aiThrust = false; // suppress normal forward thrust
+      ship.thrustOn = true;
+      ship._aiShoot = true;
+      // Reverse thrust particles from front
+      if (Math.random() < 0.4) {
+        const fx = ship.x + Math.cos(ship.ang) * ship.r;
+        const fy = ship.y + Math.sin(ship.ang) * ship.r;
+        particles.push({
+          x: fx + rand(-4, 4), y: fy + rand(-4, 4),
+          vx: Math.cos(ship.ang) * rand(40, 80), vy: Math.sin(ship.ang) * rand(40, 80),
+          life: 0.25, maxLife: 0.25, color: ship.color, size: rand(1, 3),
+        });
+      }
+    }
+  }
+
+  if (ship.maneuver === 'smokescreen') {
+    // Ongoing particle drizzle for first 0.5s
+    const elapsed = MANEUVER_DEFS.smokescreen.duration - ship.maneuverTimer;
+    if (elapsed < 0.5 && Math.random() < 0.6) {
+      const a = rand(0, Math.PI * 2);
+      particles.push({
+        x: ship.x + rand(-10, 10), y: ship.y + rand(-10, 10),
+        vx: Math.cos(a) * rand(15, 50), vy: Math.sin(a) * rand(15, 50),
+        life: rand(1.0, 2.0), maxLife: 2.0, color: ship.color, size: rand(3, 6),
+      });
+    }
+  }
+
+  if (ship.maneuver === 'reflectorShields') {
+    // Advance orbit angle (fast rotation)
+    ship._reflectorAngle += Math.PI * 2.5 * dt; // ~2.5 rev/sec
+    // Suppress firing
+    ship._aiShoot = false;
+  }
+
+  if (ship.maneuver === 'mineField') {
+    ship._mineDropTimer -= dt;
+    if (ship._mineDropTimer <= 0 && ship._minesDropped < 3) {
+      // Drop a mine from the back of the ship
+      const backAng = ship.ang + Math.PI;
+      mines.push({
+        x: ship.x + Math.cos(backAng) * ship.r * 1.5,
+        y: ship.y + Math.sin(backAng) * ship.r * 1.5,
+        ownerId: ship.id,
+        color: ship.color,
+        life: 45.0,
+        r: 5,
+        proximityRadius: 200,
+      });
+      ship._minesDropped++;
+      ship._mineDropTimer = 1.0; // next mine in 1s
+      spawnExplosion(ship.x + Math.cos(backAng) * ship.r * 1.5,
+                     ship.y + Math.sin(backAng) * ship.r * 1.5, ship.color, 5, 20);
+    }
+  }
+
+  // End maneuver
+  if (ship.maneuverTimer <= 0) {
+    ship.maneuverActive = false;
+    ship._hyperSpeedActive = false;
+
+    if (ship.maneuver === 'teleport') {
+      // Reappear with burst
+      ship._teleportPhase = null;
+      ship.vx *= 0.2; ship.vy *= 0.2; // kill most remaining velocity
+      spawnExplosion(ship.x, ship.y, ship.color, 15, 80);
+      shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: 50, life: 0.4, color: ship.color });
+    }
+
+    if (ship.maneuver === 'quickTurn') {
+      // Increased likelihood to fire immediately after turn
+      ship.fireCooldown = 0;
+      ship._aiShoot = true;
+    }
+
+    if (ship.maneuver === 'spinOut') {
+      // Activate post-maneuver accuracy+speed boost
+      ship._spinOutBoostTimer = MANEUVER_DEFS.spinOut.afterDuration;
+      ship.fireCooldown = 0;
+      ship._aiShoot = true;
+      spawnExplosion(ship.x, ship.y, ship.color, 8, 50);
+    }
+
+    if (ship.maneuver === 'reflectorShields') {
+      // Remove all shields belonging to this ship
+      for (let i = reflectorShields.length - 1; i >= 0; i--) {
+        if (reflectorShields[i].ownerId === ship.id) {
+          reflectorShields.splice(i, 1);
+        }
+      }
+    }
+  }
 }
 
 // ─── WEAPON FIRE SYSTEM ─────────────────────────────────────
@@ -838,15 +1585,20 @@ function removeHelixPartner(b) {
 
 function fireWeapon(ship) {
   const w = ship.weapon;
-  const ang = ship.ang;
+  const accNoise = ship.maneuverActive && ship.maneuver === 'rapidFire' ? rand(-0.15, 0.15) : 0;
+  const ang = ship.ang + accNoise;
   const bx = ship.x + Math.cos(ang) * ship.r * 1.2;
   const by = ship.y + Math.sin(ang) * ship.r * 1.2;
+  // Spin Out boost: 50% faster projectiles
+  const wSpd = w.speed * (ship._spinOutBoostTimer > 0 ? 1.5 : 1);
+  // Scale weapon offsets with ship size (for Flagship etc)
+  const sizeScale = ship.r / CFG.SHIP_RADIUS;
 
   switch (w.type) {
     case 'basic':
       bullets.push(makeBullet(ship, bx, by,
-        Math.cos(ang)*w.speed + ship.vx*0.3,
-        Math.sin(ang)*w.speed + ship.vy*0.3));
+        Math.cos(ang)*wSpd + ship.vx*0.3,
+        Math.sin(ang)*wSpd + ship.vy*0.3));
       break;
 
     case 'shotgun': {
@@ -855,16 +1607,16 @@ function fireWeapon(ship) {
         const off = (i/(w.pellets-1) - 0.5) * 2 * sr;
         const a = ang + off;
         bullets.push(makeBullet(ship, bx, by,
-          Math.cos(a)*w.speed + ship.vx*0.3,
-          Math.sin(a)*w.speed + ship.vy*0.3, {size:2}));
+          Math.cos(a)*wSpd + ship.vx*0.3,
+          Math.sin(a)*wSpd + ship.vy*0.3, {size:2}));
       }
       break;
     }
 
     case 'grenade':
       bullets.push(makeBullet(ship, bx, by,
-        Math.cos(ang)*w.speed + ship.vx*0.3,
-        Math.sin(ang)*w.speed + ship.vy*0.3,
+        Math.cos(ang)*wSpd + ship.vx*0.3,
+        Math.sin(ang)*wSpd + ship.vy*0.3,
         {detonateTime: w.fuseTime, contactDetonate: true, size:5}));
       break;
 
@@ -890,11 +1642,11 @@ function fireWeapon(ship) {
     case 'alternating': {
       const perp = ang + Math.PI/2;
       for (const side of [-1, 1]) {
-        const ox = bx + Math.cos(perp)*w.offset*side;
-        const oy = by + Math.sin(perp)*w.offset*side;
+        const ox = bx + Math.cos(perp)*w.offset*sizeScale*side;
+        const oy = by + Math.sin(perp)*w.offset*sizeScale*side;
         bullets.push(makeBullet(ship, ox, oy,
-          Math.cos(ang)*w.speed + ship.vx*0.3,
-          Math.sin(ang)*w.speed + ship.vy*0.3));
+          Math.cos(ang)*wSpd + ship.vx*0.3,
+          Math.sin(ang)*wSpd + ship.vy*0.3));
       }
       break;
     }
@@ -906,28 +1658,28 @@ function fireWeapon(ship) {
 
     case 'sniper':
       bullets.push(makeBullet(ship, bx, by,
-        Math.cos(ang)*w.speed + ship.vx*0.3,
-        Math.sin(ang)*w.speed + ship.vy*0.3, {size:2}));
+        Math.cos(ang)*wSpd + ship.vx*0.3,
+        Math.sin(ang)*wSpd + ship.vy*0.3, {size:2}));
       break;
 
     case 'chaotic':
       bullets.push(makeBullet(ship, bx, by,
-        Math.cos(ang)*w.speed + ship.vx*0.3,
-        Math.sin(ang)*w.speed + ship.vy*0.3,
+        Math.cos(ang)*wSpd + ship.vx*0.3,
+        Math.sin(ang)*wSpd + ship.vy*0.3,
         {curveRate: rand(-4, 4)}));
       break;
 
     case 'scrap':
       bullets.push(makeBullet(ship, bx, by,
-        Math.cos(ang)*w.speed + ship.vx*0.3,
-        Math.sin(ang)*w.speed + ship.vy*0.3,
+        Math.cos(ang)*wSpd + ship.vx*0.3,
+        Math.sin(ang)*wSpd + ship.vy*0.3,
         {detonateTime: w.fuseTime, contactDetonate: false, size:4}));
       break;
 
     case 'snake':
       bullets.push(makeBullet(ship, bx, by,
-        Math.cos(ang)*w.speed + ship.vx*0.3,
-        Math.sin(ang)*w.speed + ship.vy*0.3,
+        Math.cos(ang)*wSpd + ship.vx*0.3,
+        Math.sin(ang)*wSpd + ship.vy*0.3,
         {sineAmp: 8, sineFreq: 14}));
       break;
 
@@ -938,8 +1690,8 @@ function fireWeapon(ship) {
 
     case 'boomerang':
       bullets.push(makeBullet(ship, bx, by,
-        Math.cos(ang)*w.speed + ship.vx*0.3,
-        Math.sin(ang)*w.speed + ship.vy*0.3,
+        Math.cos(ang)*wSpd + ship.vx*0.3,
+        Math.sin(ang)*wSpd + ship.vy*0.3,
         {boomerang: true, maxLife: w.life}));
       break;
 
@@ -947,11 +1699,11 @@ function fireWeapon(ship) {
       const perp = ang + Math.PI/2;
       const helixId = Math.random();
       for (const side of [-1, 1]) {
-        const ox = bx + Math.cos(perp)*w.offset*side;
-        const oy = by + Math.sin(perp)*w.offset*side;
+        const ox = bx + Math.cos(perp)*w.offset*sizeScale*side;
+        const oy = by + Math.sin(perp)*w.offset*sizeScale*side;
         bullets.push(makeBullet(ship, ox, oy,
-          Math.cos(ang)*w.speed + ship.vx*0.3,
-          Math.sin(ang)*w.speed + ship.vy*0.3,
+          Math.cos(ang)*wSpd + ship.vx*0.3,
+          Math.sin(ang)*wSpd + ship.vy*0.3,
           {sineAmp: 3, sineFreq: 10, helixSide: side, helixId, helixGrow: true}));
       }
       break;
@@ -962,20 +1714,20 @@ function fireWeapon(ship) {
       for (let i = 0; i < w.projectiles; i++) {
         const orbAng = (i / w.projectiles) * Math.PI * 2;
         bullets.push(makeBullet(ship, bx, by,
-          Math.cos(ang)*w.speed + ship.vx*0.3,
-          Math.sin(ang)*w.speed + ship.vy*0.3,
+          Math.cos(ang)*wSpd + ship.vx*0.3,
+          Math.sin(ang)*wSpd + ship.vy*0.3,
           {cyclone: true, cycloneAng: orbAng, cycloneCx: bx, cycloneCy: by,
-           cycloneFireAng: ang, cycloneSpeed: w.speed, cycloneId: cId, size: 2,
+           cycloneFireAng: ang, cycloneSpeed: wSpd, cycloneId: cId, size: 2,
            cycloneRadiusMult: rand(0.5, 1.5)}));
       }
       // Inner projectiles — stay close to the eye of the storm
       for (let i = 0; i < (w.innerProjectiles || 0); i++) {
         const orbAng = (i / (w.innerProjectiles)) * Math.PI * 2 + rand(0, 1);
         bullets.push(makeBullet(ship, bx, by,
-          Math.cos(ang)*w.speed + ship.vx*0.3,
-          Math.sin(ang)*w.speed + ship.vy*0.3,
+          Math.cos(ang)*wSpd + ship.vx*0.3,
+          Math.sin(ang)*wSpd + ship.vy*0.3,
           {cyclone: true, cycloneAng: orbAng, cycloneCx: bx, cycloneCy: by,
-           cycloneFireAng: ang, cycloneSpeed: w.speed, cycloneId: cId, size: 2,
+           cycloneFireAng: ang, cycloneSpeed: wSpd, cycloneId: cId, size: 2,
            cycloneRadiusMult: rand(0.1, 0.25)}));
       }
       break;
@@ -983,29 +1735,30 @@ function fireWeapon(ship) {
 
     case 'crossshot': {
       const perp = ang + Math.PI/2;
-      const convergeAng = Math.atan2(w.offset, w.convergeDist);
+      const scaledOffset = w.offset * sizeScale;
+      const convergeAng = Math.atan2(scaledOffset, w.convergeDist);
       for (const side of [-1, 1]) {
-        const ox = bx + Math.cos(perp)*w.offset*side;
-        const oy = by + Math.sin(perp)*w.offset*side;
+        const ox = bx + Math.cos(perp)*scaledOffset*side;
+        const oy = by + Math.sin(perp)*scaledOffset*side;
         const fireAng = ang - convergeAng*side;
         bullets.push(makeBullet(ship, ox, oy,
-          Math.cos(fireAng)*w.speed + ship.vx*0.3,
-          Math.sin(fireAng)*w.speed + ship.vy*0.3));
+          Math.cos(fireAng)*wSpd + ship.vx*0.3,
+          Math.sin(fireAng)*wSpd + ship.vy*0.3));
       }
       break;
     }
 
     case 'lightning':
       bullets.push(makeBullet(ship, bx, by,
-        Math.cos(ang)*w.speed + ship.vx*0.3,
-        Math.sin(ang)*w.speed + ship.vy*0.3,
+        Math.cos(ang)*wSpd + ship.vx*0.3,
+        Math.sin(ang)*wSpd + ship.vy*0.3,
         {lightning: true, lightningZigTimer: rand(0.03, 0.06), lightningOrigAng: ang, lightningSplitsLeft: 2}));
       break;
 
     case 'concussive':
       bullets.push(makeBullet(ship, bx, by,
-        Math.cos(ang)*w.speed + ship.vx*0.3,
-        Math.sin(ang)*w.speed + ship.vy*0.3,
+        Math.cos(ang)*wSpd + ship.vx*0.3,
+        Math.sin(ang)*wSpd + ship.vy*0.3,
         {concussive: true, concussiveTimer: rand(0.3, 1.0) * w.life}));
       break;
   }
@@ -1024,22 +1777,24 @@ function processBurstQueue(ship) {
   while (ship.burstQueue.length > 0 && gameTime >= ship.burstQueue[0].time) {
     const burst = ship.burstQueue.shift();
     const w = ship.weapon;
-    const ang = ship.ang;
+    const accNoise2 = ship.maneuverActive && ship.maneuver === 'rapidFire' ? rand(-0.15, 0.15) : 0;
+    const ang = ship.ang + accNoise2;
     const bx = ship.x + Math.cos(ang)*ship.r*1.2;
     const by = ship.y + Math.sin(ang)*ship.r*1.2;
+    const wSpd = w.speed * (ship._spinOutBoostTimer > 0 ? 1.5 : 1);
     switch (burst.type) {
       case 'triple':
         bullets.push(makeBullet(ship, bx, by,
-          Math.cos(ang)*w.speed + ship.vx*0.3,
-          Math.sin(ang)*w.speed + ship.vy*0.3));
+          Math.cos(ang)*wSpd + ship.vx*0.3,
+          Math.sin(ang)*wSpd + ship.vy*0.3));
         break;
       case 'flamethrower': {
         const t = burst.idx / burst.total;
         const sOff = Math.sin(t * Math.PI * 4) * (w.amplitude * Math.PI/180);
         const a = ang + sOff;
         bullets.push(makeBullet(ship, bx, by,
-          Math.cos(a)*w.speed + ship.vx*0.8,
-          Math.sin(a)*w.speed + ship.vy*0.8,
+          Math.cos(a)*wSpd + ship.vx*0.8,
+          Math.sin(a)*wSpd + ship.vy*0.8,
           {life: rand(1.5, 2.5), size: 0.5}));
         break;
       }
@@ -1047,8 +1802,8 @@ function processBurstQueue(ship) {
         const sr = (w.spread/2) * Math.PI/180;
         const a = ang + rand(-sr, sr);
         bullets.push(makeBullet(ship, bx, by,
-          Math.cos(a)*w.speed + ship.vx*0.3,
-          Math.sin(a)*w.speed + ship.vy*0.3, {size:2}));
+          Math.cos(a)*wSpd + ship.vx*0.3,
+          Math.sin(a)*wSpd + ship.vy*0.3, {size:2}));
         break;
       }
     }
@@ -1125,16 +1880,64 @@ function detonateBullet(b) {
   }
 }
 
+function detonateMine(mine) {
+  // Grenade-style explosion: particles + 16 shrapnel + repulsor push
+  for (let i = 0; i < 12; i++) {
+    const a = rand(0, Math.PI * 2);
+    const sp = rand(20, 80);
+    particles.push({ x: mine.x, y: mine.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+      life: rand(0.3, 1.2), maxLife: 1.2, color: mine.color, size: rand(1, 3) });
+  }
+  playAsteroidBreak();
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2;
+    bullets.push({
+      x: mine.x, y: mine.y, vx: Math.cos(a) * 500, vy: Math.sin(a) * 500,
+      life: 0.4, owner: mine.ownerId, color: mine.color, damage: 2, type: 'grenade',
+      size: 2, isShrapnel: true, contactDetonate: false, detonateTime: null,
+      armed: true, armTime: 0, fireAng: a, spawnTime: gameTime,
+      curveRate: 0, sineAmp: 0, sineFreq: 0,
+    });
+  }
+  // Repulsor push
+  const repulsorRadius = 240, repulsorForce = 200;
+  for (const ast of asteroids) {
+    const d = dist(mine, ast);
+    if (d < repulsorRadius && d > 0) {
+      const pushAng = Math.atan2(ast.y - mine.y, ast.x - mine.x);
+      const strength = 1 - (d / repulsorRadius);
+      ast.vx += Math.cos(pushAng) * repulsorForce * strength;
+      ast.vy += Math.sin(pushAng) * repulsorForce * strength;
+    }
+  }
+  for (const ob of bullets) {
+    if (ob.owner === mine.ownerId || ob.isShrapnel) continue;
+    const d = dist(mine, ob);
+    if (d < repulsorRadius && d > 0) {
+      const pushAng = Math.atan2(ob.y - mine.y, ob.x - mine.x);
+      const strength = 1 - (d / repulsorRadius);
+      ob.vx += Math.cos(pushAng) * repulsorForce * strength;
+      ob.vy += Math.sin(pushAng) * repulsorForce * strength;
+    }
+  }
+  shockwaves.push({ x: mine.x, y: mine.y, r: 0, maxR: 240, life: 0.35, color: mine.color });
+}
+
 // Settings state — false = random, true = predetermined
 const settings = {
   randomPersonalities: false,
   weapons: true,
   randomWeapons: false,
   passives: true,
+  maneuvers: true,
   shipHP: 3,
   numShips: 12,
   autoRestart: false,
   chaosMode: false,
+  matchLogger: false,
+  showWeaponTag: true,
+  showPassiveTag: true,
+  showManeuverTag: true,
 };
 
 function toggleSetting(el) {
@@ -1184,6 +1987,117 @@ document.getElementById('settings-btn').addEventListener('click', () => {
   document.getElementById('settings-panel').classList.toggle('open');
 });
 
+// ─── MATCH LOGGER ─────────────────────────────────────────────
+let matchLog = [];
+try { matchLog = JSON.parse(localStorage.getItem('bbr_matchLog') || '[]'); } catch(e) { matchLog = []; }
+
+function updateLogCount() {
+  const el = document.getElementById('log-count');
+  if (el) el.textContent = matchLog.length + ' match' + (matchLog.length !== 1 ? 'es' : '') + ' logged';
+}
+updateLogCount();
+
+function logMatchData() {
+  if (!settings.matchLogger) return;
+
+  const ranked = [...ships].sort((a, b) => {
+    if (a.alive && !b.alive) return -1;
+    if (!a.alive && b.alive) return 1;
+    return (b.deathTime || 0) - (a.deathTime || 0);
+  });
+  ranked.forEach((s, i) => s._logPlace = i + 1);
+
+  const matchNum = matchLog.length + 1;
+  const timestamp = new Date().toISOString();
+  const winnerName = winner ? winner.name : 'DRAW';
+  const matchDuration = gameTime;
+
+  // Capture settings snapshot
+  const modeTag = settings.chaosMode ? 'chaos' : settings.randomWeapons ? 'random' : 'default';
+
+  for (const ship of ranked) {
+    const survTime = ship.alive ? gameTime : (ship.deathTime || 0);
+    const wpnName = ship.weapon?.name || 'Standard Issue';
+    const pasKey = ship.passive || 'none';
+    const pasName = PASSIVE_DEFS[pasKey]?.name || 'None';
+    const manKey = ship.maneuver || 'none';
+    const manName = MANEUVER_DEFS[manKey]?.name || 'None';
+
+    matchLog.push({
+      match: matchNum,
+      timestamp,
+      mode: modeTag,
+      hp: ship.maxHp,
+      numShips: ships.length,
+      matchDuration: +matchDuration.toFixed(2),
+      winner: winnerName,
+      shipName: ship.name,
+      shipColor: ship.color,
+      placement: ship._logPlace,
+      kills: ship.kills,
+      weapon: wpnName,
+      weaponType: ship.weapon?.type || 'basic',
+      passive: pasName,
+      passiveKey: pasKey,
+      maneuver: manName,
+      maneuverKey: manKey,
+      maneuverCount: ship.maneuverCount || 0,
+      killedBy: ship.alive ? '' : (ship.killedBy || 'UNKNOWN'),
+      survivalTime: +survTime.toFixed(2),
+      alive: ship.alive,
+    });
+  }
+
+  try { localStorage.setItem('bbr_matchLog', JSON.stringify(matchLog)); } catch(e) {}
+  updateLogCount();
+}
+
+function exportMatchLog() {
+  if (matchLog.length === 0) { alert('No matches logged yet.'); return; }
+
+  const headers = ['match','timestamp','mode','hp','numShips','matchDuration','winner',
+    'shipName','shipColor','placement','kills','weapon','weaponType',
+    'passive','passiveKey','maneuver','maneuverKey','maneuverCount',
+    'killedBy','survivalTime','alive'];
+
+  let csv = headers.join(',') + '\n';
+  for (const row of matchLog) {
+    csv += headers.map(h => {
+      let v = row[h] ?? '';
+      if (typeof v === 'string' && (v.includes(',') || v.includes('"'))) v = '"' + v.replace(/"/g, '""') + '"';
+      return v;
+    }).join(',') + '\n';
+  }
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const numMatches = matchLog.length > 0 ? matchLog[matchLog.length - 1].match : 0;
+  a.download = `bbr-log-${numMatches}matches-${dateStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+let clearLogPending = false;
+function clearMatchLog() {
+  if (matchLog.length === 0) return;
+  if (!clearLogPending) {
+    clearLogPending = true;
+    document.getElementById('log-clear').textContent = 'Confirm?';
+    setTimeout(() => { clearLogPending = false; document.getElementById('log-clear').textContent = 'Clear'; }, 3000);
+    return;
+  }
+  clearLogPending = false;
+  document.getElementById('log-clear').textContent = 'Clear';
+  matchLog = [];
+  try { localStorage.setItem('bbr_matchLog', '[]'); } catch(e) {}
+  updateLogCount();
+}
+
 // ─── GLOBALS ──────────────────────────────────────────────────
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -1195,6 +2109,12 @@ let asteroids = [];
 let bullets = [];
 let particles = [];
 let shockwaves = [];
+let smokeDecoys = [];
+let shipClones = [];
+let debrisField = [];
+let reflectorShields = [];
+let mines = [];
+let shipDrones = [];
 let orphanTrails = [];
 let incBulletCounter = 0;
 let incSpentBullets = new Set(); // incendiary bullet IDs that already dealt damage
@@ -1663,10 +2583,10 @@ function drawShipShape(ctx, x, y, ang, r, color, hp, maxHp, invuln, shipId, hpBa
     ctx.fillRect(-barW/2, barY, barW, barH);
     // Fill
     const pct = hp / maxHp;
-    const barColor = pct > 0.5 ? color : pct > 0.25 ? '#ffaa22' : '#ff4444';
+    const barColor = pct > 1 ? '#ffffff' : pct > 0.5 ? color : pct > 0.25 ? '#ffaa22' : '#ff4444';
     ctx.globalAlpha = (invuln && isFinite(invuln)) ? (0.3 + 0.3 * Math.sin(gameTime * 15)) * barAlpha : barAlpha;
     ctx.fillStyle = barColor;
-    ctx.fillRect(-barW/2, barY, barW * pct, barH);
+    ctx.fillRect(-barW/2, barY, barW * Math.min(pct, 1), barH);
   }
 
   ctx.restore();
@@ -1710,27 +2630,39 @@ function applyChaosMode() {
 
   const shipOptions = [4, 6, 8, 10, 12];
 
-  settings.randomPersonalities = Math.random() < 0.5;
-  // Weapon modes: 40% unique, 30% random, 30% basic
-  const wpnRoll = Math.random();
-  if (wpnRoll < 0.4) {
+  // 20% chance of a fully default match
+  if (Math.random() < 0.2) {
+    settings.randomPersonalities = false;
     settings.weapons = true;
     settings.randomWeapons = false;
-  } else if (wpnRoll < 0.7) {
-    settings.weapons = true;
-    settings.randomWeapons = true;
+    settings.passives = true;
+    settings.maneuvers = true;
+    settings.numShips = 12;
   } else {
-    settings.weapons = false;
-    settings.randomWeapons = false;
+    settings.randomPersonalities = Math.random() < 0.5;
+    // Weapon modes: 40% unique, 30% random, 30% basic
+    const wpnRoll = Math.random();
+    if (wpnRoll < 0.4) {
+      settings.weapons = true;
+      settings.randomWeapons = false;
+    } else if (wpnRoll < 0.7) {
+      settings.weapons = true;
+      settings.randomWeapons = true;
+    } else {
+      settings.weapons = false;
+      settings.randomWeapons = false;
+    }
+    settings.numShips = shipOptions[randInt(0, shipOptions.length - 1)];
+    settings.passives = Math.random() < 0.6;
+    settings.maneuvers = Math.random() < 0.4;
   }
-  settings.numShips = shipOptions[randInt(0, shipOptions.length - 1)];
-  settings.passives = Math.random() < 0.6;
 
   // Sync UI toggles
   document.querySelector('[data-setting="randomPersonalities"]').classList.toggle('on', settings.randomPersonalities);
   document.querySelector('[data-setting="weapons"]').classList.toggle('on', settings.weapons);
   document.querySelector('[data-setting="randomWeapons"]').classList.toggle('on', settings.randomWeapons);
   document.querySelector('[data-setting="passives"]').classList.toggle('on', settings.passives);
+  document.querySelector('[data-setting="maneuvers"]').classList.toggle('on', settings.maneuvers);
 
   // Sync ship count buttons
   document.querySelectorAll('#ship-count-selector .hp-btn').forEach(b => {
@@ -1745,6 +2677,12 @@ function init() {
   bullets = [];
   particles = [];
   shockwaves = [];
+  smokeDecoys = [];
+  shipClones = [];
+  debrisField = [];
+  reflectorShields = [];
+  mines = [];
+  shipDrones = [];
   orphanTrails = [];
   incBulletCounter = 0;
   incSpentBullets.clear();
@@ -1970,11 +2908,41 @@ function init() {
       burstQueue: [],
       hpBarTimer: 0,
       beamTrail: [],
+      // Maneuver state
+      maneuver: getManeuver(i),
+      maneuverCooldown: rand(3, 8), // stagger initial cooldowns
+      maneuverActive: false,
+      maneuverTimer: 0,
+      maneuverCount: 0, // track activations for stats
+      _hyperSpeedActive: false,
+      _teleportPhase: null,
+      _teleportAng: 0, _teleportShockTimer: 0,
+      _rollDir: 0,
+      _quickTurnTarget: 0, _quickTurnDone: false,
+      _serpDir: 0, _serpSweep: 0, _serpTimer: 0,
+      _panicSpinTotal: 0, _panicSpinDone: 0, _panicDir: 0,
+      _spinOutPhase: null, _spinOutDir: 0, _spinOutBoostTimer: 0,
+      _reversePhase: null,
+      _smokestealthTimer: 0,
+      _reflectorAngle: 0,
+      _repulsorX: 0, _repulsorY: 0, _repulsorTimer: 0, _repulsorRadius: 0,
+      _minesDropped: 0, _mineDropTimer: 0,
+      _droneWasActive: false,
+      _bioRegenTimer: 0,
+      blindTimer: 0,
+      _bulletThreat: false,
+      _emergencyEvade: false,
     });
     const newShip = ships[ships.length - 1];
-    if (newShip.passive === 'tanky') {
+    if (newShip.passive === 'bioHull') {
       newShip.hp += 2;
       newShip.maxHp += 2;
+    }
+    if (newShip.passive === 'flagship') {
+      newShip.hp += 7;
+      newShip.maxHp += 7;
+      newShip.r *= 2.5;
+      newShip.maneuver = 'none';
     }
     if (newShip.passive === 'shield') {
       newShip.shieldActive = true;
@@ -2072,6 +3040,7 @@ function spawnThrustParticle(ship) {
   }
 
   for (const exAng of angles) {
+    const isBio = ship.passive === 'bioHull';
     particles.push({
       x: bx + rand(-3, 3),
       y: by + rand(-3, 3),
@@ -2079,8 +3048,9 @@ function spawnThrustParticle(ship) {
       vy: Math.sin(exAng) * rand(30, 80) + ship.vy * 0.3,
       life: rand(0.1, 0.3) * lifeMult,
       maxLife: 0.3 * lifeMult,
-      color: ship.color,
+      color: isBio ? '#44ff44' : ship.color,
       size: rand(1, 2.5),
+      isPlus: isBio,
     });
   }
 }
@@ -2190,10 +3160,48 @@ function updateAI(ship, dt) {
     if (other.id === ship.id || !other.alive) continue;
     let d = dist(ship, other);
     // Stealth passive: target appears twice as far away
-    if (other.passive === 'stealth') d *= 2;
+    if (other.passive === 'stealth') d *= 1.5;
+    // Smokescreen: extreme stealth — 96% shrink for 2s, decaying over next 3s
+    if (other._smokestealthTimer > 0) {
+      const st = other._smokestealthTimer;
+      if (st > 3.0) {
+        d *= 25; // full 96% detection shrink
+      } else {
+        d *= 1 + 24 * (st / 3.0); // decay from 25x back to 1x
+      }
+    }
+    // Blinding rounds: this ship is blinded — can't see enemies
+    if (ship.blindTimer > 0) {
+      if (ship.blindTimer > 3) {
+        d = Infinity; // fully blind
+      } else {
+        d *= 1 + 50 * (ship.blindTimer / 3); // decay from 51x to 1x
+      }
+    }
     if (d < closestEnemyDist) {
       closestEnemyDist = d;
       closestEnemy = other;
+    }
+  }
+
+  // Check smoke decoys as potential targets (stationary fake enemy)
+  for (const decoy of smokeDecoys) {
+    if (decoy.ownerId === ship.id) continue; // don't target own smoke
+    const d = dist(ship, decoy);
+    if (d < closestEnemyDist) {
+      closestEnemyDist = d;
+      closestEnemy = { x: decoy.x, y: decoy.y, vx: 0, vy: 0, id: -99, alive: true };
+    }
+  }
+
+  // Check ship clones as potential targets (Double Team)
+  for (const clone of shipClones) {
+    if (clone.ownerId === ship.id || !clone.alive || clone.hit) continue;
+    const d = dist(ship, clone);
+    if (d < closestEnemyDist) {
+      closestEnemyDist = d;
+      const parent = shipById[clone.ownerId];
+      closestEnemy = { x: clone.x, y: clone.y, vx: parent ? parent.vx : 0, vy: parent ? parent.vy : 0, id: -98, alive: true };
     }
   }
 
@@ -2340,7 +3348,11 @@ function updateAI(ship, dt) {
       const travelTime = closestEnemyDist / wSpeed;
       // Oscillating lead factor — smoothly drifts between direct and leading shots
       const rawLead = ship.aimBaseline + Math.sin(gameTime * ship.aimSpeed + ship.aimPhase) * ship.aimRange;
-      const leadFactor = Math.max(0.05, Math.min(1.3, rawLead));
+      // Turret Mode or Spin Out boost: clamp aim toward optimal leading
+      const hasAimBoost = (ship.maneuverActive && ship.maneuver === 'turretMode') || ship._spinOutBoostTimer > 0;
+      const leadFactor = hasAimBoost
+        ? Math.max(0.7, Math.min(1.1, rawLead))
+        : Math.max(0.05, Math.min(1.3, rawLead));
       const leadX = closestEnemy.x + closestEnemy.vx * travelTime * leadFactor;
       const leadY = closestEnemy.y + closestEnemy.vy * travelTime * leadFactor;
       const leadAng = Math.atan2(leadY - ship.y, leadX - ship.x);
@@ -2411,6 +3423,18 @@ function updateAI(ship, dt) {
   ship._aiTurnDir = Math.sign(turnDir) * Math.min(1, Math.abs(turnDir) * 3);
   ship._aiThrust = wantThrust;
   ship._aiShoot = wantShoot;
+
+  // ── MANEUVER CONTEXT FLAGS ──
+  ship._bulletThreat = !!bulletThreat;
+  ship._emergencyEvade = collisions.length > 0;
+
+  // ── MANEUVER TRIGGER CHECK ──
+  if (ship.maneuver !== 'none' && !ship.maneuverActive && ship.maneuverCooldown <= 0) {
+    if (checkManeuverTrigger(ship)) {
+      startManeuver(ship);
+      ship.maneuverCount++;
+    }
+  }
 }
 
 // ─── UPDATE ───────────────────────────────────────────────────
@@ -2450,6 +3474,23 @@ function update(rawDt) {
     ship.iceSlow = Math.max(0, ship.iceSlow - dt);
     ship.jamSlow = Math.max(0, ship.jamSlow - dt);
     ship.stunTimer = Math.max(0, ship.stunTimer - dt);
+    ship.blindTimer = Math.max(0, ship.blindTimer - dt);
+
+    // Bio-Hull regeneration: +0.1 HP every 2 seconds
+    if (ship.passive === 'bioHull' && ship.hp < ship.maxHp) {
+      ship._bioRegenTimer += dt;
+      if (ship._bioRegenTimer >= 2.0) {
+        ship._bioRegenTimer -= 2.0;
+        ship.hp = Math.min(ship.maxHp, ship.hp + 0.1);
+        // Plus sign particle
+        particles.push({
+          x: ship.x + rand(-8, 8), y: ship.y + rand(-8, 8),
+          vx: rand(-10, 10), vy: rand(-30, -15),
+          life: 0.8, maxLife: 0.8, color: '#44ff44', size: 4,
+          isPlus: true,
+        });
+      }
+    }
     ship.overrideTimer = Math.max(0, ship.overrideTimer - dt);
 
     // Age stealth beam trail
@@ -2513,11 +3554,28 @@ function update(rawDt) {
         color: '#ff44ff', size: 1.5, isLine: true, lineAng: rand(0, Math.PI * 2), lineLen: rand(5, 10),
       });
     }
+
+    // Blinding rounds: orange ellipse flashes in front of affected ship
+    if (ship.blindTimer > 0 && Math.random() < 0.4) {
+      const fx = ship.x + Math.cos(ship.ang) * ship.r * 1.2;
+      const fy = ship.y + Math.sin(ship.ang) * ship.r * 1.2;
+      shockwaves.push({
+        x: fx + rand(-6, 6), y: fy + rand(-6, 6),
+        r: 0, maxR: rand(12, 25), life: 0.2, maxLife: 0.2,
+        color: '#ff8800', ellipse: true, ellipseAng: ship.ang + rand(-0.3, 0.3),
+      });
+    }
     ship.fireCooldown = Math.max(0, ship.fireCooldown - dt);
     ship.hpBarTimer = Math.max(0, ship.hpBarTimer - dt);
 
     // AI
     updateAI(ship, dt);
+
+    // Maneuver cooldown & update
+    ship.maneuverCooldown = Math.max(0, ship.maneuverCooldown - dt);
+    if (ship._spinOutBoostTimer > 0) ship._spinOutBoostTimer = Math.max(0, ship._spinOutBoostTimer - dt);
+    if (ship._smokestealthTimer > 0) ship._smokestealthTimer = Math.max(0, ship._smokestealthTimer - dt);
+    updateManeuver(ship, dt);
 
     // Strafe fuel management
     if (ship._isStrafing) {
@@ -2534,8 +3592,14 @@ function update(rawDt) {
       }
     }
 
+    // Active maneuver overrides normal movement (barrel roll, quick-turn, teleport)
+    const maneuverControlsMovement = ship.maneuverActive &&
+      (ship.maneuver === 'barrelRoll' || ship.maneuver === 'quickTurn' || ship._teleportPhase === 'phasing'
+       || ship.maneuver === 'serpentine' || ship.maneuver === 'panic'
+       || ship.maneuver === 'spinOut');
+
     // Override rounds: hijack controls — forced thrust + random turn
-    if (ship.overrideTimer > 0) {
+    if (ship.overrideTimer > 0 && !maneuverControlsMovement) {
       ship.ang += ship.overrideTurnDir * CFG.SHIP_TURN_SPEED * dt;
       ship.vx += Math.cos(ship.ang) * CFG.SHIP_THRUST * dt;
       ship.vy += Math.sin(ship.ang) * CFG.SHIP_THRUST * dt;
@@ -2544,16 +3608,16 @@ function update(rawDt) {
 
     // Turn (gatling reduces turn speed by 60% while firing)
     const gatlingFiring = ship.weapon.type === 'gatling' && ship.burstQueue.length > 0;
-    const gyroMult = ship.passive === 'gyro' ? 1.2 : 1.0;
+    const gyroMult = ship.passive === 'gyro' ? 1.3 : 1.0;
     const turnSpeedMult = (gatlingFiring ? 0.2 : 1.0) * gyroMult * (ship.stunTimer > 2.5 ? 0 : ship.stunTimer > 0 ? 1 - ship.stunTimer / 2.5 : 1);
-    if (ship.overrideTimer <= 0) {
+    if (ship.overrideTimer <= 0 && !maneuverControlsMovement) {
       ship.ang += (ship._aiTurnDir || 0) * CFG.SHIP_TURN_SPEED * turnSpeedMult * dt;
     }
 
     // FRAME-LEVEL EMERGENCY: check for imminent asteroid collision every frame
     // Uses lateral thrust to slip past rather than hard turning
     let emergency = false;
-    if (ship.overrideTimer <= 0) {
+    if (ship.overrideTimer <= 0 && !maneuverControlsMovement) {
     let emergAvoidX = 0, emergAvoidY = 0;
     let emergCount = 0;
     if (ship.passive !== 'drillbore') {
@@ -2598,7 +3662,7 @@ function update(rawDt) {
     // Thrust
     ship.thrustOn = ship._aiThrust;
     if (ship._aiThrust) {
-      const thrustMult = ship.passive === 'nitro' ? 1.2 : 1.0;
+      const thrustMult = (ship.passive === 'nitro' ? 1.2 : 1.0) * (ship.passive === 'bioHull' ? 0.9 : 1.0);
       ship.vx += Math.cos(ship.ang) * CFG.SHIP_THRUST * thrustMult * dt;
       ship.vy += Math.sin(ship.ang) * CFG.SHIP_THRUST * thrustMult * dt;
       if (Math.random() < 0.6) spawnThrustParticle(ship);
@@ -2607,8 +3671,11 @@ function update(rawDt) {
 
     // Friction
     const speed = Math.hypot(ship.vx, ship.vy);
-    if (speed > CFG.SHIP_MAX_SPEED) {
-      const ratio = CFG.SHIP_MAX_SPEED / speed;
+    const maneuverSpeedMult = ship.maneuverActive ? (ship.maneuver === 'barrelRoll' ? 1.5 : ship.maneuver === 'quickTurn' ? 1.8 : ship.maneuver === 'serpentine' ? 2.5 : ship.maneuver === 'spinOut' ? 2.5 : ship._teleportPhase === 'phasing' ? 2 : 1) : 1;
+    const reflectorSlow = (ship.maneuverActive && ship.maneuver === 'reflectorShields') ? 0.7 : 1;
+    const maxSpeed = CFG.SHIP_MAX_SPEED * (ship.passive === 'nitro' ? 1.3 : 1) * (ship._hyperSpeedActive ? 3 : 1) * maneuverSpeedMult * reflectorSlow;
+    if (speed > maxSpeed) {
+      const ratio = maxSpeed / speed;
       ship.vx *= ratio;
       ship.vy *= ratio;
     }
@@ -2627,26 +3694,67 @@ function update(rawDt) {
     ship.y += ship.vy * dt;
 
     // World bounds (soft bounce)
-    const bounce = 300;
+    {
     if (ship.x < 0) { ship.x = 0; ship.vx = Math.abs(ship.vx) * 0.5; }
     if (ship.x > CFG.WORLD_W) { ship.x = CFG.WORLD_W; ship.vx = -Math.abs(ship.vx) * 0.5; }
     if (ship.y < 0) { ship.y = 0; ship.vy = Math.abs(ship.vy) * 0.5; }
     if (ship.y > CFG.WORLD_H) { ship.y = CFG.WORLD_H; ship.vy = -Math.abs(ship.vy) * 0.5; }
+    }
 
     // Process burst queue (triple-guns, gatling, flamethrower)
     processBurstQueue(ship);
     // Shoot
-    if (ship._aiShoot && ship.fireCooldown <= 0) {
+    if (ship._aiShoot && ship.fireCooldown <= 0 && ship._teleportPhase !== 'phasing'
+        && !(ship.maneuverActive && ship.maneuver === 'reflectorShields')
+        && !(ship.weapon.type === 'drone' && shipDrones.some(d => d.ownerId === ship.id))) {
       let fireRate = ship.weapon.fireRate;
       // Cryo-Coolant passive: 20% faster fire rate
       if (ship.passive === 'cryoCoolant') fireRate *= 0.8;
+      // Barrel Roll maneuver: 30% faster fire rate
+      if (ship.maneuverActive && ship.maneuver === 'barrelRoll') fireRate *= 0.7;
+      // Turret Mode: 2x fire rate
+      if (ship.maneuverActive && ship.maneuver === 'turretMode') fireRate *= 0.5;
+      // Panic: 3x fire rate
+      if (ship.maneuverActive && ship.maneuver === 'panic') fireRate *= 0.33;
+      // Rapid Fire: 3x fire rate
+      if (ship.maneuverActive && ship.maneuver === 'rapidFire') fireRate *= 0.33;
       // Jam rounds debuff: up to 10x slower fire rate, decaying over 4s
       if (ship.jamSlow > 0) {
-        const jamMult = 1 + 9 * (ship.jamSlow / 4);
+        const jamMult = 1 + 9 * (ship.jamSlow / 8);
         fireRate *= jamMult;
       }
       ship.fireCooldown = fireRate;
-      fireWeapon(ship);
+      // Drone weapon: spawn array instead of firing
+      if (ship.weapon.type === 'drone') {
+        // Only spawn if no active drones for this ship
+        const hasDrones = shipDrones.some(d => d.ownerId === ship.id);
+        if (!hasDrones) {
+          const w = ship.weapon;
+          for (let di = 0; di < w.droneCount; di++) {
+            shipDrones.push({
+              ownerId: ship.id,
+              color: ship.color,
+              x: ship.x, y: ship.y,
+              vx: 0, vy: 0,
+              ang: 0,
+              orbitAngle: (Math.PI * 2 / w.droneCount) * di,
+              orbitRadius: ship.r * 3,
+              r: 5,
+              damage: w.damage,
+              life: w.life,
+              armTimer: w.armTime,
+              state: 'orbiting', // orbiting → armed → pursuing
+              launchDelay: di * w.launchInterval, // stagger launches
+              speed: w.speed,
+              turnRate: w.turnRate,
+              orbitSpeed: w.orbitSpeed,
+            });
+          }
+          ship.fireCooldown = 0.5; // small delay, real cooldown set when all drones gone
+        }
+      } else {
+        fireWeapon(ship);
+      }
 
       // Fierce passive: thin ellipse shockwave from front when firing
       if (ship.passive === 'fierce') {
@@ -2816,6 +3924,7 @@ function update(rawDt) {
             lightningZigTimer: rand(0.03, 0.07),
             lightningOrigAng: b.lightningOrigAng,
             lightningSplitsLeft: b.lightningSplitsLeft, // child inherits remaining splits
+            ownerPassive: b.ownerPassive,
           });
         }
       }
@@ -3077,6 +4186,37 @@ function update(rawDt) {
       }
     }
 
+    // Debuff passive aura trails — particles perpendicular to bullet path
+    const debuffColors = {
+      iceRounds: '#66ccff', jamRounds: '#ff4444', stunShock: '#ffff44',
+      override: '#ff44ff', blindRounds: '#ff8800',
+    };
+    if (debuffColors[b.ownerPassive]) {
+      const bSpd = Math.hypot(b.vx, b.vy);
+      // Faster bullets spawn trails more reliably (lightning at 1600 u/s needs help)
+      const spawnChance = Math.min(0.95, 0.5 + bSpd / 3000);
+      if (bSpd > 10 && Math.random() < spawnChance) {
+        const perpAng = Math.atan2(b.vy, b.vx) + Math.PI * 0.5;
+        const side = Math.random() < 0.5 ? 1 : -1;
+        const isStun = b.ownerPassive === 'stunShock';
+        const spread = isStun ? rand(8, 22) : rand(4, (b.size || 2) + 10);
+        const px = b.x + Math.cos(perpAng) * spread * side;
+        const py = b.y + Math.sin(perpAng) * spread * side;
+        const driftSpd = isStun ? rand(15, 50) : rand(8, 30);
+        const isLine = isStun;
+        particles.push({
+          x: px, y: py,
+          vx: Math.cos(perpAng) * driftSpd * side + b.vx * 0.1,
+          vy: Math.sin(perpAng) * driftSpd * side + b.vy * 0.1,
+          life: isStun ? rand(0.2, 0.4) : rand(0.12, 0.25),
+          maxLife: isStun ? 0.4 : 0.25,
+          color: debuffColors[b.ownerPassive],
+          size: isStun ? rand(2, 4) : rand(1, 2.5),
+          isLine, lineAng: isLine ? perpAng + rand(-0.5, 0.5) : 0, lineLen: isLine ? rand(6, 14) : 0,
+        });
+      }
+    }
+
     if (b.life <= 0 || b.x < -50 || b.x > CFG.WORLD_W + 50 || b.y < -50 || b.y > CFG.WORLD_H + 50) {
       if (b.type === 'lightning' && b.trail && b.trail.length > 0) {
         orphanTrails.push({trail: b.trail, color: b.color});
@@ -3156,12 +4296,26 @@ function update(rawDt) {
     // Bullet vs ship
     for (const ship of ships) {
       if (!ship.alive || ship.id === b.owner || ship.invuln > 0) continue;
-      if (dist(b, ship) < ship.r + 4) {
+      const bDist = dist(b, ship);
+
+      // Near-miss debuff detection: 2x hit radius applies effect only (no damage)
+      const attacker = shipById[b.owner];
+      if (attacker && bDist < (ship.r + 4) * 2 && bDist >= ship.r + 4) {
+        if (attacker.passive === 'blindRounds') ship.blindTimer = 6;
+        if (attacker.passive === 'iceRounds') ship.iceSlow = 4;
+        if (attacker.passive === 'jamRounds') ship.jamSlow = 8;
+        if (attacker.passive === 'stunShock') ship.stunTimer = 3.5;
+        if (attacker.passive === 'override') { ship.overrideTimer = 2; ship.overrideTurnDir = Math.random() < 0.5 ? -1 : 1; }
+      }
+
+      if (bDist < ship.r + 4) {
         // Shield passive: absorb first hit
         if (ship.shieldActive) {
           ship.shieldActive = false;
           ship.hpBarTimer = 1.5;
-          spawnExplosion(b.x, b.y, '#fff', 8, 50);
+          const shieldColor = b.color || '#fff';
+          spawnExplosion(b.x, b.y, shieldColor, 8, 50);
+          shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: 60, life: 0.4, color: shieldColor });
           // Still remove bullet (unless piercing)
         } else {
           const dmg = (b.damage || 1) * (ship.passive === 'titanium' ? 0.75 : 1);
@@ -3181,9 +4335,10 @@ function update(rawDt) {
           const attacker = shipById[b.owner];
           if (attacker) {
             if (attacker.passive === 'iceRounds') ship.iceSlow = 4;
-            if (attacker.passive === 'jamRounds') ship.jamSlow = 4;
+            if (attacker.passive === 'jamRounds') ship.jamSlow = 8;
             if (attacker.passive === 'stunShock') ship.stunTimer = 3.5;
-            if (attacker.passive === 'override') { ship.overrideTimer = 1; ship.overrideTurnDir = Math.random() < 0.5 ? -1 : 1; }
+            if (attacker.passive === 'override') { ship.overrideTimer = 2; ship.overrideTurnDir = Math.random() < 0.5 ? -1 : 1; }
+            if (attacker.passive === 'blindRounds') ship.blindTimer = 6;
           }
           if (ship.hp <= 0) {
             killShip(ship, b.owner);
@@ -3230,8 +4385,10 @@ function update(rawDt) {
           ship.shieldActive = false;
           ship.hpBarTimer = 1.5;
           spawnExplosion(ship.x, ship.y, '#fff', 12, 80);
+          shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: 60, life: 0.4, color: '#fff' });
         } else {
-          ship.hp -= 10 * (ship.passive === 'titanium' ? 0.75 : 1);
+          const astDmg = ship.passive === 'flagship' ? 3 : 10;
+          ship.hp -= astDmg * (ship.passive === 'titanium' ? 0.75 : 1);
           ship.hpBarTimer = 1.5;
           spawnExplosion(ship.x, ship.y, 'rgba(255,255,255,0.6)', 10, 80);
           playShipHit();
@@ -3259,10 +4416,10 @@ function update(rawDt) {
   // Ship vs ship collision — both die
   for (let i = 0; i < ships.length; i++) {
     const a = ships[i];
-    if (!a.alive) continue;
+    if (!a.alive || a._teleportPhase === 'phasing') continue;
     for (let j = i + 1; j < ships.length; j++) {
       const b = ships[j];
-      if (!b.alive) continue;
+      if (!b.alive || b._teleportPhase === 'phasing') continue;
       if (dist(a, b) < a.r + b.r) {
         const mx = (a.x + b.x) / 2;
         const my = (a.y + b.y) / 2;
@@ -3279,10 +4436,10 @@ function update(rawDt) {
         const aDrill = a.passive === 'drillbore';
         const bDrill = b.passive === 'drillbore';
         if (aDrill) { /* drillbore survives */ }
-        else if (a.shieldActive) { a.shieldActive = false; spawnExplosion(a.x, a.y, '#fff', 12, 80); }
+        else if (a.shieldActive) { a.shieldActive = false; spawnExplosion(a.x, a.y, b.color, 12, 80); shockwaves.push({ x: a.x, y: a.y, r: 0, maxR: 60, life: 0.4, color: b.color }); }
         else { a.hp = 0; killShip(a, bDrill ? b.id : b.id); }
         if (bDrill) { /* drillbore survives */ }
-        else if (b.shieldActive) { b.shieldActive = false; spawnExplosion(b.x, b.y, '#fff', 12, 80); }
+        else if (b.shieldActive) { b.shieldActive = false; spawnExplosion(b.x, b.y, a.color, 12, 80); shockwaves.push({ x: b.x, y: b.y, r: 0, maxR: 60, life: 0.4, color: a.color }); }
         else { b.hp = 0; killShip(b, aDrill ? a.id : a.id); }
       }
     }
@@ -3316,7 +4473,9 @@ function update(rawDt) {
           const dmg = 0.5 * (ship.passive === 'titanium' ? 0.75 : 1);
           if (ship.shieldActive) {
             ship.shieldActive = false;
-            spawnExplosion(p.x, p.y, '#fff', 6, 40);
+            const shieldColor = p.color || '#f80';
+            spawnExplosion(p.x, p.y, shieldColor, 6, 40);
+            shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: 60, life: 0.4, color: shieldColor });
           } else {
             ship.hp -= dmg;
             ship.lastAttacker = p.incOwner;
@@ -3326,9 +4485,9 @@ function update(rawDt) {
             const attacker = shipById[p.incOwner];
             if (attacker) {
               if (attacker.passive === 'iceRounds') ship.iceSlow = 4;
-              if (attacker.passive === 'jamRounds') ship.jamSlow = 4;
+              if (attacker.passive === 'jamRounds') ship.jamSlow = 8;
               if (attacker.passive === 'stunShock') ship.stunTimer = 3.5;
-              if (attacker.passive === 'override') { ship.overrideTimer = 1; ship.overrideTurnDir = Math.random() < 0.5 ? -1 : 1; }
+              if (attacker.passive === 'override') { ship.overrideTimer = 2; ship.overrideTurnDir = Math.random() < 0.5 ? -1 : 1; }
             }
             if (ship.passive === 'hitInvuln' && ship.hp > 0 && ship.hitInvulnCooldown <= 0) {
               ship.invuln = 2; ship.hitInvulnCooldown = 16;
@@ -3348,8 +4507,383 @@ function update(rawDt) {
     const s = shockwaves[i];
     s.life -= dt;
     const sMaxLife = s.maxLife || 0.4;
-    s.r = s.maxR * (1 - s.life / sMaxLife);
+    s.r = Math.max(0, s.maxR * (1 - s.life / sMaxLife));
     if (s.life <= 0) shockwaves.splice(i, 1);
+  }
+
+  // Update smoke decoys
+  for (let i = smokeDecoys.length - 1; i >= 0; i--) {
+    smokeDecoys[i].life -= dt;
+    if (smokeDecoys[i].life <= 0) smokeDecoys.splice(i, 1);
+  }
+
+  // Update ship clones (Double Team)
+  for (let i = shipClones.length - 1; i >= 0; i--) {
+    const clone = shipClones[i];
+    if (!clone.alive) { shipClones.splice(i, 1); continue; }
+
+    // If hit, count down flash timer
+    if (clone.hit) {
+      clone.hitTimer -= dt;
+      if (clone.hitTimer <= 0) {
+        spawnExplosion(clone.x, clone.y, clone.color, 10, 60);
+        clone.alive = false;
+        shipClones.splice(i, 1);
+        continue;
+      }
+    }
+
+    clone.life -= dt;
+    if (clone.life <= 0) {
+      spawnExplosion(clone.x, clone.y, clone.color, 8, 40);
+      shipClones.splice(i, 1);
+      continue;
+    }
+
+    // Mirror parent ship's position with lateral offset
+    const parent = shipById[clone.ownerId];
+    if (!parent || !parent.alive) {
+      // Parent dead — clones vanish
+      spawnExplosion(clone.x, clone.y, clone.color, 8, 40);
+      shipClones.splice(i, 1);
+      continue;
+    }
+
+    // Grow offset until reaching target
+    if (clone.offsetCurrent < clone.offsetTarget) {
+      clone.offsetCurrent = Math.min(clone.offsetTarget, clone.offsetCurrent + clone.offsetTarget * 2 * dt);
+    }
+
+    // Position: parent pos + perpendicular offset
+    const perp = parent.ang + Math.PI * 0.5;
+    clone.x = parent.x + Math.cos(perp) * clone.side * clone.offsetCurrent;
+    clone.y = parent.y + Math.sin(perp) * clone.side * clone.offsetCurrent;
+    clone.ang = parent.ang;
+
+    // Check bullet collisions (bullets destroy clone)
+    if (!clone.hit) {
+      for (const b of bullets) {
+        if (b.owner === clone.ownerId) continue; // own bullets pass through
+        if (dist(b, clone) < clone.r + 4) {
+          clone.hit = true;
+          clone.hitTimer = 1.0;
+          // Remove the bullet
+          b.life = 0;
+          break;
+        }
+      }
+    }
+
+    // Check asteroid collisions (asteroids destroy clone)
+    if (!clone.hit) {
+      for (const ast of asteroids) {
+        if (dist(clone, ast) < clone.r + ast.r * 0.85) {
+          clone.hit = true;
+          clone.hitTimer = 1.0;
+          break;
+        }
+      }
+    }
+  }
+
+  // Update debris field (Dump Debris) — absorb incoming projectiles
+  for (let i = debrisField.length - 1; i >= 0; i--) {
+    const d = debrisField[i];
+    d.life -= dt;
+    if (d.life <= 0) { debrisField.splice(i, 1); continue; }
+    // Move with drag
+    d.x += d.vx * dt;
+    d.y += d.vy * dt;
+    d.vx *= 1 - 1.5 * dt;
+    d.vy *= 1 - 1.5 * dt;
+    // Absorb bullets (not from the owner)
+    for (let j = bullets.length - 1; j >= 0; j--) {
+      const b = bullets[j];
+      if (b.owner === d.ownerId) continue;
+      const dx = b.x - d.x, dy = b.y - d.y;
+      if (dx * dx + dy * dy < (d.size + 4) * (d.size + 4)) {
+        // Absorb: destroy both debris piece and bullet
+        b.life = 0;
+        debrisField.splice(i, 1);
+        break;
+      }
+    }
+  }
+
+  // Update reflector shields — orbit and reflect bullets
+  for (let i = reflectorShields.length - 1; i >= 0; i--) {
+    const rs = reflectorShields[i];
+    rs.life -= dt;
+    if (rs.life <= 0) { reflectorShields.splice(i, 1); continue; }
+    const parent = shipById[rs.ownerId];
+    if (!parent || !parent.alive) { reflectorShields.splice(i, 1); continue; }
+
+    // Calculate current position on orbit
+    const ang = parent._reflectorAngle + rs.baseAngle;
+    rs.cx = parent.x + Math.cos(ang) * rs.orbitRadius;
+    rs.cy = parent.y + Math.sin(ang) * rs.orbitRadius;
+    rs.ang = ang + Math.PI * 0.5; // shield faces tangent to orbit
+
+    // Check bullet collisions — line segment vs point
+    const cosA = Math.cos(rs.ang), sinA = Math.sin(rs.ang);
+    const x1 = rs.cx - cosA * rs.halfLength, y1 = rs.cy - sinA * rs.halfLength;
+    const x2 = rs.cx + cosA * rs.halfLength, y2 = rs.cy + sinA * rs.halfLength;
+
+    for (const b of bullets) {
+      if (b.owner === rs.ownerId) continue; // own bullets pass through
+      // Distance from bullet to line segment
+      const dx = x2 - x1, dy = y2 - y1;
+      const len2 = dx * dx + dy * dy;
+      const t = Math.max(0, Math.min(1, ((b.x - x1) * dx + (b.y - y1) * dy) / len2));
+      const px = x1 + t * dx, py = y1 + t * dy;
+      const d2 = (b.x - px) * (b.x - px) + (b.y - py) * (b.y - py);
+      if (d2 < 8 * 8) { // 8px hit radius
+        // Reflect: reverse velocity
+        b.vx = -b.vx;
+        b.vy = -b.vy;
+        // Push bullet away from shield to prevent re-collision
+        b.x += b.vx * 0.05;
+        b.y += b.vy * 0.05;
+        // Change ownership so it can damage the original shooter
+        b.owner = rs.ownerId;
+        b.color = parent.color;
+        // Spark effect
+        spawnExplosion(px, py, parent.color, 4, 20);
+      }
+    }
+  }
+
+  // Update repulsor pushes — tick down timer and push bullets
+  for (const ship of ships) {
+    if (ship._repulsorTimer > 0) {
+      ship._repulsorTimer -= dt;
+      const pushStrength = 1200; // strong push force
+      const slowFactor = 0.4; // slow bullets to 40% speed
+      for (const b of bullets) {
+        if (b.owner === ship.id) continue;
+        const dx = b.x - ship._repulsorX, dy = b.y - ship._repulsorY;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < ship._repulsorRadius && d > 1) {
+          // Radial push away from center
+          const nx = dx / d, ny = dy / d;
+          const falloff = 1 - d / ship._repulsorRadius;
+          b.vx += nx * pushStrength * falloff * dt;
+          b.vy += ny * pushStrength * falloff * dt;
+          // Slow the bullet
+          b.vx *= 1 - (1 - slowFactor) * falloff * dt * 3;
+          b.vy *= 1 - (1 - slowFactor) * falloff * dt * 3;
+        }
+      }
+    }
+  }
+
+  // Update mines (Mine Field) — proximity, bullet, and asteroid detonation
+  for (let i = mines.length - 1; i >= 0; i--) {
+    const mine = mines[i];
+    mine.life -= dt;
+    if (mine.life <= 0) { mines.splice(i, 1); continue; }
+
+    let detonate = false;
+
+    // Proximity: enemy ship within 200 units
+    for (const ship of ships) {
+      if (ship.id === mine.ownerId || !ship.alive) continue;
+      if (dist(mine, ship) < mine.proximityRadius) { detonate = true; break; }
+    }
+
+    // Bullet strike: any projectile from any owner
+    if (!detonate) {
+      for (const b of bullets) {
+        if (b.isShrapnel) continue;
+        if (dist(mine, b) < mine.r + 4) {
+          b.life = 0; // consume the bullet
+          detonate = true;
+          break;
+        }
+      }
+    }
+
+    // Asteroid strike
+    if (!detonate) {
+      for (const ast of asteroids) {
+        if (dist(mine, ast) < mine.r + ast.r * 0.85) { detonate = true; break; }
+      }
+    }
+
+    if (detonate) {
+      detonateMine(mine);
+      mines.splice(i, 1);
+    }
+  }
+
+  // Update ship drones (Drone Array weapon)
+  for (let i = shipDrones.length - 1; i >= 0; i--) {
+    const d = shipDrones[i];
+    d.life -= dt;
+    if (d.life <= 0) {
+      shipDrones.splice(i, 1);
+      continue;
+    }
+
+    const parent = shipById[d.ownerId];
+
+    if (d.state === 'orbiting' || d.state === 'armed') {
+      // If parent dead, release all orbiting drones as pursuing
+      if (!parent || !parent.alive) {
+        d.state = 'pursuing';
+        const a = d.orbitAngle;
+        d.vx = Math.cos(a) * d.speed;
+        d.vy = Math.sin(a) * d.speed;
+        continue;
+      }
+
+      // Orbit around parent
+      const angularSpeed = d.orbitSpeed / d.orbitRadius;
+      d.orbitAngle += angularSpeed * dt;
+      d.x = parent.x + Math.cos(d.orbitAngle) * d.orbitRadius;
+      d.y = parent.y + Math.sin(d.orbitAngle) * d.orbitRadius;
+      d.ang = d.orbitAngle + Math.PI * 0.5; // face tangent
+
+      // Count down arm timer
+      if (d.state === 'orbiting') {
+        d.armTimer -= dt;
+        if (d.armTimer <= 0) d.state = 'armed';
+      }
+
+      // Armed: count down individual launch delay, then find target
+      if (d.state === 'armed') {
+        d.launchDelay -= dt;
+        if (d.launchDelay <= 0) {
+          // Find closest enemy in range
+          let closest = null, cDist = Infinity;
+          for (const s of ships) {
+            if (!s.alive || s.id === d.ownerId) continue;
+            const dd = dist(d, s);
+            if (dd < cDist) { cDist = dd; closest = s; }
+          }
+          if (closest) {
+            // Launch toward target
+            d.state = 'pursuing';
+            const tAng = angle(d, closest);
+            d.vx = Math.cos(tAng) * d.speed;
+            d.vy = Math.sin(tAng) * d.speed;
+            // Breakaway ellipse particle
+            shockwaves.push({ x: d.x, y: d.y, r: 0, maxR: 15, life: 0.2, maxLife: 0.2, color: d.color, ellipse: true, ellipseAng: tAng });
+          }
+        }
+      }
+
+      // Collision damage while orbiting (contact damage)
+      for (const s of ships) {
+        if (!s.alive || s.id === d.ownerId) continue;
+        if (dist(d, s) < d.r + s.r) {
+          // Deal damage
+          s.hp -= d.damage;
+          s.hpBarTimer = 2;
+          s.lastAttacker = d.ownerId;
+          s.lastAttackerTime = gameTime;
+          spawnExplosion(d.x, d.y, d.color, 6, 30);
+          shipDrones.splice(i, 1);
+          if (s.hp <= 0 && s.alive) {
+            s.alive = false;
+            s.killedBy = parent ? parent.name : 'DRONE';
+            const attacker = parent;
+            if (attacker && attacker.alive) { attacker.kills++; attacker.killStreak++; }
+            spawnExplosion(s.x, s.y, s.color, 30, 120);
+          }
+          break;
+        }
+      }
+      if (!shipDrones[i] || shipDrones[i] !== d) continue;
+    }
+
+    if (d.state === 'pursuing') {
+      // Mild homing — 1/4 of homing missile turn rate
+      let closest = null, cDist = Infinity;
+      for (const s of ships) {
+        if (!s.alive || s.id === d.ownerId) continue;
+        const dd = dist(d, s);
+        if (dd < cDist) { cDist = dd; closest = s; }
+      }
+      if (closest) {
+        const tAng = angle(d, closest);
+        const cAng = Math.atan2(d.vy, d.vx);
+        const da = shortAngleDist(cAng, tAng);
+        const turn = Math.sign(da) * Math.min(Math.abs(da), d.turnRate * dt);
+        const nAng = cAng + turn;
+        const spd = Math.hypot(d.vx, d.vy);
+        d.vx = Math.cos(nAng) * spd;
+        d.vy = Math.sin(nAng) * spd;
+      }
+
+      // Move
+      d.x += d.vx * dt;
+      d.y += d.vy * dt;
+      d.ang = Math.atan2(d.vy, d.vx);
+
+      // Box particle trail
+      if (Math.random() < 0.5) {
+        particles.push({
+          x: d.x + rand(-3, 3), y: d.y + rand(-3, 3),
+          vx: -d.vx * 0.2 + rand(-15, 15), vy: -d.vy * 0.2 + rand(-15, 15),
+          life: rand(0.2, 0.4), maxLife: 0.4, color: d.color, size: rand(1.5, 3),
+          isSquare: true,
+        });
+      }
+
+      // Hit ships
+      let hit = false;
+      for (const s of ships) {
+        if (!s.alive || s.id === d.ownerId) continue;
+        if (dist(d, s) < d.r + s.r) {
+          s.hp -= d.damage;
+          s.hpBarTimer = 2;
+          s.lastAttacker = d.ownerId;
+          s.lastAttackerTime = gameTime;
+          spawnExplosion(d.x, d.y, d.color, 8, 40);
+          if (s.hp <= 0 && s.alive) {
+            s.alive = false;
+            s.killedBy = parent ? parent.name : 'DRONE';
+            const attacker = parent;
+            if (attacker && attacker.alive) { attacker.kills++; attacker.killStreak++; }
+            spawnExplosion(s.x, s.y, s.color, 30, 120);
+          }
+          hit = true;
+          break;
+        }
+      }
+
+      // Hit asteroids — drone destroyed
+      if (!hit) {
+        for (const ast of asteroids) {
+          if (dist(d, ast) < d.r + ast.r * 0.85) {
+            spawnExplosion(d.x, d.y, d.color, 5, 25);
+            hit = true;
+            break;
+          }
+        }
+      }
+
+      if (hit) {
+        shipDrones.splice(i, 1);
+        continue;
+      }
+
+      // Bounds — soft bounce
+      if (d.x < 0 || d.x > CFG.WORLD_W) d.vx = -d.vx;
+      if (d.y < 0 || d.y > CFG.WORLD_H) d.vy = -d.vy;
+    }
+  }
+
+  // Set 4s cooldown when all drones are gone for a drone-weapon ship
+  for (const ship of ships) {
+    if (!ship.alive || ship.weapon.type !== 'drone') continue;
+    const hasDrones = shipDrones.some(d => d.ownerId === ship.id);
+    if (!hasDrones && ship.fireCooldown < 4.0 && ship._droneWasActive) {
+      ship.fireCooldown = 4.0;
+      ship._droneWasActive = false;
+    }
+    if (hasDrones) ship._droneWasActive = true;
   }
 
   // Camera — follow alive ships centroid, zoom to fit action
@@ -3576,9 +5110,9 @@ function killShip(ship, killerId) {
   const killer = killerId >= 0 ? shipById[killerId] : null;
   if (killer && killer.alive) {
     killer.kills++;
-    // Scrap Repair passive: heal +1 HP on kill
+    // Scrap Armor passive: heal +1.5 HP on kill (can overheal)
     if (killer.passive === 'scrapRepair') {
-      killer.hp = Math.min(killer.hp + 1, killer.maxHp);
+      killer.hp += 1.5;
       killer.hpBarTimer = 1.5;
       // Plus sign particle effect
       for (let p = 0; p < 8; p++) {
@@ -3639,7 +5173,7 @@ function killShip(ship, killerId) {
 
 // ─── DOGFIGHT DETECTION ──────────────────────────────────────
 function findBestDogfight() {
-  const alive = ships.filter(s => s.alive);
+  const alive = ships.filter(s => s.alive && s._teleportPhase !== 'phasing');
   if (alive.length < 2) return null;
 
   let bestPair = null;
@@ -3703,6 +5237,9 @@ function render() {
   ctx.scale(camZoom, camZoom);
   ctx.translate(-cameraX, -cameraY);
 
+  // Scale glow inversely with zoom — 1x at close, ~2x when zoomed out
+  const glowScale = Math.min(2.5, 0.35 / camZoom);
+
   // Stars (parallax)
   drawStars();
 
@@ -3753,15 +5290,137 @@ function render() {
     ctx.restore();
   }
 
+  // Debris field (Dump Debris) — rendered as squares
+  ctx.shadowBlur = 0;
+  for (const d of debrisField) {
+    ctx.save();
+    ctx.translate(d.x, d.y);
+    ctx.rotate(d.life * 3); // slow tumble
+    ctx.globalAlpha = Math.min(1, d.life * 0.8);
+    ctx.fillStyle = d.color;
+    const hs = d.size * 0.5;
+    ctx.fillRect(-hs, -hs, d.size, d.size);
+    ctx.restore();
+  }
+
+  // Ship clones (Double Team)
+  for (const clone of shipClones) {
+    if (!clone.alive) continue;
+    ctx.save();
+    if (clone.hit) {
+      // Flash rapidly when hit
+      ctx.globalAlpha = Math.sin(gameTime * 30) > 0 ? 0.8 : 0.15;
+    } else {
+      ctx.globalAlpha = 0.7;
+    }
+    drawShipShape(ctx, clone.x, clone.y, clone.ang, clone.r, clone.color, 1, 1, 0, clone.shipId, 0);
+    ctx.restore();
+  }
+
+  // Ship drones (Drone Array) — small pentagons
+  for (const d of shipDrones) {
+    ctx.save();
+    ctx.translate(d.x, d.y);
+    ctx.rotate(d.ang);
+    ctx.fillStyle = d.color + '88';
+    ctx.strokeStyle = d.color;
+    ctx.shadowColor = d.color;
+    ctx.shadowBlur = (d.state === 'pursuing' ? 10 : 4) * glowScale;
+    ctx.lineWidth = 1.2;
+    // Pentagon
+    ctx.beginPath();
+    for (let v = 0; v < 5; v++) {
+      const a = (v / 5) * Math.PI * 2 - Math.PI / 2;
+      const px = Math.cos(a) * d.r, py = Math.sin(a) * d.r;
+      if (v === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Ship drones (Drone Array) — small pentagons
+  for (const d of shipDrones) {
+    ctx.save();
+    ctx.translate(d.x, d.y);
+    ctx.rotate(d.ang);
+    ctx.fillStyle = d.color + '88';
+    ctx.strokeStyle = d.color;
+    ctx.lineWidth = 1.2;
+    ctx.shadowColor = d.color;
+    ctx.shadowBlur = (d.state === 'pursuing' ? 10 : 5) * glowScale;
+    ctx.beginPath();
+    for (let p = 0; p < 5; p++) {
+      const a = (p / 5) * Math.PI * 2 - Math.PI / 2;
+      const px = Math.cos(a) * d.r, py = Math.sin(a) * d.r;
+      if (p === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // Inner dot when armed/pursuing
+    if (d.state !== 'orbiting') {
+      ctx.fillStyle = '#fff';
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.arc(0, 0, d.r * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Mines (Mine Field) — flashing stationary projectiles
+  for (const mine of mines) {
+    ctx.save();
+    // Flash: bright pulse every 1 second
+    const flash = Math.sin(gameTime * Math.PI) > 0.7;
+    ctx.fillStyle = mine.color;
+    ctx.shadowColor = mine.color;
+    ctx.shadowBlur = (flash ? 20 : 6) * glowScale;
+    ctx.globalAlpha = flash ? 1.0 : 0.6;
+    ctx.beginPath();
+    ctx.arc(mine.x, mine.y, mine.r, 0, Math.PI * 2);
+    ctx.fill();
+    // Inner dot
+    ctx.fillStyle = '#fff';
+    ctx.globalAlpha = flash ? 0.9 : 0.3;
+    ctx.beginPath();
+    ctx.arc(mine.x, mine.y, mine.r * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Reflector shields — glowing lines orbiting the ship
+  for (const rs of reflectorShields) {
+    ctx.save();
+    ctx.strokeStyle = rs.color;
+    ctx.shadowColor = rs.color;
+    ctx.shadowBlur = (12) * glowScale;
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.85;
+    const cosA = Math.cos(rs.ang), sinA = Math.sin(rs.ang);
+    ctx.beginPath();
+    ctx.moveTo(rs.cx - cosA * rs.halfLength, rs.cy - sinA * rs.halfLength);
+    ctx.lineTo(rs.cx + cosA * rs.halfLength, rs.cy + sinA * rs.halfLength);
+    ctx.stroke();
+    // Thicker inner glow
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.4;
+    ctx.shadowBlur = (20) * glowScale;
+    ctx.stroke();
+    ctx.restore();
+  }
+
   // Bullets
   for (const b of bullets) {
     ctx.fillStyle = b.color;
     ctx.shadowColor = b.color;
-    ctx.shadowBlur = b.ownerPassive === 'sparkDrive' ? 28 : 14;
+    ctx.shadowBlur = (b.ownerPassive === 'sparkDrive' ? 28 : 14) * glowScale;
     if (b.type === 'sniper') {
       // Beam trail
       if (b.trail && b.trail.length > 1) {
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = (8) * glowScale;
         for (let t = 1; t < b.trail.length; t++) {
           const alpha = b.trail[t].life / 0.35;
           ctx.globalAlpha = alpha;
@@ -3783,7 +5442,7 @@ function render() {
         ctx.globalAlpha = 1;
       }
       // Elongated bright line for sniper bullet head
-      ctx.shadowBlur = 14;
+      ctx.shadowBlur = (14) * glowScale;
       const bAng = Math.atan2(b.vy, b.vx);
       ctx.strokeStyle = b.color;
       ctx.lineWidth = 2.5;
@@ -3860,7 +5519,7 @@ function render() {
     } else if (b.type === 'crossshot') {
       // Beam trail
       if (b.trail && b.trail.length > 1) {
-        ctx.shadowBlur = 6;
+        ctx.shadowBlur = (6) * glowScale;
         for (let t = 1; t < b.trail.length; t++) {
           const alpha = b.trail[t].life / 0.25;
           ctx.globalAlpha = alpha;
@@ -3880,7 +5539,7 @@ function render() {
         ctx.stroke();
       }
       // Short laser line head
-      ctx.shadowBlur = 14;
+      ctx.shadowBlur = (14) * glowScale;
       const bAng = Math.atan2(b.vy, b.vx);
       ctx.strokeStyle = b.color;
       ctx.lineWidth = 1.5;
@@ -3891,7 +5550,7 @@ function render() {
     } else if (b.type === 'lightning') {
       // Lightning: jagged beam trail
       if (b.trail && b.trail.length > 1) {
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = (10) * glowScale;
         for (let t = 1; t < b.trail.length; t++) {
           const alpha = b.trail[t].life / 0.4;
           ctx.globalAlpha = alpha;
@@ -3912,7 +5571,7 @@ function render() {
         ctx.globalAlpha = 1;
       }
       // Bright point at tip
-      ctx.shadowBlur = 18;
+      ctx.shadowBlur = (18) * glowScale;
       ctx.beginPath();
       ctx.arc(b.x, b.y, 2.5, 0, Math.PI * 2);
       ctx.fill();
@@ -3940,7 +5599,7 @@ function render() {
   for (const ot of orphanTrails) {
     if (ot.trail.length < 2) continue;
     ctx.shadowColor = ot.color;
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = (10) * glowScale;
     for (let t = 1; t < ot.trail.length; t++) {
       const alpha = ot.trail[t].life / 0.4;
       ctx.globalAlpha = alpha;
@@ -3958,12 +5617,13 @@ function render() {
   // Ships
   for (const ship of ships) {
     if (!ship.alive) continue;
+    if (ship._teleportPhase === 'phasing') continue; // invisible during teleport
 
     // ── STEALTH BEAM TRAIL (draw before ship) ──
     if (ship.passive === 'stealth' && ship.beamTrail && ship.beamTrail.length > 1) {
       ctx.save();
       ctx.shadowColor = ship.color;
-      ctx.shadowBlur = 6;
+      ctx.shadowBlur = (6) * glowScale;
       for (let t = 1; t < ship.beamTrail.length; t++) {
         const alpha = ship.beamTrail[t].life / ship.beamTrail[t].maxLife;
         ctx.globalAlpha = alpha * 0.5;
@@ -3995,21 +5655,23 @@ function render() {
       ctx.globalAlpha = 1;
     }
 
-    // Titanium: large triangular shape encompassing the ship
+    // Titanium: two wide thin chevrons on each side of the ship
     if (ship.passive === 'titanium') {
       ctx.save();
       ctx.translate(ship.x, ship.y);
       ctx.rotate(ship.ang);
       ctx.strokeStyle = ship.color;
-      ctx.globalAlpha = 0.2 + 0.05 * Math.sin(gameTime * 2);
-      ctx.lineWidth = 1.5;
-      const tR = ship.r + 7;
-      ctx.beginPath();
-      ctx.moveTo(tR * 1.3, 0);
-      ctx.lineTo(-tR * 0.9, -tR * 0.9);
-      ctx.lineTo(-tR * 0.9, tR * 0.9);
-      ctx.closePath();
-      ctx.stroke();
+      ctx.globalAlpha = 0.25 + 0.05 * Math.sin(gameTime * 2);
+      ctx.lineWidth = 1.2;
+      const cR = ship.r + 5;
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(cR * 0.6, side * cR * 0.6);   // front tip
+        ctx.lineTo(-cR * 0.3, side * cR * 1.2);   // rear outer
+        ctx.moveTo(cR * 0.6, side * cR * 0.6);    // front tip again
+        ctx.lineTo(-cR * 0.5, side * cR * 0.5);   // rear inner
+        ctx.stroke();
+      }
       ctx.globalAlpha = 1;
       ctx.restore();
     }
@@ -4047,6 +5709,15 @@ function render() {
       ctx.beginPath();
       ctx.moveTo(p.x - Math.cos(p.lineAng) * p.lineLen * 0.5, p.y - Math.sin(p.lineAng) * p.lineLen * 0.5);
       ctx.lineTo(p.x + Math.cos(p.lineAng) * p.lineLen * 0.5, p.y + Math.sin(p.lineAng) * p.lineLen * 0.5);
+      ctx.stroke();
+    } else if (p.isPlus) {
+      // Plus sign particle (Bio-Hull)
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 1.5;
+      const s = p.size * 0.6;
+      ctx.beginPath();
+      ctx.moveTo(p.x - s, p.y); ctx.lineTo(p.x + s, p.y);
+      ctx.moveTo(p.x, p.y - s); ctx.lineTo(p.x, p.y + s);
       ctx.stroke();
     } else {
       ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
@@ -4131,7 +5802,7 @@ function render() {
         ctx.font = '900 56px "Orbitron"';
         ctx.textAlign = 'center';
         ctx.shadowColor = w.color;
-        ctx.shadowBlur = 40;
+        ctx.shadowBlur = (40) * glowScale;
         ctx.fillStyle = w.color;
         ctx.fillText(w.name, W/2 + slideX, H/2);
         ctx.shadowBlur = 0;
@@ -4149,7 +5820,7 @@ function render() {
         ctx.font = '900 56px "Orbitron"';
         ctx.textAlign = 'center';
         ctx.shadowColor = '#888';
-        ctx.shadowBlur = 40;
+        ctx.shadowBlur = (40) * glowScale;
         ctx.fillStyle = '#888';
         ctx.fillText('DRAW', W/2 + slideX, H/2);
         ctx.shadowBlur = 0;
@@ -4244,9 +5915,14 @@ function drawScoreboard(ctx) {
 
   const half = Math.ceil(ships.length / 2);
   const tagW = 140;
-  const tagH = 30;
   const gap = 6;
   const hasHP = ships[0] && ships[0].maxHp > 1;
+
+  // How many info lines to show (weapon/passive, maneuver)
+  const showLine1 = settings.showWeaponTag || settings.showPassiveTag;
+  const showLine2 = settings.showManeuverTag;
+  const infoLines = (showLine1 ? 1 : 0) + (showLine2 ? 1 : 0);
+  const tagH = 20 + infoLines * 10;
 
   // Draw a row of player tags
   function drawRow(list, y) {
@@ -4305,14 +5981,27 @@ function drawScoreboard(ctx) {
         ctx.stroke();
       }
 
-      // Weapon | Passive loadout line
+      // Info lines
       ctx.font = '7px "Share Tech Mono", monospace';
       ctx.fillStyle = ship.alive ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.15)';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      const wpnName = ship.weapon?.name || 'Basic';
-      const pasName = PASSIVE_DEFS[ship.passive]?.name || 'None';
-      ctx.fillText(wpnName + ' | ' + pasName, nameX, y + 22);
+      let lineY = y + 20;
+
+      // Line 1: Weapon | Passive (or just one if the other is hidden)
+      if (showLine1) {
+        const wpnName = settings.showWeaponTag ? (ship.weapon?.name || 'Basic') : null;
+        const pasName = settings.showPassiveTag ? (PASSIVE_DEFS[ship.passive]?.name || 'None') : null;
+        const line1 = [wpnName, pasName].filter(Boolean).join(' | ');
+        ctx.fillText(line1, nameX, lineY);
+        lineY += 10;
+      }
+
+      // Line 2: Maneuver
+      if (showLine2) {
+        const manName = MANEUVER_DEFS[ship.maneuver]?.name || 'None';
+        ctx.fillText(manName, nameX, lineY);
+      }
 
       // HP bar (if multi-HP)
       if (hasHP) {
@@ -4391,10 +6080,24 @@ function startMatch() {
     ship.aimPhase = settings.randomPersonalities ? rand(0, Math.PI * 2) : p.aimPhase;
     ship.weapon = getWeapon(ship.id);
     ship.passive = getPassive(ship.id);
+    ship.maneuver = getManeuver(ship.id);
+    ship.maneuverCooldown = rand(3, 8);
+    ship.maneuverActive = false;
+    ship.maneuverTimer = 0;
+    ship.maneuverCount = 0;
+    ship._hyperSpeedActive = false;
+    ship._teleportPhase = null;
     ship.burstQueue = [];
-    if (ship.passive === 'tanky') {
+    ship.r = CFG.SHIP_RADIUS;
+    if (ship.passive === 'bioHull') {
       ship.hp += 2;
       ship.maxHp += 2;
+    }
+    if (ship.passive === 'flagship') {
+      ship.hp += 7;
+      ship.maxHp += 7;
+      ship.r = CFG.SHIP_RADIUS * 2.5;
+      ship.maneuver = 'none';
     }
     ship.shieldActive = ship.passive === 'shield';
     if (ship.passive === 'obliterator') {
@@ -4404,6 +6107,8 @@ function startMatch() {
     ship.overrideTimer = 0;
     ship.iceSlow = 0;
     ship.jamSlow = 0;
+    ship.blindTimer = 0;
+    ship._bioRegenTimer = 0;
     ship.lastAttacker = -1;
     ship.lastAttackerTime = 0;
   }
@@ -4414,6 +6119,7 @@ function startMatch() {
 }
 
 function showWinner() {
+  logMatchData();
   const ov = document.getElementById('winner-overlay');
   ov.classList.add('show');
   showScoreboard = false;
@@ -4454,7 +6160,7 @@ function showWinner() {
     row.className = 'rank-row' + (i === 0 ? ' top1' : i === 1 ? ' top2' : i === 2 ? ' top3' : '');
     row.style.animationDelay = `${i * 0.08}s`;
     const survivalTime = ship.alive ? gameTime : ship.deathTime;
-    const causeText = ship.alive ? '👑' : (ship.killedBy === 'ASTEROID' ? '☄' : `✕ ${ship.killedBy}`);
+    const causeText = ship.alive ? '—' : (ship.killedBy === 'ASTEROID' ? 'ASTEROID' : `✕ ${ship.killedBy}`);
 
     const numSpan = document.createElement('span');
     numSpan.className = 'rank-num';
@@ -4472,7 +6178,8 @@ function showWinner() {
     loadoutSpan.className = 'rank-loadout';
     const wpnName = ship.weapon?.name || 'Standard Issue';
     const pasName = PASSIVE_DEFS[ship.passive]?.name || 'None';
-    loadoutSpan.textContent = wpnName + ' | ' + pasName;
+    const manName = MANEUVER_DEFS[ship.maneuver]?.name || '';
+    loadoutSpan.textContent = wpnName + ' | ' + pasName + (manName ? ' | ' + manName : '');
     nameBlock.appendChild(loadoutSpan);
     row.appendChild(nameBlock);
     const causeSpan = document.createElement('span');
@@ -4493,7 +6200,7 @@ function showWinner() {
   // Auto-restart countdown
   clearAutoRestart();
   if (settings.autoRestart) {
-    let remaining = 10;
+    let remaining = settings.matchLogger ? 3 : 10;
     const cdEl = document.getElementById('auto-restart-countdown');
     cdEl.style.display = 'block';
     cdEl.innerHTML = `NEXT MATCH IN <span class="countdown-num">${remaining}</span>`;
