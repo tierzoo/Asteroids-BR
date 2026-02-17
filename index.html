@@ -695,24 +695,24 @@ const PRESET_PROFILES = [
 
 // ─── WEAPON DEFINITIONS ──────────────────────────────────────
 const WEAPON_DEFS = {
-  basic:        { name:'Basic Laser',    speed:400, life:2.0, fireRate:0.28, damage:3, type:'basic' },
+  basic:        { name:'Standard Issue',    speed:400, life:2.0, fireRate:0.28, damage:3, type:'basic' },
   shotgun:      { name:'Shotgun',        speed:460, life:1.5, fireRate:1.0,  damage:1, type:'shotgun',    pellets:5, spread:14 },
   grenade:      { name:'Grenade',        speed:400, life:1.3, fireRate:2.0,  damage:2, type:'grenade',    fuseTime:0.65, shrapCount:16, shrapDmg:2, shrapLife:0.4, shrapSpeed:300 },
   triple:       { name:'Triple-guns',    speed:400, life:1.8, fireRate:0.6,  damage:2, type:'triple',     burstCount:3, burstDelay:0.05 },
   homing:       { name:'Homing Missiles',speed:300, life:2.4, fireRate:4.0,  damage:2, type:'homing',     launchSpeed:50, boostDelay:0.15 },
-  alternating:  { name:'Alt. Blasters',  speed:400, life:1.65, fireRate:0.28, damage:2, type:'alternating', offset:6 },
+  alternating:  { name:'Twin Blasters',  speed:400, life:1.65, fireRate:0.28, damage:2, type:'alternating', offset:6 },
   flamethrower: { name:'Flamethrower',   speed:250, life:2.0, fireRate:2.5,  damage:1, type:'flamethrower',burstCount:30, amplitude:15 },
   sniper:       { name:'Sniper',         speed:780, life:2.0, fireRate:1.05, damage:5, type:'sniper' },
   chaotic:      { name:'Chaotic Shot',   speed:400, life:1.8, fireRate:0.28, damage:3, type:'chaotic' },
   scrap:        { name:'Scrap Shot',     speed:400, life:1.75, fireRate:1.0,  damage:2, type:'scrap',      fuseTime:0.4, shrapCount:5, shrapSpread:20, shrapSpeed:400 },
   snake:        { name:'Snake Shot',     speed:400, life:1.8, fireRate:0.4,  damage:3, type:'snake' },
   gatling:      { name:'Gatling Gun',    speed:720, life:1.8, fireRate:2.6,  damage:1, type:'gatling',    burstCount:15, burstDelay:0.08, spread:4 },
-  boomerang:    { name:'Boomerang Shot', speed:350, life:1.8, fireRate:0.35, damage:3, type:'boomerang' },
+  boomerang:    { name:'Boomerang', speed:350, life:1.8, fireRate:0.35, damage:3, type:'boomerang' },
   doublehelix:  { name:'Double Helix',  speed:450, life:2.2, fireRate:0.64, damage:2.2, type:'doublehelix', offset:4 },
   cyclone:      { name:'Cyclone Shot',  speed:480, life:2.4, fireRate:2.0,  damage:0.8, type:'cyclone',    projectiles:5, innerProjectiles:2 },
   crossshot:    { name:'Cross-Shot',    speed:540, life:1.05, fireRate:0.4, damage:1.5, type:'crossshot',  offset:12, convergeDist:250 },
   lightning:    { name:'Lightning Bolt', speed:1600, life:0.34, fireRate:0.77, damage:3, type:'lightning' },
-  concussive:   { name:'Concussive',    speed:400, life:1.5, fireRate:0.374, damage:3, type:'concussive', splitCount:4, splitDmg:2, splitLife:0.2, splitSpeed:300 },
+  concussive:   { name:'Scatterburst',    speed:400, life:1.5, fireRate:0.374, damage:3, type:'concussive', splitCount:4, splitDmg:2, splitLife:0.2, splitSpeed:300 },
 };
 
 // Ship index → weapon key mapping
@@ -756,7 +756,7 @@ const PASSIVE_DEFS = {
   detonator:   { name: 'Detonator',    desc: 'Kill triggers explosion' },
   stunShock:   { name: 'Stun Shock',   desc: 'Hits freeze target turning' },
   override:    { name: 'Override',     desc: 'Hits hijack target controls' },
-  cryoCoolant: { name: 'Cryo-Coolant', desc: '-20% fire cooldown' },
+  cryoCoolant: { name: 'Fast Cycling', desc: '-20% fire cooldown' },
 };
 const PASSIVE_KEYS = Object.keys(PASSIVE_DEFS).filter(k => k !== 'none');
 
@@ -4470,7 +4470,7 @@ function showWinner() {
     nameBlock.appendChild(nameSpan);
     const loadoutSpan = document.createElement('span');
     loadoutSpan.className = 'rank-loadout';
-    const wpnName = ship.weapon?.name || 'Basic Laser';
+    const wpnName = ship.weapon?.name || 'Standard Issue';
     const pasName = PASSIVE_DEFS[ship.passive]?.name || 'None';
     loadoutSpan.textContent = wpnName + ' | ' + pasName;
     nameBlock.appendChild(loadoutSpan);
