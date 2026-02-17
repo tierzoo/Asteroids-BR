@@ -678,25 +678,31 @@ const PRESET_PROFILES = [
 
 // ─── WEAPON DEFINITIONS ──────────────────────────────────────
 const WEAPON_DEFS = {
-  basic:        { name:'Basic Laser',    speed:400, life:1.8, fireRate:0.28, damage:3, type:'basic' },
-  shotgun:      { name:'Shotgun',        speed:400, life:1.5, fireRate:1.0,  damage:1, type:'shotgun',    pellets:5, spread:16 },
+  basic:        { name:'Basic Laser',    speed:400, life:2.0, fireRate:0.28, damage:3, type:'basic' },
+  shotgun:      { name:'Shotgun',        speed:460, life:1.5, fireRate:1.0,  damage:1, type:'shotgun',    pellets:5, spread:14 },
   grenade:      { name:'Grenade',        speed:400, life:1.3, fireRate:2.0,  damage:2, type:'grenade',    fuseTime:0.65, shrapCount:16, shrapDmg:2, shrapLife:0.4, shrapSpeed:300 },
-  triple:       { name:'Triple-guns',    speed:400, life:1.8, fireRate:0.6,  damage:2, type:'triple',     burstCount:3, burstDelay:0.1 },
+  triple:       { name:'Triple-guns',    speed:400, life:1.8, fireRate:0.6,  damage:2, type:'triple',     burstCount:3, burstDelay:0.05 },
   homing:       { name:'Homing Missiles',speed:300, life:2.4, fireRate:4.0,  damage:2, type:'homing',     launchSpeed:50, boostDelay:0.15 },
   alternating:  { name:'Alt. Blasters',  speed:400, life:1.65, fireRate:0.28, damage:2, type:'alternating', offset:6 },
   flamethrower: { name:'Flamethrower',   speed:250, life:2.0, fireRate:2.5,  damage:1, type:'flamethrower',burstCount:30, amplitude:15 },
-  sniper:       { name:'Sniper',         speed:650, life:2.0, fireRate:1.05, damage:5, type:'sniper' },
+  sniper:       { name:'Sniper',         speed:780, life:2.0, fireRate:1.05, damage:5, type:'sniper' },
   chaotic:      { name:'Chaotic Shot',   speed:400, life:1.8, fireRate:0.28, damage:3, type:'chaotic' },
   scrap:        { name:'Scrap Shot',     speed:400, life:1.75, fireRate:1.0,  damage:2, type:'scrap',      fuseTime:0.4, shrapCount:5, shrapSpread:20, shrapSpeed:400 },
   snake:        { name:'Snake Shot',     speed:400, life:1.8, fireRate:0.4,  damage:3, type:'snake' },
-  gatling:      { name:'Gatling Gun',    speed:400, life:1.8, fireRate:2.6,  damage:1, type:'gatling',    burstCount:15, burstDelay:0.08, spread:4 },
+  gatling:      { name:'Gatling Gun',    speed:720, life:1.8, fireRate:2.6,  damage:1, type:'gatling',    burstCount:15, burstDelay:0.08, spread:4 },
+  boomerang:    { name:'Boomerang Shot', speed:350, life:1.8, fireRate:0.35, damage:3, type:'boomerang' },
+  doublehelix:  { name:'Double Helix',  speed:450, life:2.2, fireRate:0.64, damage:2.2, type:'doublehelix', offset:4 },
+  cyclone:      { name:'Cyclone Shot',  speed:480, life:2.4, fireRate:2.0,  damage:0.8, type:'cyclone',    projectiles:5, innerProjectiles:2 },
+  crossshot:    { name:'Cross-Shot',    speed:540, life:1.05, fireRate:0.4, damage:1.5, type:'crossshot',  offset:12, convergeDist:250 },
+  lightning:    { name:'Lightning Bolt', speed:1600, life:0.34, fireRate:0.77, damage:3, type:'lightning' },
+  concussive:   { name:'Concussive',    speed:400, life:1.5, fireRate:0.374, damage:3, type:'concussive', splitCount:4, splitDmg:2, splitLife:0.2, splitSpeed:300 },
 };
 
 // Ship index → weapon key mapping
 // RED=alternating, GREEN=chaotic, BLUE=grenade, ORANGE=flamethrower,
 // PINK=gatling, CYAN=homing, LIME=snake, CORAL=shotgun,
-// PURPLE=scrap, WHITE=basic, YELLOW=triple, MAGENTA=sniper
-const SHIP_WEAPONS = ['alternating','chaotic','grenade','flamethrower','gatling','homing','snake','shotgun','scrap','basic','triple','sniper'];
+// PURPLE=scrap, WHITE=basic, YELLOW=lightning, MAGENTA=sniper
+const SHIP_WEAPONS = ['alternating','chaotic','grenade','flamethrower','gatling','homing','snake','shotgun','scrap','basic','lightning','sniper'];
 
 const WEAPON_KEYS = Object.keys(WEAPON_DEFS);
 
@@ -709,14 +715,50 @@ function getWeapon(shipIdx) {
   return {...WEAPON_DEFS[SHIP_WEAPONS[shipIdx]]};
 }
 
+// ─── PASSIVE ABILITIES ──────────────────────────────────────
+const PASSIVE_DEFS = {
+  none:        { name: 'None',         desc: '' },
+  scrapRepair: { name: 'Scrap Repair', desc: '+1 HP on kill' },
+  tanky:       { name: 'Tanky',        desc: '+2 max HP' },
+  nitro:       { name: 'Nitro',        desc: '+20% acceleration' },
+  gyro:        { name: 'Gyro',         desc: '+20% turn speed' },
+  shield:      { name: 'Shield',       desc: 'Ignore first hit' },
+  piercing:    { name: 'Piercing',     desc: 'Shots pierce targets' },
+  fierce:      { name: 'Fierce',       desc: '+35% damage' },
+  hitInvuln:   { name: 'Hit Invuln',   desc: '2s invincibility on hit' },
+  scope:       { name: 'Scope',        desc: '+20% weapon range' },
+  titanium:    { name: 'Titanium',     desc: '-25% incoming damage' },
+  stealth:     { name: 'Stealth',      desc: 'Perceived as 2x distance' },
+  sparkDrive:  { name: 'Spark Drive',  desc: '+20% projectile speed' },
+  drillbore:   { name: 'Drillbore',    desc: 'Survives collisions' },
+  iceRounds:   { name: 'Ice Rounds',   desc: 'Slows hit targets' },
+  jamRounds:   { name: 'Jam Rounds',   desc: 'Jams hit targets\' fire rate' },
+  incendiary:  { name: 'Incendiary',   desc: 'Trail deals damage' },
+  obliterator: { name: 'Obliterator',  desc: 'Asteroids explode on hit' },
+  absorber:    { name: 'Absorber',     desc: 'Deletes enemy projectiles' },
+  detonator:   { name: 'Detonator',    desc: 'Kill triggers explosion' },
+  stunShock:   { name: 'Stun Shock',   desc: 'Hits freeze target turning' },
+  override:    { name: 'Override',     desc: 'Hits hijack target controls' },
+};
+const PASSIVE_KEYS = Object.keys(PASSIVE_DEFS).filter(k => k !== 'none');
+
+function getPassive() {
+  if (settings.randomWeapons || settings.chaosMode) {
+    return PASSIVE_KEYS[randInt(0, PASSIVE_KEYS.length - 1)];
+  }
+  return 'none';
+}
+
 // ─── WEAPON FIRE SYSTEM ─────────────────────────────────────
 function makeBullet(ship, x, y, vx, vy, opts) {
   const o = opts || {};
+  const scopeMult = ship.passive === 'scope' ? 1.2 : 1;
+  const sparkMult = ship.passive === 'sparkDrive' ? 1.2 : 1;
   return {
-    x, y, vx, vy,
-    life: o.life ?? ship.weapon.life,
+    x, y, vx: vx * sparkMult, vy: vy * sparkMult,
+    life: (o.life ?? ship.weapon.life) * scopeMult,
     owner: ship.id, color: o.color ?? ship.color,
-    damage: o.damage ?? ship.weapon.damage,
+    damage: (o.damage ?? ship.weapon.damage) * (ship.passive === 'fierce' ? 1.35 : 1),
     type: o.type ?? ship.weapon.type,
     size: o.size ?? 3,
     detonateTime: o.detonateTime ?? null,
@@ -729,7 +771,33 @@ function makeBullet(ship, x, y, vx, vy, opts) {
     curveRate: o.curveRate ?? 0,
     sineAmp: o.sineAmp ?? 0,
     sineFreq: o.sineFreq ?? 0,
+    boomerang: o.boomerang ?? false,
+    maxLife: o.maxLife ?? null,
+    helixSide: o.helixSide ?? 0,
+    helixId: o.helixId ?? null,
+    helixGrow: o.helixGrow ?? false,
+    cyclone: o.cyclone ?? false,
+    cycloneAng: o.cycloneAng ?? 0,
+    cycloneCx: o.cycloneCx ?? 0,
+    cycloneCy: o.cycloneCy ?? 0,
+    cycloneFireAng: o.cycloneFireAng ?? 0,
+    cycloneSpeed: o.cycloneSpeed ?? 0,
+    cycloneId: o.cycloneId ?? null,
+    cycloneRadiusMult: o.cycloneRadiusMult ?? 1,
+    lightning: o.lightning ?? false,
+    lightningZigTimer: o.lightningZigTimer ?? 0,
+    lightningOrigAng: o.lightningOrigAng ?? (o.fireAng ?? ship.ang),
+    lightningSplitsLeft: o.lightningSplitsLeft ?? 0,
+    concussive: o.concussive ?? false,
+    concussiveTimer: o.concussiveTimer ?? 0,
+    incId: ship.passive === 'incendiary' ? ++incBulletCounter : 0,
   };
+}
+
+function removeHelixPartner(b) {
+  if (b.type !== 'doublehelix' || !b.helixId) return;
+  const partner = bullets.find(o => o !== b && o.helixId === b.helixId);
+  if (partner) partner.life = 0; // will be cleaned up on next tick
 }
 
 function fireWeapon(ship) {
@@ -831,13 +899,88 @@ function fireWeapon(ship) {
       for (let i = 0; i < w.burstCount; i++)
         ship.burstQueue.push({time: gameTime + i*w.burstDelay, type:'gatling'});
       break;
+
+    case 'boomerang':
+      bullets.push(makeBullet(ship, bx, by,
+        Math.cos(ang)*w.speed + ship.vx*0.3,
+        Math.sin(ang)*w.speed + ship.vy*0.3,
+        {boomerang: true, maxLife: w.life}));
+      break;
+
+    case 'doublehelix': {
+      const perp = ang + Math.PI/2;
+      const helixId = Math.random();
+      for (const side of [-1, 1]) {
+        const ox = bx + Math.cos(perp)*w.offset*side;
+        const oy = by + Math.sin(perp)*w.offset*side;
+        bullets.push(makeBullet(ship, ox, oy,
+          Math.cos(ang)*w.speed + ship.vx*0.3,
+          Math.sin(ang)*w.speed + ship.vy*0.3,
+          {sineAmp: 3, sineFreq: 10, helixSide: side, helixId, helixGrow: true}));
+      }
+      break;
+    }
+
+    case 'cyclone': {
+      const cId = Math.random();
+      for (let i = 0; i < w.projectiles; i++) {
+        const orbAng = (i / w.projectiles) * Math.PI * 2;
+        bullets.push(makeBullet(ship, bx, by,
+          Math.cos(ang)*w.speed + ship.vx*0.3,
+          Math.sin(ang)*w.speed + ship.vy*0.3,
+          {cyclone: true, cycloneAng: orbAng, cycloneCx: bx, cycloneCy: by,
+           cycloneFireAng: ang, cycloneSpeed: w.speed, cycloneId: cId, size: 2,
+           cycloneRadiusMult: rand(0.5, 1.5)}));
+      }
+      // Inner projectiles — stay close to the eye of the storm
+      for (let i = 0; i < (w.innerProjectiles || 0); i++) {
+        const orbAng = (i / (w.innerProjectiles)) * Math.PI * 2 + rand(0, 1);
+        bullets.push(makeBullet(ship, bx, by,
+          Math.cos(ang)*w.speed + ship.vx*0.3,
+          Math.sin(ang)*w.speed + ship.vy*0.3,
+          {cyclone: true, cycloneAng: orbAng, cycloneCx: bx, cycloneCy: by,
+           cycloneFireAng: ang, cycloneSpeed: w.speed, cycloneId: cId, size: 2,
+           cycloneRadiusMult: rand(0.1, 0.25)}));
+      }
+      break;
+    }
+
+    case 'crossshot': {
+      const perp = ang + Math.PI/2;
+      const convergeAng = Math.atan2(w.offset, w.convergeDist);
+      for (const side of [-1, 1]) {
+        const ox = bx + Math.cos(perp)*w.offset*side;
+        const oy = by + Math.sin(perp)*w.offset*side;
+        const fireAng = ang - convergeAng*side;
+        bullets.push(makeBullet(ship, ox, oy,
+          Math.cos(fireAng)*w.speed + ship.vx*0.3,
+          Math.sin(fireAng)*w.speed + ship.vy*0.3));
+      }
+      break;
+    }
+
+    case 'lightning':
+      bullets.push(makeBullet(ship, bx, by,
+        Math.cos(ang)*w.speed + ship.vx*0.3,
+        Math.sin(ang)*w.speed + ship.vy*0.3,
+        {lightning: true, lightningZigTimer: rand(0.03, 0.06), lightningOrigAng: ang, lightningSplitsLeft: 2}));
+      break;
+
+    case 'concussive':
+      bullets.push(makeBullet(ship, bx, by,
+        Math.cos(ang)*w.speed + ship.vx*0.3,
+        Math.sin(ang)*w.speed + ship.vy*0.3,
+        {concussive: true, concussiveTimer: rand(0.3, 1.0) * w.life}));
+      break;
   }
   const lowSoundWeapons = ['shotgun', 'scrap'];
   const riseSoundWeapons = ['chaotic', 'snake'];
   if (lowSoundWeapons.includes(w.type)) playShootLow();
   else if (riseSoundWeapons.includes(w.type)) playShootRise();
   else if (w.type === 'sniper') playShootSniper();
-  else if (w.type === 'alternating') playShootAlt();
+  else if (w.type === 'alternating' || w.type === 'crossshot') playShootAlt();
+  else if (w.type === 'lightning') playShootSniper();
+  else if (w.type === 'concussive') playShootLow();
   else playShoot();
 }
 
@@ -859,9 +1002,9 @@ function processBurstQueue(ship) {
         const sOff = Math.sin(t * Math.PI * 4) * (w.amplitude * Math.PI/180);
         const a = ang + sOff;
         bullets.push(makeBullet(ship, bx, by,
-          Math.cos(a)*w.speed + ship.vx*0.3,
-          Math.sin(a)*w.speed + ship.vy*0.3,
-          {life: rand(1.5, 2.5), size: rand(2, 3.5)}));
+          Math.cos(a)*w.speed + ship.vx*0.8,
+          Math.sin(a)*w.speed + ship.vy*0.8,
+          {life: rand(1.5, 2.5), size: 0.5}));
         break;
       }
       case 'gatling': {
@@ -887,17 +1030,41 @@ function detonateBullet(b) {
       const sp = rand(20, 80);
       particles.push({ x:b.x, y:b.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:rand(0.3,1.2), maxLife:1.2, color:b.color, size:rand(1,3) });
     }
-    playExplosion();
+    playAsteroidBreak();
     for (let i = 0; i < 16; i++) {
       const a = (i/16) * Math.PI * 2;
       bullets.push({
-        x:b.x, y:b.y, vx:Math.cos(a)*300, vy:Math.sin(a)*300,
+        x:b.x, y:b.y, vx:Math.cos(a)*500, vy:Math.sin(a)*500,
         life:0.4, owner:b.owner, color:b.color, damage:2, type:'grenade',
         size:2, isShrapnel:true, contactDetonate:false, detonateTime:null,
         armed:true, armTime:0, fireAng:a, spawnTime:gameTime,
         curveRate:0, sineAmp:0, sineFreq:0,
       });
     }
+    // Repulsor effect — push asteroids and enemy bullets away
+    const repulsorRadius = 240;
+    const repulsorForce = 200;
+    for (const ast of asteroids) {
+      const d = dist(b, ast);
+      if (d < repulsorRadius && d > 0) {
+        const pushAng = Math.atan2(ast.y - b.y, ast.x - b.x);
+        const strength = 1 - (d / repulsorRadius); // stronger closer
+        ast.vx += Math.cos(pushAng) * repulsorForce * strength;
+        ast.vy += Math.sin(pushAng) * repulsorForce * strength;
+      }
+    }
+    for (const ob of bullets) {
+      if (ob.owner === b.owner || ob.isShrapnel) continue;
+      const d = dist(b, ob);
+      if (d < repulsorRadius && d > 0) {
+        const pushAng = Math.atan2(ob.y - b.y, ob.x - b.x);
+        const strength = 1 - (d / repulsorRadius);
+        ob.vx += Math.cos(pushAng) * repulsorForce * strength;
+        ob.vy += Math.sin(pushAng) * repulsorForce * strength;
+      }
+    }
+    // Repulsor shockwave ring
+    shockwaves.push({ x: b.x, y: b.y, r: 0, maxR: 240, life: 0.35, color: b.color });
   } else if (b.type === 'scrap') {
     // Particles only, no shockwave
     for (let i = 0; i < 6; i++) {
@@ -990,6 +1157,9 @@ let asteroids = [];
 let bullets = [];
 let particles = [];
 let shockwaves = [];
+let orphanTrails = [];
+let incBulletCounter = 0;
+let incSpentBullets = new Set(); // incendiary bullet IDs that already dealt damage
 let gameTime = 0;
 let gameOver = false;
 let pregame = true;
@@ -1534,6 +1704,9 @@ function init() {
   bullets = [];
   particles = [];
   shockwaves = [];
+  orphanTrails = [];
+  incBulletCounter = 0;
+  incSpentBullets.clear();
   gameTime = 0;
   gameOver = false;
   winner = null;
@@ -1743,9 +1916,30 @@ function init() {
       strafeDepleted: false, // lockout when fully drained
       thrustOn: false,
       weapon: getWeapon(i),
+      passive: getPassive(),
+      shieldActive: false,
+      hitInvulnCooldown: 0,
+      iceSlow: 0,       // remaining ice slow duration
+      jamSlow: 0,       // remaining jam duration
+      stunTimer: 0,     // stun shock: total remaining (1s full + 2.5s decay)
+      overrideTimer: 0, // override: remaining hijack duration
+      overrideTurnDir: 0, // override: forced turn direction
+      lastAttacker: -1,  // last pilot who dealt damage
+      lastAttackerTime: 0,
       burstQueue: [],
       hpBarTimer: 0,
     });
+    const newShip = ships[ships.length - 1];
+    if (newShip.passive === 'tanky') {
+      newShip.hp += 2;
+      newShip.maxHp += 2;
+    }
+    if (newShip.passive === 'shield') {
+      newShip.shieldActive = true;
+    }
+    if (newShip.passive === 'obliterator') {
+      newShip.rockShooter = Math.min(1, newShip.rockShooter + 0.3);
+    }
   }
 
   // Spawn asteroids — avoid ship spawn locations
@@ -1868,6 +2062,7 @@ function isDirectionSafe(ship, ang, speed, lookahead) {
 
 // Find the best evasion angle — scan multiple directions and pick the safest
 function findSafeDirection(ship, preferredAng, speed, look) {
+  if (ship.passive === 'drillbore') return preferredAng;
   const la = look || 1.5;
   // Test preferred angle first
   if (isDirectionSafe(ship, preferredAng, speed, la)) return preferredAng;
@@ -1896,14 +2091,16 @@ function updateAI(ship, dt) {
   // ── PREDICTIVE ASTEROID COLLISION SCAN ──
   // Gather all imminent collisions within the next 2 seconds
   const collisions = [];
-  for (const ast of asteroids) {
-    const d = dist(ship, ast);
-    if (d > 900) continue; // scan wider radius
-    const col = predictCollision(ship, ast, 3.0);
-    if (col) collisions.push(col);
+  if (ship.passive !== 'drillbore') {
+    for (const ast of asteroids) {
+      const d = dist(ship, ast);
+      if (d > 900) continue; // scan wider radius
+      const col = predictCollision(ship, ast, 3.0);
+      if (col) collisions.push(col);
+    }
+    // Sort by urgency (soonest first)
+    collisions.sort((a, b) => a.t - b.t);
   }
-  // Sort by urgency (soonest first)
-  collisions.sort((a, b) => a.t - b.t);
 
   // ── SCAN INCOMING BULLETS ──
   let bulletThreat = null;
@@ -1927,7 +2124,9 @@ function updateAI(ship, dt) {
   // ── SCAN ENEMIES ──
   for (const other of ships) {
     if (other.id === ship.id || !other.alive) continue;
-    const d = dist(ship, other);
+    let d = dist(ship, other);
+    // Stealth passive: target appears twice as far away
+    if (other.passive === 'stealth') d *= 2;
     if (d < closestEnemyDist) {
       closestEnemyDist = d;
       closestEnemy = other;
@@ -2183,6 +2382,11 @@ function update(rawDt) {
     if (!ship.alive) continue;
 
     ship.invuln = Math.max(0, ship.invuln - dt);
+    ship.hitInvulnCooldown = Math.max(0, ship.hitInvulnCooldown - dt);
+    ship.iceSlow = Math.max(0, ship.iceSlow - dt);
+    ship.jamSlow = Math.max(0, ship.jamSlow - dt);
+    ship.stunTimer = Math.max(0, ship.stunTimer - dt);
+    ship.overrideTimer = Math.max(0, ship.overrideTimer - dt);
     ship.fireCooldown = Math.max(0, ship.fireCooldown - dt);
     ship.hpBarTimer = Math.max(0, ship.hpBarTimer - dt);
 
@@ -2204,35 +2408,49 @@ function update(rawDt) {
       }
     }
 
-    // Turn
-    ship.ang += (ship._aiTurnDir || 0) * CFG.SHIP_TURN_SPEED * dt;
+    // Override rounds: hijack controls — forced thrust + random turn
+    if (ship.overrideTimer > 0) {
+      ship.ang += ship.overrideTurnDir * CFG.SHIP_TURN_SPEED * dt;
+      ship.vx += Math.cos(ship.ang) * CFG.SHIP_THRUST * dt;
+      ship.vy += Math.sin(ship.ang) * CFG.SHIP_THRUST * dt;
+      ship.thrustOn = true;
+    }
+
+    // Turn (gatling reduces turn speed by 60% while firing)
+    const gatlingFiring = ship.weapon.type === 'gatling' && ship.burstQueue.length > 0;
+    const gyroMult = ship.passive === 'gyro' ? 1.2 : 1.0;
+    const turnSpeedMult = (gatlingFiring ? 0.2 : 1.0) * gyroMult * (ship.stunTimer > 2.5 ? 0 : ship.stunTimer > 0 ? 1 - ship.stunTimer / 2.5 : 1);
+    if (ship.overrideTimer <= 0) {
+      ship.ang += (ship._aiTurnDir || 0) * CFG.SHIP_TURN_SPEED * turnSpeedMult * dt;
+    }
 
     // FRAME-LEVEL EMERGENCY: check for imminent asteroid collision every frame
     // Uses lateral thrust to slip past rather than hard turning
     let emergency = false;
+    if (ship.overrideTimer <= 0) {
     let emergAvoidX = 0, emergAvoidY = 0;
     let emergCount = 0;
-    for (const ast of asteroids) {
-      const d = dist(ship, ast);
-      if (d > ast.r + 350) continue;
-      const col = predictCollision(ship, ast, 1.0);
-      if (col) {
-        const toAst = angle(ship, ast);
-        const urgency = 1 / (col.t + 0.05);
-        emergAvoidX -= Math.cos(toAst) * urgency;
-        emergAvoidY -= Math.sin(toAst) * urgency;
-        emergCount++;
+    if (ship.passive !== 'drillbore') {
+      for (const ast of asteroids) {
+        const d = dist(ship, ast);
+        if (d > ast.r + 350) continue;
+        const col = predictCollision(ship, ast, 1.0);
+        if (col) {
+          const toAst = angle(ship, ast);
+          const urgency = 1 / (col.t + 0.05);
+          emergAvoidX -= Math.cos(toAst) * urgency;
+          emergAvoidY -= Math.sin(toAst) * urgency;
+          emergCount++;
+        }
       }
     }
     if (emergCount > 0) {
       emergency = true;
       const escapeAng = Math.atan2(emergAvoidY, emergAvoidX);
-      // Bloodthirsty in combat: dodge strength fades as rage builds (0.45 early → 0.25 late)
       const btRage = ship._bloodthirstyCombat ? Math.min(1, 0.35 + gameTime / 120) : 0;
       const turnMult = ship._bloodthirstyCombat ? lerp(0.45, 0.25, btRage) : 1.5;
       const turnNeeded = shortAngleDist(ship.ang, escapeAng);
-      ship.ang += Math.sign(turnNeeded) * Math.min(Math.abs(turnNeeded), CFG.SHIP_TURN_SPEED * turnMult * dt);
-      // Lateral strafe push — nudge velocity perpendicular to the threat
+      ship.ang += Math.sign(turnNeeded) * Math.min(Math.abs(turnNeeded), CFG.SHIP_TURN_SPEED * turnMult * turnSpeedMult * dt);
       const strafeDir = (ship.id % 2 === 0) ? 1 : -1;
       const perpAng = ship.ang + Math.PI * 0.5 * strafeDir;
       const strafeForce = CFG.SHIP_THRUST * 0.35;
@@ -2241,7 +2459,7 @@ function update(rawDt) {
       ship._aiThrust = true;
     }
 
-    // AI-level avoidance strafe — smooth lateral push when AI detects upcoming asteroids
+    // AI-level avoidance strafe
     if (!emergency && ship._avoidStrafe) {
       const strafeDir = (ship.id % 2 === 0) ? 1 : -1;
       const perpAng = ship.ang + Math.PI * 0.5 * strafeDir;
@@ -2254,10 +2472,12 @@ function update(rawDt) {
     // Thrust
     ship.thrustOn = ship._aiThrust;
     if (ship._aiThrust) {
-      ship.vx += Math.cos(ship.ang) * CFG.SHIP_THRUST * dt;
-      ship.vy += Math.sin(ship.ang) * CFG.SHIP_THRUST * dt;
+      const thrustMult = ship.passive === 'nitro' ? 1.2 : 1.0;
+      ship.vx += Math.cos(ship.ang) * CFG.SHIP_THRUST * thrustMult * dt;
+      ship.vy += Math.sin(ship.ang) * CFG.SHIP_THRUST * thrustMult * dt;
       if (Math.random() < 0.6) spawnThrustParticle(ship);
     }
+    } // end override skip
 
     // Friction
     const speed = Math.hypot(ship.vx, ship.vy);
@@ -2268,6 +2488,13 @@ function update(rawDt) {
     }
     ship.vx *= (1 - 0.3 * dt);
     ship.vy *= (1 - 0.3 * dt);
+
+    // Ice slow: reduce speed by up to 50%, decaying over 4s
+    if (ship.iceSlow > 0) {
+      const iceFactor = 1 - 0.5 * (ship.iceSlow / 4);
+      ship.vx *= iceFactor;
+      ship.vy *= iceFactor;
+    }
 
     // Move
     ship.x += ship.vx * dt;
@@ -2284,7 +2511,13 @@ function update(rawDt) {
     processBurstQueue(ship);
     // Shoot
     if (ship._aiShoot && ship.fireCooldown <= 0) {
-      ship.fireCooldown = ship.weapon.fireRate;
+      let fireRate = ship.weapon.fireRate;
+      // Jam rounds debuff: up to 10x slower fire rate, decaying over 4s
+      if (ship.jamSlow > 0) {
+        const jamMult = 1 + 9 * (ship.jamSlow / 4);
+        fireRate *= jamMult;
+      }
+      ship.fireCooldown = fireRate;
       fireWeapon(ship);
     }
   }
@@ -2335,7 +2568,10 @@ function update(rawDt) {
     // Snake shot — sine wave oscillation
     if (b.sineAmp) {
       const age = gameTime - b.spawnTime;
-      const angVel = b.sineAmp * Math.cos(age * b.sineFreq);
+      // Growing amplitude for double helix
+      const ampMult = b.helixGrow ? (1 + age * 1.5) : 1;
+      const amp = b.sineAmp * ampMult * b.helixSide || b.sineAmp * ampMult;
+      const angVel = amp * Math.cos(age * b.sineFreq);
       const spd = Math.hypot(b.vx, b.vy);
       const cAng = Math.atan2(b.vy, b.vx);
       const nAng = cAng + angVel * dt;
@@ -2343,8 +2579,100 @@ function update(rawDt) {
       b.vy = Math.sin(nAng) * spd;
     }
 
-    b.x += b.vx * dt;
-    b.y += b.vy * dt;
+    // Boomerang — arc back after 75% lifetime
+    if (b.boomerang && b.maxLife) {
+      const elapsed = b.maxLife - b.life;
+      if (elapsed >= b.maxLife * 0.75) {
+        if (!b.boomeranged) {
+          b.boomeranged = true;
+          const cAng = Math.atan2(b.vy, b.vx);
+          b.boomerangTarget = cAng + Math.PI + rand(-Math.PI/2, Math.PI/2);
+        }
+        const spd = Math.hypot(b.vx, b.vy);
+        const cAng = Math.atan2(b.vy, b.vx);
+        const turnNeeded = shortAngleDist(cAng, b.boomerangTarget);
+        const turnRate = 8; // radians/sec — fast arc
+        const turn = Math.sign(turnNeeded) * Math.min(Math.abs(turnNeeded), turnRate * dt);
+        const nAng = cAng + turn;
+        const newSpd = Math.min(spd + 200 * dt, 450); // accelerate during arc
+        b.vx = Math.cos(nAng) * newSpd;
+        b.vy = Math.sin(nAng) * newSpd;
+      }
+    }
+
+    // Cyclone — orbit around moving center
+    if (b.cyclone) {
+      const age = gameTime - b.spawnTime;
+      // Center point moves forward
+      b.cycloneCx += Math.cos(b.cycloneFireAng) * b.cycloneSpeed * dt * 0.85;
+      b.cycloneCy += Math.sin(b.cycloneFireAng) * b.cycloneSpeed * dt * 0.85;
+      // Orbit expands over time, varied per bullet
+      b.cycloneAng += 6 * dt;
+      const radius = (15 + age * 60) * (b.cycloneRadiusMult || 1);
+      const targetX = b.cycloneCx + Math.cos(b.cycloneAng) * radius;
+      const targetY = b.cycloneCy + Math.sin(b.cycloneAng) * radius;
+      // Smoothly blend position toward orbit target
+      const blend = Math.min(1, 12 * dt);
+      const newX = lerp(b.x, targetX, blend);
+      const newY = lerp(b.y, targetY, blend);
+      // Set velocity from actual movement (for trails/collision)
+      b.vx = (newX - b.x) / Math.max(dt, 0.001);
+      b.vy = (newY - b.y) / Math.max(dt, 0.001);
+      b.x = newX;
+      b.y = newY;
+    }
+
+    // Lightning — zigzag and split
+    if (b.lightning) {
+      b.lightningZigTimer -= dt;
+      if (b.lightningZigTimer <= 0) {
+        b.lightningZigTimer = rand(0.03, 0.07);
+        // Zigzag: deflect within ±80° of original fire direction
+        const spd = Math.hypot(b.vx, b.vy);
+        const maxDev = 80 * Math.PI / 180; // 80° each side = 160° cone
+        const newAng = b.lightningOrigAng + rand(-maxDev, maxDev);
+        b.vx = Math.cos(newAng) * spd;
+        b.vy = Math.sin(newAng) * spd;
+      }
+      // Split if splits remaining
+      if (b.lightningSplitsLeft > 0) {
+        const elapsed = (b.maxLife || 0.4) - b.life;
+        const splitFrac = b.lightningSplitsLeft === 2 ? rand(0.25, 0.45) : rand(0.4, 0.7);
+        const splitTime = (b.maxLife || 0.4) * splitFrac;
+        if (elapsed >= splitTime) {
+          b.lightningSplitsLeft--;
+          const spd = Math.hypot(b.vx, b.vy);
+          const maxDev = 80 * Math.PI / 180;
+          const splitAng = b.lightningOrigAng + rand(-maxDev, maxDev);
+          bullets.push({
+            x: b.x, y: b.y,
+            vx: Math.cos(splitAng) * spd,
+            vy: Math.sin(splitAng) * spd,
+            life: b.life,
+            owner: b.owner, color: b.color,
+            damage: b.damage, type: 'lightning',
+            size: b.size,
+            detonateTime: null, contactDetonate: false,
+            isShrapnel: false, armed: true, armTime: 0,
+            fireAng: b.fireAng, spawnTime: b.spawnTime,
+            curveRate: 0, sineAmp: 0, sineFreq: 0,
+            boomerang: false, maxLife: null,
+            helixSide: 0, helixId: null, helixGrow: false,
+            cyclone: false, cycloneAng: 0, cycloneCx: 0, cycloneCy: 0,
+            cycloneFireAng: 0, cycloneSpeed: 0, cycloneId: null, cycloneRadiusMult: 1,
+            lightning: true,
+            lightningZigTimer: rand(0.03, 0.07),
+            lightningOrigAng: b.lightningOrigAng,
+            lightningSplitsLeft: b.lightningSplitsLeft, // child inherits remaining splits
+          });
+        }
+      }
+    }
+
+    if (!b.cyclone) {
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+    }
     b.life -= dt;
 
     // Detonation timer (grenade fuse, scrap split)
@@ -2357,8 +2685,62 @@ function update(rawDt) {
       }
     }
 
+    // Concussive shell split
+    if (b.concussive) {
+      b.concussiveTimer -= dt;
+      if (b.concussiveTimer <= 0) {
+        const w = WEAPON_DEFS.concussive;
+        // Spawn 4 split projectiles in random directions
+        for (let s = 0; s < w.splitCount; s++) {
+          const splitAng = Math.random() * Math.PI * 2;
+          const splitSpd = w.splitSpeed * rand(0.7, 1.3);
+          bullets.push(makeBullet({id: b.owner, ang: splitAng, r: 6, x: b.x, y: b.y, vx: 0, vy: 0,
+            weapon: {life: w.splitLife, damage: w.splitDmg, type: 'concussive'}},
+            b.x, b.y,
+            Math.cos(splitAng) * splitSpd + b.vx * 0.3,
+            Math.sin(splitAng) * splitSpd + b.vy * 0.3,
+            {life: w.splitLife, damage: w.splitDmg, concussive: false, size: 2, color: b.color}));
+        }
+        // Square particles at split site
+        for (let p = 0; p < 10; p++) {
+          particles.push({
+            x: b.x + rand(-8, 8), y: b.y + rand(-8, 8),
+            vx: rand(-60, 60), vy: rand(-60, 60),
+            life: rand(0.2, 0.5), maxLife: 0.5,
+            color: b.color, size: rand(2, 4), square: true,
+          });
+        }
+        spawnExplosion(b.x, b.y, b.color, 6, 40);
+        bullets.splice(i, 1);
+        continue;
+      }
+    }
+
     // Bullet trail particle
-    if (b.sineAmp) {
+    const _preTrailCount = b.incId ? particles.length : 0;
+    if (b.type === 'flamethrower') {
+      // Flamethrower: dense flickering flame particles
+      const age = gameTime - b.spawnTime;
+      const nearShip = age < 0.2;
+      const spawnCount = nearShip ? 1 : 3;
+      const spawnChance = nearShip ? 0.3 : 1;
+      if (Math.random() < spawnChance) {
+        for (let tp = 0; tp < spawnCount; tp++) {
+          const tLife = rand(0.15, 0.35);
+          const fade = Math.max(0.3, 1 - age / (b.life + age));
+          particles.push({
+            x: b.x + rand(-4, 4),
+            y: b.y + rand(-4, 4),
+            vx: b.vx * rand(-0.05, 0.1) + rand(-20, 20),
+            vy: b.vy * rand(-0.05, 0.1) + rand(-20, 20),
+            life: tLife,
+            maxLife: tLife,
+            color: b.color,
+            size: rand(1.5, 4) * fade,
+          });
+        }
+      }
+    } else if (b.sineAmp && b.type !== 'doublehelix') {
       // Snake bullets: dense, long-lasting glowing trail
       for (let tp = 0; tp < 2; tp++) {
         const tLife = rand(0.4, 0.8);
@@ -2429,6 +2811,75 @@ function update(rawDt) {
         b.trail[t].life -= dt;
         if (b.trail[t].life <= 0) b.trail.splice(t, 1);
       }
+    } else if (b.type === 'doublehelix') {
+      // Double helix: snake-like particle trail
+      for (let tp = 0; tp < 2; tp++) {
+        const tLife = rand(0.4, 0.8);
+        particles.push({
+          x: b.x + rand(-3, 3),
+          y: b.y + rand(-3, 3),
+          vx: -b.vx * 0.02 + rand(-6, 6),
+          vy: -b.vy * 0.02 + rand(-6, 6),
+          life: tLife,
+          maxLife: tLife,
+          color: b.color,
+          size: rand(1.5, 3),
+        });
+      }
+      // Cross-link lines between helix pair
+      if (!b.trail) b.trail = [];
+      const partner = bullets.find(o => o !== b && o.helixId === b.helixId);
+      if (partner && Math.random() < 0.3) {
+        const mx = (b.x + partner.x) / 2;
+        const my = (b.y + partner.y) / 2;
+        const linkAng = Math.atan2(partner.y - b.y, partner.x - b.x);
+        const linkLen = Math.hypot(partner.x - b.x, partner.y - b.y) / 2;
+        b.trail.push({x: mx, y: my, life: 0.3, ang: linkAng, len: linkLen});
+      }
+      for (let t = b.trail.length - 1; t >= 0; t--) {
+        b.trail[t].life -= dt;
+        if (b.trail[t].life <= 0) b.trail.splice(t, 1);
+      }
+    } else if (b.type === 'cyclone') {
+      // Cyclone: long particle trails
+      const tLife = rand(0.5, 1.0);
+      particles.push({
+        x: b.x + rand(-2, 2),
+        y: b.y + rand(-2, 2),
+        vx: rand(-8, 8),
+        vy: rand(-8, 8),
+        life: tLife,
+        maxLife: tLife,
+        color: b.color,
+        size: rand(1, 2),
+      });
+    } else if (b.type === 'crossshot') {
+      // Cross-shot: beam trail like sniper
+      if (!b.trail) b.trail = [];
+      b.trail.push({x: b.x, y: b.y, life: 0.25});
+      for (let t = b.trail.length - 1; t >= 0; t--) {
+        b.trail[t].life -= dt;
+        if (b.trail[t].life <= 0) b.trail.splice(t, 1);
+      }
+    } else if (b.type === 'lightning') {
+      // Lightning: beam trail that follows the zigzag path
+      if (!b.trail) b.trail = [];
+      b.trail.push({x: b.x, y: b.y, life: 0.4});
+      for (let t = b.trail.length - 1; t >= 0; t--) {
+        b.trail[t].life -= dt;
+        if (b.trail[t].life <= 0) b.trail.splice(t, 1);
+      }
+    } else if (b.type === 'concussive' && b.concussive) {
+      // Concussive: small square particles clustered around the shell
+      if (Math.random() < 0.6) {
+        const tLife = rand(0.15, 0.3);
+        particles.push({
+          x: b.x + rand(-4, 4), y: b.y + rand(-4, 4),
+          vx: rand(-15, 15), vy: rand(-15, 15),
+          life: tLife, maxLife: tLife,
+          color: b.color, size: rand(1.5, 3), square: true,
+        });
+      }
     } else if (Math.random() < 0.5) {
       const tLife = rand(0.08, 0.15);
       particles.push({
@@ -2442,10 +2893,35 @@ function update(rawDt) {
         size: rand(1, 2),
       });
     }
+    // Tag trail particles from incendiary bullets
+    if (b.incId && particles.length > _preTrailCount) {
+      for (let pi = _preTrailCount; pi < particles.length; pi++) {
+        particles[pi].incId = b.incId;
+        particles[pi].incOwner = b.owner;
+      }
+    }
 
     if (b.life <= 0 || b.x < -50 || b.x > CFG.WORLD_W + 50 || b.y < -50 || b.y > CFG.WORLD_H + 50) {
+      if (b.type === 'lightning' && b.trail && b.trail.length > 0) {
+        orphanTrails.push({trail: b.trail, color: b.color});
+      }
       bullets.splice(i, 1);
       continue;
+    }
+
+    // Absorber rounds: this bullet deletes enemy bullets it touches
+    const absOwner = ships[b.owner];
+    if (absOwner && absOwner.passive === 'absorber') {
+      for (let j = bullets.length - 1; j >= 0; j--) {
+        if (j === i) continue;
+        const ob = bullets[j];
+        if (ob.owner === b.owner) continue;
+        if (dist(b, ob) < 8) {
+          spawnExplosion(ob.x, ob.y, '#fff', 4, 30);
+          bullets.splice(j, 1);
+          if (j < i) i--; // adjust index
+        }
+      }
     }
 
     // Bullet vs asteroid
@@ -2456,7 +2932,17 @@ function update(rawDt) {
         const explodeScale = ast.r / 50;
         spawnExplosion(ast.x, ast.y, 'rgba(255,255,255,0.6)', Math.floor(8 * explodeScale), 100 * explodeScale);
         playAsteroidBreak();
-        if (ast.sizeIdx < 3) {
+        const ownerObl = ships[b.owner];
+        if (ownerObl && ownerObl.passive === 'obliterator') {
+          // Obliterator: no fragments, emit 5 projectiles
+          for (let k = 0; k < 5; k++) {
+            const a = rand(0, Math.PI * 2);
+            const sp = 400;
+            bullets.push(makeBullet(ownerObl, ast.x, ast.y, Math.cos(a) * sp, Math.sin(a) * sp,
+              { life: 0.8, damage: 2, type: 'basic', size: 2, isShrapnel: true, fireAng: a }));
+          }
+          spawnExplosion(ast.x, ast.y, ownerObl.color, 15, 120);
+        } else if (ast.sizeIdx < 3) {
           const spread = ast.r * 0.4;
           for (let k = 0; k < 2; k++) {
             asteroids.push(spawnAsteroid(ast.sizeIdx + 1, ast.x + rand(-spread, spread), ast.y + rand(-spread, spread)));
@@ -2479,28 +2965,78 @@ function update(rawDt) {
     }
 
     if (bulletHit) {
-      bullets.splice(i, 1);
-      continue;
+      if (b.type === 'lightning' && b.trail && b.trail.length > 0) {
+        orphanTrails.push({trail: b.trail, color: b.color});
+      }
+      removeHelixPartner(b);
+      // Piercing passive: bullet survives hitting an asteroid
+      const ownerShip = ships[b.owner];
+      if (!(ownerShip && ownerShip.passive === 'piercing')) {
+        bullets.splice(i, 1);
+        continue;
+      }
     }
 
     // Bullet vs ship
     for (const ship of ships) {
       if (!ship.alive || ship.id === b.owner || ship.invuln > 0) continue;
       if (dist(b, ship) < ship.r + 4) {
-        ship.hp -= (b.damage || 1);
-        ship.hpBarTimer = 1.5;
-        const explodeSize = Math.min(12, 4 + (b.damage || 1) * 2);
-        spawnExplosion(b.x, b.y, ship.color, explodeSize, 60 + (b.damage || 1) * 10);
-        playShipHit();
-        if (ship.hp <= 0) {
-          killShip(ship, b.owner);
+        // Shield passive: absorb first hit
+        if (ship.shieldActive) {
+          ship.shieldActive = false;
+          ship.hpBarTimer = 1.5;
+          spawnExplosion(b.x, b.y, '#fff', 8, 50);
+          // Still remove bullet (unless piercing)
+        } else {
+          const dmg = (b.damage || 1) * (ship.passive === 'titanium' ? 0.75 : 1);
+          ship.hp -= dmg;
+          ship.lastAttacker = b.owner;
+          ship.lastAttackerTime = gameTime;
+          ship.hpBarTimer = 1.5;
+          const explodeSize = Math.min(12, 4 + dmg * 2);
+          spawnExplosion(b.x, b.y, ship.color, explodeSize, 60 + dmg * 10);
+          playShipHit();
+          // Hit Invincibility passive: 2s invuln after taking damage (16s cooldown)
+          if (ship.passive === 'hitInvuln' && ship.hp > 0 && ship.hitInvulnCooldown <= 0) {
+            ship.invuln = 2;
+            ship.hitInvulnCooldown = 16;
+          }
+          // Ice/Jam rounds: apply debuff based on attacker's passive
+          const attacker = ships[b.owner];
+          if (attacker) {
+            if (attacker.passive === 'iceRounds') ship.iceSlow = 4;
+            if (attacker.passive === 'jamRounds') ship.jamSlow = 4;
+            if (attacker.passive === 'stunShock') ship.stunTimer = 3.5;
+            if (attacker.passive === 'override') { ship.overrideTimer = 1; ship.overrideTurnDir = Math.random() < 0.5 ? -1 : 1; }
+          }
+          if (ship.hp <= 0) {
+            killShip(ship, b.owner);
+          }
         }
         // Grenade contact detonation on ship
         if (b.contactDetonate && !b.isShrapnel) detonateBullet(b);
-        bullets.splice(i, 1);
+        if (b.type === 'lightning' && b.trail && b.trail.length > 0) {
+          orphanTrails.push({trail: b.trail, color: b.color});
+        }
+        removeHelixPartner(b);
+        // Piercing passive: bullet survives hitting a ship
+        const ownerShip = ships[b.owner];
+        if (!(ownerShip && ownerShip.passive === 'piercing')) {
+          bullets.splice(i, 1);
+        }
         break;
       }
     }
+  }
+
+  // Age orphan trails (lightning beams that persist after bullet death)
+  for (let i = orphanTrails.length - 1; i >= 0; i--) {
+    const ot = orphanTrails[i];
+    for (let t = ot.trail.length - 1; t >= 0; t--) {
+      ot.trail[t].life -= dt;
+      if (ot.trail[t].life <= 0) ot.trail.splice(t, 1);
+    }
+    if (ot.trail.length === 0) orphanTrails.splice(i, 1);
   }
 
   // Ship vs asteroid collision
@@ -2509,10 +3045,28 @@ function update(rawDt) {
     for (let j = asteroids.length - 1; j >= 0; j--) {
       const ast = asteroids[j];
       if (dist(ship, ast) < ship.r + ast.r * 0.85) {
-        ship.hp--;
-        ship.hpBarTimer = 1.5;
-        spawnExplosion(ship.x, ship.y, 'rgba(255,255,255,0.6)', 10, 80);
-        playShipHit();
+        // Drillbore passive: smash through asteroids unharmed
+        if (ship.passive === 'drillbore') {
+          spawnExplosion(ast.x, ast.y, ship.color, 12, 80);
+          playAsteroidBreak();
+        // Shield passive: absorb asteroid hit
+        } else if (ship.shieldActive) {
+          ship.shieldActive = false;
+          ship.hpBarTimer = 1.5;
+          spawnExplosion(ship.x, ship.y, '#fff', 12, 80);
+        } else {
+          ship.hp -= 10 * (ship.passive === 'titanium' ? 0.75 : 1);
+          ship.hpBarTimer = 1.5;
+          spawnExplosion(ship.x, ship.y, 'rgba(255,255,255,0.6)', 10, 80);
+          playShipHit();
+          if (ship.passive === 'hitInvuln' && ship.hp > 0 && ship.hitInvulnCooldown <= 0) {
+            ship.invuln = 2;
+            ship.hitInvulnCooldown = 16;
+          }
+          if (ship.hp <= 0) {
+            killShip(ship, -1);
+          }
+        }
         // Destroy asteroid too
         if (ast.sizeIdx < 3) {
           const spread = ast.r * 0.4;
@@ -2521,9 +3075,6 @@ function update(rawDt) {
           }
         }
         asteroids.splice(j, 1);
-        if (ship.hp <= 0) {
-          killShip(ship, -1); // killed by asteroid
-        }
         break;
       }
     }
@@ -2548,11 +3099,15 @@ function update(rawDt) {
         spawnExplosion(a.x, a.y, a.color, 15, 100);
         spawnExplosion(b.x, b.y, b.color, 15, 100);
         playExplosion();
-        // Kill both — attribute to each other
-        a.hp = 0;
-        b.hp = 0;
-        killShip(a, b.id);
-        killShip(b, a.id);
+        // Kill both — attribute to each other (drillbore/shield survive)
+        const aDrill = a.passive === 'drillbore';
+        const bDrill = b.passive === 'drillbore';
+        if (aDrill) { /* drillbore survives */ }
+        else if (a.shieldActive) { a.shieldActive = false; spawnExplosion(a.x, a.y, '#fff', 12, 80); }
+        else { a.hp = 0; killShip(a, bDrill ? b.id : b.id); }
+        if (bDrill) { /* drillbore survives */ }
+        else if (b.shieldActive) { b.shieldActive = false; spawnExplosion(b.x, b.y, '#fff', 12, 80); }
+        else { b.hp = 0; killShip(b, aDrill ? a.id : a.id); }
       }
     }
   }
@@ -2577,6 +3132,38 @@ function update(rawDt) {
     p.vx *= (1 - 3 * dt);
     p.vy *= (1 - 3 * dt);
     p.life -= dt;
+    // Incendiary trail damage check
+    if (p.incId && !incSpentBullets.has(p.incId)) {
+      for (const ship of ships) {
+        if (!ship.alive || ship.id === p.incOwner || ship.invuln > 0) continue;
+        if (Math.hypot(p.x - ship.x, p.y - ship.y) < ship.r + 3) {
+          const dmg = 0.5 * (ship.passive === 'titanium' ? 0.75 : 1);
+          if (ship.shieldActive) {
+            ship.shieldActive = false;
+            spawnExplosion(p.x, p.y, '#fff', 6, 40);
+          } else {
+            ship.hp -= dmg;
+            ship.lastAttacker = p.incOwner;
+            ship.lastAttackerTime = gameTime;
+            ship.hpBarTimer = 1.5;
+            spawnExplosion(p.x, p.y, '#f80', 4, 30);
+            const attacker = ships[p.incOwner];
+            if (attacker) {
+              if (attacker.passive === 'iceRounds') ship.iceSlow = 4;
+              if (attacker.passive === 'jamRounds') ship.jamSlow = 4;
+              if (attacker.passive === 'stunShock') ship.stunTimer = 3.5;
+              if (attacker.passive === 'override') { ship.overrideTimer = 1; ship.overrideTurnDir = Math.random() < 0.5 ? -1 : 1; }
+            }
+            if (ship.passive === 'hitInvuln' && ship.hp > 0 && ship.hitInvulnCooldown <= 0) {
+              ship.invuln = 2; ship.hitInvulnCooldown = 16;
+            }
+            if (ship.hp <= 0) killShip(ship, p.incOwner);
+          }
+          incSpentBullets.add(p.incId);
+          break;
+        }
+      }
+    }
     if (p.life <= 0) particles.splice(i, 1);
   }
 
@@ -2804,8 +3391,43 @@ function killShip(ship, killerId) {
   spawnExplosion(ship.x, ship.y, ship.color, 40, 200);
   playExplosion();
 
+  // If killed by asteroid but recently damaged by a pilot (within 5s), credit that pilot
+  if (killerId < 0 && ship.lastAttacker >= 0 && (gameTime - ship.lastAttackerTime) < 5) {
+    killerId = ship.lastAttacker;
+  }
+
   const killer = killerId >= 0 ? ships[killerId] : null;
-  if (killer && killer.alive) killer.kills++;
+  if (killer && killer.alive) {
+    killer.kills++;
+    // Scrap Repair passive: heal +1 HP on kill
+    if (killer.passive === 'scrapRepair') {
+      killer.hp = Math.min(killer.hp + 1, killer.maxHp);
+      killer.hpBarTimer = 1.5;
+      // Plus sign particle effect
+      for (let p = 0; p < 8; p++) {
+        const isHoriz = p < 4;
+        const t = (p % 4) / 3 - 0.5;
+        const px = isHoriz ? t * 20 : 0;
+        const py = isHoriz ? 0 : t * 20;
+        particles.push({
+          x: killer.x + px, y: killer.y + py - 15,
+          vx: rand(-10, 10), vy: rand(-30, -15),
+          life: 0.8, maxLife: 0.8,
+          color: '#0f0', size: 2.5,
+        });
+      }
+    }
+    // Detonator passive: 25 projectiles from kill site
+    if (killer.passive === 'detonator') {
+      for (let di = 0; di < 25; di++) {
+        const a = (di / 25) * Math.PI * 2;
+        const sp = 500;
+        bullets.push(makeBullet(killer, ship.x, ship.y, Math.cos(a) * sp, Math.sin(a) * sp,
+          { life: 1, damage: 2, type: 'basic', size: 2.5, isShrapnel: true, fireAng: a }));
+      }
+      spawnExplosion(ship.x, ship.y, killer.color, 30, 250);
+    }
+  }
   if (killerId < 0) asteroidKills++;
 
   const killerName = killer ? killer.name : 'ASTEROID';
@@ -3022,11 +3644,116 @@ function render() {
       ctx.beginPath();
       ctx.arc(b.x, b.y, b.size || 3, 0, Math.PI * 2);
       ctx.fill();
+    } else if (b.type === 'triple') {
+      // Short line for triple-guns
+      const bAng = Math.atan2(b.vy, b.vx);
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(b.x - Math.cos(bAng)*5, b.y - Math.sin(bAng)*5);
+      ctx.lineTo(b.x + Math.cos(bAng)*5, b.y + Math.sin(bAng)*5);
+      ctx.stroke();
+    } else if (b.type === 'doublehelix') {
+      // Cross-link trail lines between helix pair
+      if (b.trail && b.trail.length > 0 && b.helixSide === 1) {
+        for (const tp of b.trail) {
+          const alpha = tp.life / 0.3;
+          ctx.globalAlpha = alpha * 0.5;
+          ctx.strokeStyle = b.color;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(tp.x - Math.cos(tp.ang) * tp.len, tp.y - Math.sin(tp.ang) * tp.len);
+          ctx.lineTo(tp.x + Math.cos(tp.ang) * tp.len, tp.y + Math.sin(tp.ang) * tp.len);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.size || 3, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (b.type === 'crossshot') {
+      // Beam trail
+      if (b.trail && b.trail.length > 1) {
+        ctx.shadowBlur = 6;
+        for (let t = 1; t < b.trail.length; t++) {
+          const alpha = b.trail[t].life / 0.25;
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = b.color;
+          ctx.lineWidth = 2 * alpha;
+          ctx.beginPath();
+          ctx.moveTo(b.trail[t-1].x, b.trail[t-1].y);
+          ctx.lineTo(b.trail[t].x, b.trail[t].y);
+          ctx.stroke();
+        }
+        const last = b.trail[b.trail.length - 1];
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+      // Short laser line head
+      ctx.shadowBlur = 14;
+      const bAng = Math.atan2(b.vy, b.vx);
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(b.x - Math.cos(bAng)*6, b.y - Math.sin(bAng)*6);
+      ctx.lineTo(b.x + Math.cos(bAng)*6, b.y + Math.sin(bAng)*6);
+      ctx.stroke();
+    } else if (b.type === 'lightning') {
+      // Lightning: jagged beam trail
+      if (b.trail && b.trail.length > 1) {
+        ctx.shadowBlur = 10;
+        for (let t = 1; t < b.trail.length; t++) {
+          const alpha = b.trail[t].life / 0.4;
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = b.color;
+          ctx.lineWidth = 2.5 * alpha;
+          ctx.beginPath();
+          ctx.moveTo(b.trail[t-1].x, b.trail[t-1].y);
+          ctx.lineTo(b.trail[t].x, b.trail[t].y);
+          ctx.stroke();
+        }
+        const last = b.trail[b.trail.length - 1];
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      // Bright point at tip
+      ctx.shadowBlur = 18;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
     } else {
       ctx.beginPath();
       ctx.arc(b.x, b.y, b.size || 3, 0, Math.PI * 2);
       ctx.fill();
     }
+    ctx.shadowBlur = 0;
+  }
+
+  // Orphan lightning trails (persist after bullet death)
+  for (const ot of orphanTrails) {
+    if (ot.trail.length < 2) continue;
+    ctx.shadowColor = ot.color;
+    ctx.shadowBlur = 10;
+    for (let t = 1; t < ot.trail.length; t++) {
+      const alpha = ot.trail[t].life / 0.4;
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = ot.color;
+      ctx.lineWidth = 2.5 * alpha;
+      ctx.beginPath();
+      ctx.moveTo(ot.trail[t-1].x, ot.trail[t-1].y);
+      ctx.lineTo(ot.trail[t].x, ot.trail[t].y);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
   }
 
@@ -3372,7 +4099,22 @@ function startMatch() {
     ship.aimSpeed = settings.randomPersonalities ? rand(0.3, 0.8) : p.aimSpeed;
     ship.aimPhase = settings.randomPersonalities ? rand(0, Math.PI * 2) : p.aimPhase;
     ship.weapon = getWeapon(ship.id);
+    ship.passive = getPassive();
     ship.burstQueue = [];
+    if (ship.passive === 'tanky') {
+      ship.hp += 2;
+      ship.maxHp += 2;
+    }
+    ship.shieldActive = ship.passive === 'shield';
+    if (ship.passive === 'obliterator') {
+      ship.rockShooter = Math.min(1, ship.rockShooter + 0.3);
+    }
+    ship.stunTimer = 0;
+    ship.overrideTimer = 0;
+    ship.iceSlow = 0;
+    ship.jamSlow = 0;
+    ship.lastAttacker = -1;
+    ship.lastAttackerTime = 0;
   }
   pregame = false;
   document.getElementById('pregame-overlay').classList.add('hidden');
