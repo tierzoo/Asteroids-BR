@@ -238,6 +238,95 @@
     transition: all 0.3s;
   }
 
+  #countdown-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(0,0,0,0.6) 0%,
+      rgba(0,0,0,0.3) 50%,
+      rgba(0,0,0,0.1) 100%
+    );
+    pointer-events: none;
+  }
+  #countdown-overlay.hidden { display: none; }
+  #countdown-timer {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: 6px;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(255,255,255,0.4);
+    margin-bottom: 4px;
+  }
+  #countdown-loadout {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    letter-spacing: 6px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 20px;
+  }
+  #countdown-roster {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    max-width: 700px;
+    margin-bottom: 24px;
+  }
+  .cd-ship-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid;
+    background: rgba(0,0,0,0.6);
+    opacity: 0;
+    animation: cdCardIn 0.25s ease forwards;
+  }
+  .cd-ship-card .cd-ship-header {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .cd-ship-card .cd-ship-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+  .cd-ship-card .cd-ship-detail {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.3;
+    text-align: center;
+  }
+  @keyframes cdCardIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  #countdown-bets {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 8px;
+    color: rgba(255,255,255,0.6);
+    text-shadow: 0 0 20px rgba(255,255,255,0.2);
+    animation: betsPulse 1s ease-in-out infinite;
+  }
+  @keyframes betsPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
   #start-btn:hover {
     background: rgba(255,255,255,0.15);
     border-color: #fff;
@@ -649,6 +738,13 @@
   <div id="pregame-sub">PREPARE FOR COMBAT</div>
   <div id="pregame-roster"></div>
   <button id="start-btn">START MATCH</button>
+</div>
+
+<div id="countdown-overlay" class="hidden">
+  <div id="countdown-timer"></div>
+  <div id="countdown-loadout"></div>
+  <div id="countdown-roster"></div>
+  <div id="countdown-bets">PLACE YOUR BETS!</div>
 </div>
 
 <div id="winner-overlay">
@@ -1184,16 +1280,26 @@ function startManeuver(ship) {
       if (dist(ship, target) < pulseRadius) {
         target.stunTimer = 1.75;
         stunHit = true;
-        // Stun spark particles on affected ship
-        for (let sp = 0; sp < 6; sp++) {
+        // Stun arc sparks on affected ship
+        for (let sp = 0; sp < 4; sp++) {
           const a = rand(0, Math.PI * 2);
+          const arcLen = rand(10, 25);
+          const segs = randInt(2, 3);
+          const ap = [{x: 0, y: 0}];
+          for (let s = 1; s <= segs; s++) {
+            const t = s / segs;
+            ap.push({
+              x: Math.cos(a) * arcLen * t + rand(-5, 5),
+              y: Math.sin(a) * arcLen * t + rand(-5, 5)
+            });
+          }
           particles.push({
             x: target.x + rand(-target.r, target.r),
             y: target.y + rand(-target.r, target.r),
             vx: Math.cos(a) * rand(40, 80), vy: Math.sin(a) * rand(40, 80),
-            life: rand(0.2, 0.4), maxLife: 0.4,
-            color: '#ffff44', size: rand(1, 2),
-            isLine: true, lineAng: a, lineLen: rand(5, 10),
+            life: rand(0.15, 0.3), maxLife: 0.3,
+            color: '#ffff44', size: 1.5,
+            isArc: true, arcPoints: ap,
           });
         }
       }
@@ -2228,6 +2334,9 @@ let incSpentBullets = new Set(); // incendiary bullet IDs that already dealt dam
 let gameTime = 0;
 let gameOver = false;
 let pregame = true;
+let countdown = false;
+let countdownTimer = 0;
+const COUNTDOWN_DURATION = 5;
 let winner = null;
 let simSpeed = 1;
 let finaleMode = false;
@@ -3198,6 +3307,9 @@ function init() {
   buildScoreboard();
   buildPregameRoster();
   pregame = true;
+  countdown = false;
+  countdownTimer = 0;
+  document.getElementById('countdown-overlay').classList.add('hidden');
   document.getElementById('pregame-overlay').classList.remove('hidden');
   cameraX = CFG.WORLD_W / 2;
   cameraY = CFG.WORLD_H / 2;
@@ -3673,6 +3785,28 @@ function update(rawDt) {
     return;
   }
 
+  // During countdown, render ships but don't simulate gameplay
+  if (countdown) {
+    countdownTimer -= rawDt;
+    // Update countdown display
+    const secs = Math.ceil(Math.max(0, countdownTimer));
+    document.getElementById('countdown-timer').textContent = 'MATCH BEGINNING IN ' + secs + '!';
+    // Keep camera overview
+    targetCamX = CFG.WORLD_W / 2;
+    targetCamY = CFG.WORLD_H / 2;
+    const fullZoomX = W / (CFG.WORLD_W + 200);
+    const fullZoomY = H / (CFG.WORLD_H + 200);
+    targetZoom = Math.min(fullZoomX, fullZoomY);
+    const camLerpCd = 1 - Math.pow(1 - 0.05, rawDt * 60);
+    cameraX = lerp(cameraX, targetCamX, camLerpCd);
+    cameraY = lerp(cameraY, targetCamY, camLerpCd);
+    camZoom = lerp(camZoom, targetZoom, camLerpCd);
+    if (countdownTimer <= 0) {
+      endCountdown();
+    }
+    return;
+  }
+
   // During finale, keep updating visuals even after gameOver
   if (gameOver && !finaleMode) return;
 
@@ -3744,17 +3878,20 @@ function update(rawDt) {
         color: Math.random() < 0.5 ? '#ff6600' : '#ffaa00', size: rand(2, 4),
       });
     }
-    // Ice Rounds: large square particles emitted sideways from affected ship
+    // Ice Rounds: diamond and snowflake particles emitted from affected ship
     if (ship.iceSlow > 0 && Math.random() < 0.4) {
       const perp = ship.ang + Math.PI / 2;
       const side = Math.random() < 0.5 ? 1 : -1;
       const offset = rand(0, ship.r * 1.2);
+      const iceType = Math.random() < 0.5 ? 'diamond' : 'snowflake';
       particles.push({
         x: ship.x + Math.cos(perp) * side * offset, y: ship.y + Math.sin(perp) * side * offset,
-        vx: Math.cos(perp) * side * rand(40, 80),
-        vy: Math.sin(perp) * side * rand(40, 80),
-        life: 0.3, maxLife: 0.3,
-        color: '#55bbff', size: rand(4, 7),
+        vx: Math.cos(perp) * side * rand(30, 60) + rand(-10, 10),
+        vy: Math.sin(perp) * side * rand(30, 60) + rand(-10, 10) - 15,
+        life: 0.4, maxLife: 0.4,
+        color: '#55bbff', size: rand(3, 6),
+        isDiamond: iceType === 'diamond', isSnowflake: iceType === 'snowflake',
+        spinAng: rand(0, Math.PI * 2),
       });
     }
 
@@ -3773,15 +3910,26 @@ function update(rawDt) {
       });
     }
 
-    // Stun Shock: fragmenting line particles engulf affected ship
-    if (ship.stunTimer > 0 && Math.random() < 0.5) {
+    // Stun Shock: mini lightning arcs crackle on affected ship
+    if (ship.stunTimer > 0 && Math.random() < 0.4) {
       const a = rand(0, Math.PI * 2);
-      const d = rand(0, ship.r * 1.5);
+      const d = rand(0, ship.r * 1.2);
+      const arcLen = rand(8, 18);
+      const segs = randInt(2, 3);
+      const ap = [{x: 0, y: 0}];
+      for (let s = 1; s <= segs; s++) {
+        const t = s / segs;
+        ap.push({
+          x: Math.cos(a) * arcLen * t + rand(-4, 4),
+          y: Math.sin(a) * arcLen * t + rand(-4, 4)
+        });
+      }
       particles.push({
         x: ship.x + Math.cos(a) * d, y: ship.y + Math.sin(a) * d,
-        vx: rand(-30, 30), vy: rand(-30, 30),
-        life: 0.3, maxLife: 0.3,
-        color: '#ffff44', size: 1.5, isLine: true, lineAng: rand(0, Math.PI * 2), lineLen: rand(4, 10),
+        vx: rand(-20, 20), vy: rand(-20, 20),
+        life: 0.18, maxLife: 0.18,
+        color: '#ffff44', size: 1.5,
+        isArc: true, arcPoints: ap,
       });
     }
 
@@ -4443,22 +4591,55 @@ function update(rawDt) {
       if (bSpd > 10 && Math.random() < spawnChance) {
         const perpAng = Math.atan2(b.vy, b.vx) + Math.PI * 0.5;
         const side = Math.random() < 0.5 ? 1 : -1;
-        const isStun = b.ownerPassive === 'stunShock';
-        const spread = isStun ? rand(8, 22) : rand(4, (b.size || 2) + 10);
-        const px = b.x + Math.cos(perpAng) * spread * side;
-        const py = b.y + Math.sin(perpAng) * spread * side;
-        const driftSpd = isStun ? rand(15, 50) : rand(8, 30);
-        const isLine = isStun;
-        particles.push({
-          x: px, y: py,
-          vx: Math.cos(perpAng) * driftSpd * side + b.vx * 0.1,
-          vy: Math.sin(perpAng) * driftSpd * side + b.vy * 0.1,
-          life: isStun ? rand(0.35, 0.6) : rand(0.12, 0.25),
-          maxLife: isStun ? 0.6 : 0.25,
-          color: debuffColors[b.ownerPassive],
-          size: isStun ? rand(2, 4) : rand(1, 2.5),
-          isLine, lineAng: isLine ? perpAng + rand(-0.5, 0.5) : 0, lineLen: isLine ? rand(6, 14) : 0,
-        });
+        if (b.ownerPassive === 'stunShock') {
+          // Mini lightning arc: 3-4 jagged segments forking out perpendicular
+          const arcLen = rand(15, 35);
+          const segments = randInt(3, 4);
+          const arcPoints = [{x: 0, y: 0}];
+          for (let s = 1; s <= segments; s++) {
+            const t = s / segments;
+            // Main direction is perpendicular outward with jitter
+            arcPoints.push({
+              x: Math.cos(perpAng) * arcLen * t * side + rand(-6, 6),
+              y: Math.sin(perpAng) * arcLen * t * side + rand(-6, 6)
+            });
+          }
+          particles.push({
+            x: b.x, y: b.y, vx: b.vx * 0.1, vy: b.vy * 0.1,
+            life: rand(0.12, 0.22), maxLife: 0.22,
+            color: '#ffff44', size: 1.5,
+            isArc: true, arcPoints,
+          });
+        } else if (b.ownerPassive === 'iceRounds') {
+          // Ice crystals: diamonds and snowflakes
+          const spread = rand(6, 16);
+          const px = b.x + Math.cos(perpAng) * spread * side;
+          const py = b.y + Math.sin(perpAng) * spread * side;
+          const driftSpd = rand(15, 45);
+          const iceType = Math.random() < 0.6 ? 'diamond' : 'snowflake';
+          particles.push({
+            x: px, y: py,
+            vx: Math.cos(perpAng) * driftSpd * side + b.vx * 0.05,
+            vy: Math.sin(perpAng) * driftSpd * side + b.vy * 0.05,
+            life: rand(0.2, 0.4), maxLife: 0.4,
+            color: '#55bbff', size: rand(2, 4.5),
+            isDiamond: iceType === 'diamond', isSnowflake: iceType === 'snowflake',
+            spinAng: rand(0, Math.PI * 2),
+          });
+        } else {
+          const spread = rand(4, (b.size || 2) + 10);
+          const px = b.x + Math.cos(perpAng) * spread * side;
+          const py = b.y + Math.sin(perpAng) * spread * side;
+          const driftSpd = rand(8, 30);
+          particles.push({
+            x: px, y: py,
+            vx: Math.cos(perpAng) * driftSpd * side + b.vx * 0.1,
+            vy: Math.sin(perpAng) * driftSpd * side + b.vy * 0.1,
+            life: rand(0.12, 0.25), maxLife: 0.25,
+            color: debuffColors[b.ownerPassive],
+            size: rand(1, 2.5),
+          });
+        }
       }
     }
 
@@ -5668,7 +5849,10 @@ function render() {
   ctx.translate(-cameraX, -cameraY);
 
   // Scale glow inversely with zoom — 1x at close, ~2x when zoomed out
-  const glowScale = Math.min(8, 0.35 / camZoom);
+  const baseGlowScale = Math.min(8, 0.35 / camZoom);
+  // Countdown glow boost: 2× at start, decaying to 1× by end
+  const countdownGlowMult = countdown ? 1 + (countdownTimer / COUNTDOWN_DURATION) : 1;
+  const glowScale = baseGlowScale * countdownGlowMult;
 
   // Stars (parallax)
   drawStars();
@@ -5753,6 +5937,11 @@ function render() {
     if (clone.hit) {
       // Flash rapidly when hit
       ctx.globalAlpha = Math.sin(gameTime * 30) > 0 ? 0.8 : 0.15;
+    } else if (clone.orbitElapsed < 0.5) {
+      // Hologram flicker on spawn — rapid on/off
+      const t = clone.orbitElapsed;
+      const flicker = Math.sin(t * 60) * Math.sin(t * 23) * Math.sin(t * 47);
+      ctx.globalAlpha = flicker > 0 ? 0.8 : 0.05;
     } else {
       ctx.globalAlpha = 0.7;
     }
@@ -6106,14 +6295,13 @@ function render() {
     // ── PASSIVE VISUAL OVERLAYS ──
     ctx.save();
 
-    // Shield: thin ring around ship until damaged
+    // Shield: hex ring around ship until damaged
     if (ship.passive === 'shield' && ship.shieldActive) {
       ctx.save();
       ctx.translate(ship.x, ship.y);
       ctx.rotate(ship.ang);
-      const shieldR = ship.r + 6;
+      const shieldR = (ship.r + 6) * 1.2;
       const pulse = 0.35 + 0.15 * Math.sin(gameTime * 3);
-      // Outer hex ring
       ctx.strokeStyle = ship.color;
       ctx.globalAlpha = pulse;
       ctx.lineWidth = 1.5;
@@ -6125,25 +6313,6 @@ function render() {
       }
       ctx.closePath();
       ctx.stroke();
-      // Inner hex pattern — 6 smaller hexes at each vertex, shimmer offset
-      ctx.globalAlpha = pulse * 0.4;
-      ctx.lineWidth = 0.8;
-      for (let h = 0; h < 6; h++) {
-        const ha = (h / 6) * Math.PI * 2 - Math.PI / 6;
-        const hx = Math.cos(ha) * shieldR * 0.55;
-        const hy = Math.sin(ha) * shieldR * 0.55;
-        const miniR = shieldR * 0.3;
-        const shimmer = Math.sin(gameTime * 5 + h * 1.05);
-        ctx.globalAlpha = pulse * (0.15 + 0.2 * Math.max(0, shimmer));
-        ctx.beginPath();
-        for (let v = 0; v < 6; v++) {
-          const a = (v / 6) * Math.PI * 2 - Math.PI / 6;
-          const px = hx + Math.cos(a) * miniR, py = hy + Math.sin(a) * miniR;
-          if (v === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-        }
-        ctx.closePath();
-        ctx.stroke();
-      }
       ctx.globalAlpha = 1;
       ctx.restore();
     }
@@ -6195,7 +6364,20 @@ function render() {
     const alpha = p.life / p.maxLife;
     ctx.globalAlpha = alpha;
     ctx.fillStyle = p.color;
-    if (p.isLine) {
+    if (p.isArc && p.arcPoints) {
+      // Mini lightning arc — jagged connected segments
+      ctx.strokeStyle = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 6 * glowScale;
+      ctx.lineWidth = 1.5 * alpha;
+      ctx.beginPath();
+      ctx.moveTo(p.x + p.arcPoints[0].x, p.y + p.arcPoints[0].y);
+      for (let a = 1; a < p.arcPoints.length; a++) {
+        ctx.lineTo(p.x + p.arcPoints[a].x, p.y + p.arcPoints[a].y);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    } else if (p.isLine) {
       // Line particle for debuff effects
       ctx.strokeStyle = p.color;
       ctx.lineWidth = 1.5;
@@ -6203,6 +6385,58 @@ function render() {
       ctx.moveTo(p.x - Math.cos(p.lineAng) * p.lineLen * 0.5, p.y - Math.sin(p.lineAng) * p.lineLen * 0.5);
       ctx.lineTo(p.x + Math.cos(p.lineAng) * p.lineLen * 0.5, p.y + Math.sin(p.lineAng) * p.lineLen * 0.5);
       ctx.stroke();
+    } else if (p.isDiamond) {
+      // Diamond/rhombus crystal
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.spinAng || 0);
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 5 * glowScale;
+      ctx.strokeStyle = p.color;
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = alpha * 0.4;
+      const s = p.size;
+      ctx.beginPath();
+      ctx.moveTo(0, -s);
+      ctx.lineTo(s * 0.6, 0);
+      ctx.lineTo(0, s);
+      ctx.lineTo(-s * 0.6, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    } else if (p.isSnowflake) {
+      // Six-pointed snowflake cross
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.spinAng || 0);
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 5 * glowScale;
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 1;
+      const s = p.size;
+      for (let arm = 0; arm < 6; arm++) {
+        const a = (arm / 6) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(a) * s, Math.sin(a) * s);
+        ctx.stroke();
+        // Small barbs at 60% length
+        const bx = Math.cos(a) * s * 0.6, by = Math.sin(a) * s * 0.6;
+        const bLen = s * 0.3;
+        const b1 = a + 0.5, b2 = a - 0.5;
+        ctx.beginPath();
+        ctx.moveTo(bx, by);
+        ctx.lineTo(bx + Math.cos(b1) * bLen, by + Math.sin(b1) * bLen);
+        ctx.moveTo(bx, by);
+        ctx.lineTo(bx + Math.cos(b2) * bLen, by + Math.sin(b2) * bLen);
+        ctx.stroke();
+      }
+      ctx.shadowBlur = 0;
+      ctx.restore();
     } else if (p.isPlus) {
       // Plus sign particle (Bio-Hull)
       ctx.strokeStyle = p.color;
@@ -6608,8 +6842,68 @@ function startMatch() {
   }
   pregame = false;
   document.getElementById('pregame-overlay').classList.add('hidden');
-  showScoreboard = true;
   document.getElementById('settings-panel').classList.remove('open');
+
+  // Enter countdown phase (skip for match logger to keep data collection fast)
+  if (settings.matchLogger) {
+    showScoreboard = true;
+  } else {
+    countdown = true;
+    countdownTimer = COUNTDOWN_DURATION;
+    buildCountdownRoster();
+    document.getElementById('countdown-overlay').classList.remove('hidden');
+  }
+}
+
+function buildCountdownRoster() {
+  const el = document.getElementById('countdown-roster');
+  el.innerHTML = '';
+  // Determine loadout mode
+  let loadoutMode = 'UNIQUE';
+  if (settings.chaosMode) loadoutMode = 'RANDOM';
+  else if (settings.randomWeapons) loadoutMode = 'RANDOM';
+  else if (!settings.weapons) loadoutMode = 'STANDARD';
+  document.getElementById('countdown-loadout').textContent = 'LOADOUTS: ' + loadoutMode;
+  document.getElementById('countdown-timer').textContent = 'MATCH BEGINNING IN 5!';
+
+  for (let i = 0; i < ships.length; i++) {
+    const ship = ships[i];
+    const card = document.createElement('div');
+    card.className = 'cd-ship-card';
+    card.style.borderColor = ship.color + '55';
+    card.style.background = ship.color + '0d';
+    card.style.animationDelay = `${i * 0.04}s`;
+
+    // Header: icon + name
+    const header = document.createElement('div');
+    header.className = 'cd-ship-header';
+    header.appendChild(createShipIcon(ship.id, ship.color, 18));
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'cd-ship-name';
+    nameSpan.style.color = ship.color;
+    nameSpan.textContent = ship.name;
+    header.appendChild(nameSpan);
+    card.appendChild(header);
+
+    // Details
+    const weapName = ship.weapon ? ship.weapon.name : 'Basic';
+    const passName = PASSIVE_DEFS[ship.passive] ? PASSIVE_DEFS[ship.passive].name : 'None';
+    const manuName = MANEUVER_DEFS[ship.maneuver] ? MANEUVER_DEFS[ship.maneuver].name : 'None';
+
+    const detail = document.createElement('div');
+    detail.className = 'cd-ship-detail';
+    detail.innerHTML = `${weapName}<br>${passName}<br>${manuName}`;
+    card.appendChild(detail);
+
+    el.appendChild(card);
+  }
+}
+
+function endCountdown() {
+  countdown = false;
+  countdownTimer = 0;
+  document.getElementById('countdown-overlay').classList.add('hidden');
+  showScoreboard = true;
 }
 
 function showWinner() {
@@ -6742,7 +7036,7 @@ document.getElementById('restart-btn').addEventListener('click', () => {
 
 // ─── CAMERA MODE TOGGLE ──────────────────────────────────────
 document.addEventListener('keydown', (e) => {
-  if (e.code === 'Space' && !pregame) {
+  if (e.code === 'Space' && !pregame && !countdown) {
     e.preventDefault();
     if (cameraMode === 'manual') {
       cameraMode = 'overview';
