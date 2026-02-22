@@ -25,7 +25,7 @@
     cursor: crosshair;
   }
 
-  canvas {
+  #game {
     display: block;
     position: fixed;
     top: 0; left: 0;
@@ -109,10 +109,6 @@
     font-size: 9px;
     letter-spacing: 1px;
     color: rgba(255,255,255,0.2);
-  }
-
-  #camera-mode.dogfight #camera-mode-text {
-    color: rgba(255,120,60,0.7);
   }
 
   #camera-mode.manual #camera-mode-text {
@@ -225,6 +221,145 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
+
+  /* Mode selector buttons */
+  #mode-selector {
+    display: flex; gap: 8px; margin-bottom: 20px;
+  }
+  .mode-btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 4px;
+    padding: 10px 28px;
+    background: rgba(0,0,0,0.5);
+    border: 2px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.5);
+    cursor: pointer; transition: all 0.3s;
+  }
+  .mode-btn:hover { border-color: rgba(255,255,255,0.4); color: rgba(255,255,255,0.7); }
+  .mode-btn.active {
+    border-color: rgba(68,255,136,0.5);
+    color: rgba(68,255,136,0.9);
+    background: rgba(68,255,136,0.08);
+  }
+
+  /* Team builder area */
+  #team-builder { display: none; width: 90%; max-width: 900px; margin-bottom: 20px; }
+  #team-builder.active { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+  /* Ship picker grid */
+  #ship-picker {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 5px; width: 100%; max-width: 700px;
+  }
+  .picker-ship {
+    display: flex; align-items: center;
+    gap: 6px; padding: 5px 10px;
+    border-radius: 3px; cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; letter-spacing: 2px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(0,0,0,0.5);
+    opacity: 0.7; transition: all 0.2s;
+  }
+  .picker-ship:hover { opacity: 1; border-color: rgba(255,255,255,0.4); }
+  .picker-ship .ship-icon { width: 22px; height: 22px; flex-shrink: 0; }
+
+  .picker-label {
+    font-family: 'Orbitron', sans-serif; font-size: 11px;
+    letter-spacing: 4px; color: rgba(255,255,255,0.3);
+    margin-bottom: 2px;
+  }
+
+  /* Team columns */
+  #team-columns {
+    display: flex; gap: 8px; width: 100%;
+    justify-content: center; flex-wrap: wrap;
+  }
+  .team-col {
+    flex: 1; min-width: 140px; max-width: 220px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 4px; padding: 6px;
+    display: flex; flex-direction: column; gap: 0;
+    background: rgba(0,0,0,0.3);
+    height: 380px;
+  }
+  .team-col-header {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 3px; text-align: center;
+    cursor: pointer; padding: 4px 0;
+    flex-shrink: 0;
+  }
+  .team-col-header:hover { text-decoration: underline; }
+  .team-slots-area {
+    flex: 1; display: flex; flex-direction: column;
+    gap: 3px; overflow: hidden; padding: 2px 0;
+  }
+  .team-slot {
+    display: flex; align-items: center; gap: 5px;
+    padding: 3px 6px; border-radius: 3px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 1; min-height: 0;
+  }
+  .team-slot .ship-icon { width: 22px; height: 22px; flex-shrink: 0; }
+  .team-slot-name { font-family: 'Share Tech Mono', monospace; font-size: 10px; flex: 1; }
+  .team-slot-remove {
+    font-size: 11px; cursor: pointer; color: rgba(255,255,255,0.3);
+    padding: 0 4px; transition: color 0.2s;
+  }
+  .team-slot-remove:hover { color: #ff4444; }
+  .team-add-slot {
+    display: flex; align-items: center; justify-content: center;
+    padding: 4px; border-radius: 3px; cursor: pointer;
+    border: 1px dashed rgba(255,255,255,0.15);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; color: rgba(255,255,255,0.3);
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .team-add-slot:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.5); }
+  .team-add-slot.target { border-color: rgba(68,255,136,0.4); color: rgba(68,255,136,0.6); }
+  .team-col-remove {
+    text-align: center; font-size: 8px; color: rgba(255,255,255,0.2);
+    cursor: pointer; padding: 2px 0; flex-shrink: 0;
+  }
+  .team-col-remove:hover { color: #ff4444; }
+  /* Per-team loadout buttons */
+  .team-loadout-row { display: flex; gap: 3px; margin-bottom: 4px; flex-shrink: 0; }
+  .team-wpn-btn {
+    flex: 1; padding: 4px 3px; font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; text-align: center; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.15); border-radius: 3px;
+    background: rgba(0,0,0,0.3); color: rgba(255,255,255,0.5);
+    transition: all 0.2s; white-space: nowrap; overflow: hidden;
+  }
+  .team-wpn-btn:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.06); }
+  .team-wpn-btn.active { color: rgba(68,255,136,0.8); border-color: rgba(68,255,136,0.3); background: rgba(68,255,136,0.04); }
+  .team-wpn-dropdown {
+    position: fixed; z-index: 200; background: rgba(15,15,20,0.95);
+    border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;
+    padding: 4px 0; min-width: 130px; max-height: 280px; overflow-y: auto;
+  }
+  .team-wpn-item {
+    display: flex; align-items: center; gap: 6px; padding: 4px 10px;
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    color: rgba(255,255,255,0.7); cursor: pointer;
+  }
+  .team-wpn-item:hover { background: rgba(255,255,255,0.06); }
+  .team-wpn-item input[type="checkbox"] { margin: 0; accent-color: #44ff88; }
+  .add-team-col {
+    min-width: 60px; max-width: 80px;
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 4px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', sans-serif; font-size: 10px;
+    letter-spacing: 2px; color: rgba(255,255,255,0.3);
+    opacity: 0.5; transition: all 0.2s;
+    min-height: 380px;
+  }
+  .add-team-col:hover { opacity: 0.8; border-color: rgba(255,255,255,0.3); }
+
   #start-btn {
     font-family: 'Orbitron', sans-serif;
     font-size: 14px;
@@ -274,17 +409,17 @@
   #countdown-roster {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-    max-width: 700px;
-    margin-bottom: 24px;
+    gap: 9px;
+    max-width: 1250px;
+    margin-bottom: 36px;
   }
   .cd-ship-card {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    padding: 6px 8px;
-    border-radius: 4px;
+    gap: 3px;
+    padding: 9px 20px;
+    border-radius: 5px;
     border: 1px solid;
     background: rgba(0,0,0,0.6);
     opacity: 0;
@@ -293,18 +428,19 @@
   .cd-ship-card .cd-ship-header {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 10px;
   }
   .cd-ship-card .cd-ship-name {
     font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
+    font-size: 16px;
     font-weight: 700;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
+    padding-left: 0;
   }
   .cd-ship-card .cd-ship-detail {
     font-family: 'Share Tech Mono', monospace;
-    font-size: 8px;
-    letter-spacing: 1px;
+    font-size: 12px;
+    letter-spacing: 1.5px;
     color: rgba(255,255,255,0.45);
     line-height: 1.3;
     text-align: center;
@@ -341,19 +477,20 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(0,0,0,0.85);
-    backdrop-filter: blur(8px);
+    background: rgba(0,0,0,0);
+    backdrop-filter: blur(0px);
     overflow: hidden;
   }
 
   #winner-overlay.show {
     display: flex;
-    animation: fadeOverlay 1s ease;
+    animation: fadeOverlay 0.8s ease forwards;
     padding: 30px 0;
   }
 
   @keyframes fadeOverlay {
-    from { opacity: 0; } to { opacity: 1; }
+    from { background: rgba(0,0,0,0); backdrop-filter: blur(0px); }
+    to { background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); }
   }
 
   #winner-overlay h2 {
@@ -362,6 +499,9 @@
     letter-spacing: 10px;
     color: rgba(255,255,255,0.4);
     margin-bottom: 12px;
+    opacity: 0;
+    animation: rankSlide 0.4s ease forwards;
+    animation-delay: 0.1s;
   }
 
   #winner-name {
@@ -370,6 +510,9 @@
     font-weight: 900;
     text-shadow: 0 0 60px currentColor;
     margin-bottom: 10px;
+    opacity: 0;
+    animation: rankSlide 0.4s ease forwards;
+    animation-delay: 0.2s;
   }
 
   #rankings {
@@ -474,6 +617,8 @@
     cursor: pointer;
     pointer-events: all;
     transition: all 0.3s;
+    opacity: 0;
+    animation: rankSlide 0.4s ease forwards;
   }
 
   #restart-btn:hover {
@@ -511,6 +656,16 @@
     cursor: pointer;
     pointer-events: all;
     transition: all 0.2s;
+  }
+
+  #settings-btn.match-hidden {
+    opacity: 0;
+    background: transparent;
+    border-color: transparent;
+  }
+  #settings-btn.match-hidden:hover {
+    opacity: 0;
+    background: transparent;
   }
 
   #settings-btn:hover {
@@ -616,6 +771,331 @@
   .hp-btn:hover {
     border-color: rgba(255,255,255,0.4);
   }
+
+  /* ─── TOURNAMENT MODE ───────────────────────────────────── */
+  #tournament-overlay {
+    position: fixed; inset: 0; z-index: 105;
+    display: flex; flex-direction: row;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(0,0,0,0.7) 0%,
+      rgba(0,0,0,0.4) 50%,
+      rgba(0,0,0,0.15) 100%
+    );
+    transition: background 0.6s ease, opacity 0.5s ease;
+    opacity: 0;
+    pointer-events: none;
+  }
+  #tournament-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #tournament-overlay.bracket-transition {
+    background: rgba(0,0,0,0.94);
+  }
+  #tournament-overlay.champion-screen {
+    background: rgba(0,0,0,1);
+  }
+
+  #tourney-sidebar {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 200px; z-index: 2;
+    padding: 20px 16px;
+    border-right: 1px solid rgba(255,255,255,0.1);
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(6px);
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  #tourney-sidebar h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 3px; color: rgba(255,255,255,0.5);
+  }
+  .tourney-size-btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 3px; padding: 8px 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.4);
+    cursor: pointer; transition: all 0.2s; text-align: center;
+    border-radius: 3px;
+  }
+  .tourney-size-btn:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.6); }
+  .tourney-size-btn.active {
+    border-color: rgba(255,200,0,0.5); color: rgba(255,200,0,0.9);
+    background: rgba(255,200,0,0.08);
+  }
+  #tourney-back-btn {
+    font-family: 'Share Tech Mono', monospace; font-size: 11px;
+    padding: 8px 12px; background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 3px;
+    color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.2s;
+  }
+  #tourney-back-btn:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); }
+  #tourney-start-btn {
+    font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700;
+    letter-spacing: 4px; padding: 12px 16px;
+    background: rgba(68,255,136,0.08); border: 2px solid rgba(68,255,136,0.3);
+    color: rgba(68,255,136,0.7); cursor: pointer; transition: all 0.3s;
+    border-radius: 3px; text-align: center;
+  }
+  #tourney-start-btn:hover { background: rgba(68,255,136,0.15); border-color: rgba(68,255,136,0.6); color: #44ff88; }
+  #tourney-start-btn:disabled { opacity: 0.3; cursor: default; }
+  #tourney-status {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; color: rgba(255,255,255,0.3);
+    text-align: center; line-height: 1.5;
+  }
+
+  #tourney-bracket-area {
+    flex: 1; overflow: hidden; padding: 12px 20px;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center;
+  }
+  #tourney-bracket-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px; font-weight: 900;
+    letter-spacing: 8px; color: #fff;
+    text-shadow: 0 0 30px rgba(255,200,0,0.3);
+    margin-bottom: 4px; text-align: center; flex-shrink: 0;
+  }
+  #tourney-bracket-subtitle {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px; letter-spacing: 6px;
+    color: rgba(255,255,255,0.3); margin-bottom: 8px; text-align: center; flex-shrink: 0;
+  }
+  #bracket-container {
+    display: flex; align-items: center; gap: 0;
+    transform-origin: center center;
+    transition: transform 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
+    opacity: 1;
+  }
+  #bracket-container.fade-content {
+    opacity: 0;
+    transition: transform 1.2s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.3s ease;
+  }
+  #bracket-flash {
+    position: fixed; inset: 0; z-index: 99999;
+    background: #000; opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  #bracket-flash.active {
+    opacity: 1;
+  }
+  .bracket-round {
+    display: flex; flex-direction: column;
+    gap: 0; flex-shrink: 0;
+  }
+  .bracket-match {
+    display: flex; flex-direction: column;
+    margin: 0;
+  }
+  .bracket-slot {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 4px 8px; min-width: 130px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer; transition: all 0.2s, opacity 0.4s ease;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; letter-spacing: 1px;
+    color: rgba(255,255,255,0.4);
+  }
+  .bracket-slot.slot-top { border-radius: 3px 3px 0 0; border-bottom: none; }
+  .bracket-slot.slot-bot { border-radius: 0 0 3px 3px; }
+  .bracket-slot:hover { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.06); }
+  .bracket-slot.filled {
+    color: rgba(255,255,255,0.8);
+  }
+  .bracket-slot.winner {
+    opacity: 1;
+  }
+  .bracket-slot.loser {
+    opacity: 0.3;
+  }
+  .bracket-slot.current-match {
+    animation: currentMatchPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes currentMatchPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(68,255,136,0); }
+    50% { box-shadow: 0 0 12px 2px rgba(68,255,136,0.2); }
+  }
+  .slot-top-row {
+    display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
+  }
+  .bracket-slot .slot-name {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: inherit; letter-spacing: 1.5px; text-align: center;
+  }
+  .slot-ships-row {
+    display: flex; align-items: center; justify-content: center; gap: 2px;
+    min-height: 14px;
+  }
+  .slot-ships-row .ship-icon { flex-shrink: 0; }
+  .bracket-half { display: flex; align-items: center; }
+  .bracket-final-area {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 0 6px; flex-shrink: 0;
+  }
+  .bracket-final-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px; font-weight: 700; letter-spacing: 3px;
+    color: rgba(255,255,255,0.5); margin-bottom: 4px; text-align: center;
+  }
+
+  /* Tournament animation states */
+  #bracket-container.tourney-focus .bracket-slot {
+    opacity: 0.2;
+    transition: opacity 0.4s;
+  }
+  #bracket-container.tourney-focus .bracket-slot.winner,
+  #bracket-container.tourney-focus .bracket-slot.filled {
+    opacity: 0.25;
+  }
+  #bracket-container.tourney-focus .bracket-slot.current-match,
+  #bracket-container.tourney-focus .bracket-slot.current-match.filled {
+    opacity: 1;
+  }
+  .bracket-slot.flash-eliminate {
+    animation: erraticFlash 0.03s steps(1) infinite !important;
+  }
+  @keyframes erraticFlash {
+    0%  { opacity: 1; }
+    15% { opacity: 0.05; }
+    30% { opacity: 0.9; }
+    45% { opacity: 0.08; }
+    60% { opacity: 0.75; }
+    75% { opacity: 0.03; }
+    90% { opacity: 0.6; }
+  }
+  .bracket-slot.eliminated {
+    opacity: 0.1 !important;
+    transition: opacity 0.6s !important;
+  }
+  .bracket-slot.eliminated .slot-name { text-decoration: line-through; }
+  .bracket-slot.highlight-winner {
+    opacity: 1 !important;
+  }
+  @keyframes advanceGlow {
+    0% { opacity: 0; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.06); box-shadow: 0 0 20px rgba(255,255,255,0.3); }
+    100% { opacity: 1; transform: scale(1); box-shadow: none; }
+  }
+  .champion-glow {
+    animation: championPulse 2s ease-in-out infinite !important;
+  }
+  @keyframes championPulse {
+    0%, 100% { box-shadow: 0 0 15px 3px var(--glow-color, #fff), 0 0 30px 8px var(--glow-color, #fff); }
+    50% { box-shadow: 0 0 30px 8px var(--glow-color, #fff), 0 0 60px 20px var(--glow-color, #fff); }
+  }
+  /* Team builder modal for tournament */
+  #tourney-team-modal {
+    position: fixed; inset: 0; z-index: 110;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+  }
+  #tourney-team-modal.active { display: flex; }
+  #tourney-team-modal-inner {
+    background: rgba(10,10,20,0.95);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px; padding: 20px;
+    max-width: 750px; width: 90%;
+    max-height: 85vh; overflow-y: auto;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+  #tourney-team-modal-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px; font-weight: 700;
+    letter-spacing: 5px; color: #fff;
+  }
+  #tourney-modal-picker {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 5px; width: 100%; max-width: 600px;
+  }
+  #tourney-modal-slots {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    justify-content: center; width: 100%; max-width: 600px;
+    min-height: 36px; padding: 8px;
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 4px;
+  }
+  .tourney-modal-ship {
+    display: flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 3px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .tourney-modal-ship .ship-icon { width: 20px; height: 20px; }
+  .tourney-modal-ship span { font-size: 10px; letter-spacing: 1px; }
+  .tourney-modal-ship .tm-remove {
+    cursor: pointer; color: rgba(255,255,255,0.3);
+    padding: 0 3px; font-size: 11px;
+  }
+  .tourney-modal-ship .tm-remove:hover { color: #ff4444; }
+  #tourney-modal-name-row {
+    display: flex; align-items: center; gap: 8px; width: 100%; max-width: 600px;
+  }
+  #tourney-modal-name-row label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px; letter-spacing: 3px; color: rgba(255,255,255,0.4);
+  }
+  #tourney-modal-name-input {
+    flex: 1; padding: 6px 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15); border-radius: 3px;
+    color: #fff; font-family: 'Share Tech Mono', monospace;
+    font-size: 12px; letter-spacing: 2px; outline: none;
+  }
+  #tourney-modal-name-input:focus { border-color: rgba(255,255,255,0.3); }
+  #tourney-modal-btns {
+    display: flex; gap: 8px; margin-top: 4px;
+  }
+  #tourney-modal-btns button {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 3px; padding: 8px 20px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.6);
+    cursor: pointer; transition: all 0.2s; border-radius: 3px;
+  }
+  #tourney-modal-btns button:hover { border-color: rgba(255,255,255,0.4); color: #fff; }
+  #tourney-modal-btns .tm-save {
+    border-color: rgba(68,255,136,0.3); color: rgba(68,255,136,0.7);
+    background: rgba(68,255,136,0.06);
+  }
+  #tourney-modal-btns .tm-save:hover { border-color: rgba(68,255,136,0.6); color: #44ff88; }
+  /* Loadout row in tournament modal */
+  #tourney-modal-loadouts {
+    display: flex; gap: 6px; width: 100%; max-width: 600px; justify-content: center;
+  }
+  #tourney-modal-loadouts .team-wpn-btn {
+    padding: 5px 12px; font-size: 10px;
+  }
+  /* Tournament progress banner */
+  #tourney-progress-banner {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 102; display: none;
+    text-align: center; padding: 10px 16px 12px;
+    background: rgba(0,0,0,0.85);
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px; font-weight: 700;
+    letter-spacing: 4px; color: rgba(255,255,255,0.5);
+    pointer-events: none;
+  }
+  #tourney-progress-banner.active { display: block; }
+  .banner-round { font-size: 13px; letter-spacing: 5px; color: rgba(255,255,255,0.35); margin-bottom: 4px; }
+  .banner-teams { display: flex; align-items: center; justify-content: center; gap: 16px; }
+  .banner-team { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .banner-team-name { font-size: 22px; font-weight: 900; letter-spacing: 4px; }
+  .banner-team-ships { display: flex; gap: 3px; align-items: center; justify-content: center; }
+  .banner-team-ships .ship-icon { transition: opacity 0.4s ease; }
+  .banner-team-ships .ship-icon.eliminated { opacity: 0.2; }
+  .banner-vs { font-size: 16px; font-weight: 900; letter-spacing: 3px; color: rgba(255,255,255,0.3); padding: 0 8px; }
 </style>
 </head>
 <body>
@@ -630,8 +1110,12 @@
     <div class="setting-toggle" data-setting="randomPersonalities" onclick="toggleSetting(this)"></div>
   </div>
   <div class="setting-row">
+    <span class="setting-label">Unique Ships</span>
+    <div class="setting-toggle" data-setting="uniqueShips" onclick="toggleSetting(this)"></div>
+  </div>
+  <div class="setting-row">
     <span class="setting-label">Unique Weapons</span>
-    <div class="setting-toggle on" data-setting="weapons" onclick="toggleSetting(this)"></div>
+    <div class="setting-toggle" data-setting="weapons" onclick="toggleSetting(this)"></div>
   </div>
   <div class="setting-row">
     <span class="setting-label">Random Weapons</span>
@@ -639,11 +1123,11 @@
   </div>
   <div class="setting-row">
     <span class="setting-label">Unique Passives</span>
-    <div class="setting-toggle on" data-setting="passives" onclick="toggleSetting(this)"></div>
+    <div class="setting-toggle" data-setting="passives" onclick="toggleSetting(this)"></div>
   </div>
   <div class="setting-row">
     <span class="setting-label">Maneuvers</span>
-    <div class="setting-toggle on" data-setting="maneuvers" onclick="toggleSetting(this)"></div>
+    <div class="setting-toggle" data-setting="maneuvers" onclick="toggleSetting(this)"></div>
   </div>
   <h3 style="margin-top:12px">SHIP HP</h3>
   <div class="setting-row">
@@ -692,15 +1176,15 @@
   <h3 style="margin-top:12px">SCORECARD</h3>
   <div class="setting-row">
     <span class="setting-label">Show Weapons</span>
-    <div class="setting-toggle on" data-setting="showWeaponTag" onclick="toggleSetting(this)"></div>
+    <div class="setting-toggle" data-setting="showWeaponTag" onclick="toggleSetting(this)"></div>
   </div>
   <div class="setting-row">
     <span class="setting-label">Show Passives</span>
-    <div class="setting-toggle on" data-setting="showPassiveTag" onclick="toggleSetting(this)"></div>
+    <div class="setting-toggle" data-setting="showPassiveTag" onclick="toggleSetting(this)"></div>
   </div>
   <div class="setting-row">
     <span class="setting-label">Show Maneuvers</span>
-    <div class="setting-toggle on" data-setting="showManeuverTag" onclick="toggleSetting(this)"></div>
+    <div class="setting-toggle" data-setting="showManeuverTag" onclick="toggleSetting(this)"></div>
   </div>
   <h3 style="margin-top:12px">SIM SPEED</h3>
   <div class="setting-row">
@@ -736,9 +1220,67 @@
 <div id="pregame-overlay">
   <div id="pregame-title">BLAST BELT ROYALE</div>
   <div id="pregame-sub">PREPARE FOR COMBAT</div>
+  <div id="mode-selector">
+    <button class="mode-btn active" data-mode="ffa" onclick="setMatchModeUI('ffa')">FREE FOR ALL</button>
+    <button class="mode-btn" data-mode="teams" onclick="setMatchModeUI('teams')">TEAM BATTLE</button>
+    <button class="mode-btn" data-mode="tournament" onclick="setMatchModeUI('tournament')">TOURNAMENT</button>
+  </div>
   <div id="pregame-roster"></div>
+  <div id="team-builder">
+    <div class="picker-label">TAP TO ADD FIGHTERS</div>
+    <div id="ship-picker"></div>
+    <div id="team-columns"></div>
+  </div>
   <button id="start-btn">START MATCH</button>
 </div>
+
+<!-- Tournament Bracket Overlay -->
+<div id="tournament-overlay">
+  <div id="tourney-sidebar">
+    <h3>TOURNAMENT</h3>
+    <div id="tourney-size-btns">
+      <div class="tourney-size-btn" data-size="4" onclick="setTourneySize(4)">4 TEAMS</div>
+      <div class="tourney-size-btn active" data-size="8" onclick="setTourneySize(8)">8 TEAMS</div>
+      <div class="tourney-size-btn" data-size="16" onclick="setTourneySize(16)">16 TEAMS</div>
+      <div class="tourney-size-btn" data-size="32" onclick="setTourneySize(32)">32 TEAMS</div>
+      <div class="tourney-size-btn" data-size="64" onclick="setTourneySize(64)">64 TEAMS</div>
+    </div>
+    <div id="tourney-status"></div>
+    <button id="tourney-start-btn" disabled onclick="startTournament()">BEGIN</button>
+    <button id="tourney-random-btn" onclick="randomFillTournament()" style="background:#335; color:#8cf; border:1px solid #8cf44; font-family:Orbitron,sans-serif; font-size:11px; padding:8px 12px; cursor:pointer; letter-spacing:2px;">RANDOM FILL</button>
+    <div style="flex:1;"></div>
+    <button id="tourney-back-btn" onclick="exitTournament()">← BACK</button>
+  </div>
+  <div id="tourney-bracket-area">
+    <div id="tourney-bracket-title">TOURNAMENT</div>
+    <div id="tourney-bracket-subtitle">SINGLE ELIMINATION</div>
+    <div id="bracket-container"></div>
+  </div>
+</div>
+
+<div id="bracket-flash"></div>
+
+<!-- Tournament team builder modal -->
+<div id="tourney-team-modal">
+  <div id="tourney-team-modal-inner">
+    <div id="tourney-team-modal-title">EDIT TEAM</div>
+    <div id="tourney-modal-name-row">
+      <label>NAME</label>
+      <input id="tourney-modal-name-input" type="text" maxlength="16" placeholder="TEAM NAME" />
+    </div>
+    <div id="tourney-modal-loadouts"></div>
+    <div class="picker-label" style="margin-top:4px;">TAP TO ADD FIGHTERS</div>
+    <div id="tourney-modal-picker"></div>
+    <div id="tourney-modal-slots"></div>
+    <div id="tourney-modal-btns">
+      <button onclick="closeTourneyTeamModal()">CANCEL</button>
+      <button class="tm-save" onclick="saveTourneyTeam()">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tournament progress banner (shown during matches) -->
+<div id="tourney-progress-banner"></div>
 
 <div id="countdown-overlay" class="hidden">
   <div id="countdown-timer"></div>
@@ -786,6 +1328,15 @@ const PILOT_NAMES = [
   'PURPLE', 'WHITE', 'YELLOW', 'MAGENTA',
   'SKY', 'GOLD', 'SILVER', 'VIOLET'
 ];
+
+// Ship design defs keyed by index string for dropdown compatibility
+const SHIP_DESIGN_DEFS = {};
+const SHIP_DESIGN_KEYS = [];
+for (let i = 0; i < PILOT_NAMES.length; i++) {
+  const key = String(i);
+  SHIP_DESIGN_DEFS[key] = { name: PILOT_NAMES[i] };
+  SHIP_DESIGN_KEYS.push(key);
+}
 
 const PILOT_COLORS = [
   '#ff4444', '#44ff88', '#4488ff', '#ffaa22',
@@ -861,7 +1412,13 @@ const SHIP_WEAPONS = ['alternating','chaotic','grenade','flamethrower','gatling'
 
 const WEAPON_KEYS = Object.keys(WEAPON_DEFS);
 
-function getWeapon(shipIdx) {
+function getWeapon(shipIdx, teamNum) {
+  // Per-team weapon pool
+  if (teamNum > 0 && teamWeapons[teamNum - 1] && teamWeapons[teamNum - 1].length > 0) {
+    const pool = teamWeapons[teamNum - 1];
+    const key = pool[randInt(0, pool.length - 1)];
+    return {...WEAPON_DEFS[key]};
+  }
   if (!settings.weapons && !settings.randomWeapons) return {...WEAPON_DEFS.basic};
   if (settings.randomWeapons) {
     const key = WEAPON_KEYS[randInt(0, WEAPON_KEYS.length - 1)];
@@ -875,7 +1432,7 @@ const PASSIVE_DEFS = {
   none:        { name: 'None',         desc: '' },
   scrapRepair: { name: 'Scrap Armor', desc: '+1.5 HP on kill (can overheal)' },
   bioHull:     { name: 'Bio-Hull',     desc: '+1 HP, regen 0.1/2s, -10% accel' },
-  nitro:       { name: 'Nitro',        desc: '+20% accel, +30% top speed' },
+  nitro:       { name: 'Nitro',        desc: '+30% accel, +40% top speed' },
   gyro:        { name: 'Gyro',         desc: '+30% turn speed' },
   shield:      { name: 'Shield',       desc: 'Ignore first hit' },
   piercing:    { name: 'Piercing',     desc: 'Shots pierce targets' },
@@ -885,7 +1442,7 @@ const PASSIVE_DEFS = {
   titanium:    { name: 'Titanium',     desc: '-25% incoming damage' },
   stealth:     { name: 'Stealth',      desc: 'Perceived as 1.5x distance' },
   sparkDrive:  { name: 'Spark Drive',  desc: '+20% projectile speed' },
-  drillbore:   { name: 'Drillbore',    desc: 'Survives collisions' },
+  drillbore:   { name: 'Drillbore',    desc: 'Survives collisions (5% chip dmg)' },
   iceRounds:   { name: 'Ice Rounds',   desc: 'Slows + 0.25 HP DoT' },
   jamRounds:   { name: 'Jam Rounds',   desc: 'Jams hit targets\' fire rate' },
   incendiary:  { name: 'Incendiary',   desc: '50% damage as burn DoT, trail dmg' },
@@ -910,7 +1467,12 @@ const SHIP_PASSIVES = ['nitro','bouncyShot','stealth','incendiary','sparkDrive',
 // Passives that are useless in one-hit-kill (no unique weapons) matches
 const ONESHOT_USELESS_PASSIVES = ['hitInvuln'];
 
-function getPassive(shipIdx) {
+function getPassive(shipIdx, teamNum) {
+  // Per-team passive pool
+  if (teamNum > 0 && teamPassives[teamNum - 1] && teamPassives[teamNum - 1].length > 0) {
+    const pool = teamPassives[teamNum - 1];
+    return pool[randInt(0, pool.length - 1)];
+  }
   const pool = (!settings.weapons)
     ? PASSIVE_KEYS.filter(k => !ONESHOT_USELESS_PASSIVES.includes(k))
     : PASSIVE_KEYS;
@@ -1024,7 +1586,12 @@ const MANEUVER_KEYS = Object.keys(MANEUVER_DEFS);
 // PURPLE=dumpDebris, WHITE=reflectorShields, YELLOW=shockPulse, MAGENTA=turretMode
 const SHIP_MANEUVERS = ['rapidFire','reverse','mineField','smokescreen','doubleTeam','barrelRoll','repulsor','hyperSpeed','dumpDebris','reflectorShields','shockPulse','turretMode','spinOut','repulsor','panic','quickTurn'];
 
-function getManeuver(shipIdx) {
+function getManeuver(shipIdx, teamNum) {
+  // Per-team maneuver pool
+  if (teamNum > 0 && teamManeuvers[teamNum - 1] && teamManeuvers[teamNum - 1].length > 0) {
+    const pool = teamManeuvers[teamNum - 1];
+    return pool[randInt(0, pool.length - 1)];
+  }
   if (!settings.maneuvers) return 'none';
   // Chaos mode always randomizes
   if (settings.chaosMode) {
@@ -1073,7 +1640,7 @@ function checkManeuverTrigger(ship) {
   // Minimum speed requirement (e.g. Dump Debris)
   if (def.minSpeedPct) {
     const spd = Math.sqrt(ship.vx * ship.vx + ship.vy * ship.vy);
-    const maxSpd = CFG.SHIP_MAX_SPEED * (ship.passive === 'nitro' ? 1.3 : 1);
+    const maxSpd = CFG.SHIP_MAX_SPEED * (ship.passive === 'nitro' ? 1.4 : 1);
     if (spd < maxSpd * def.minSpeedPct) return false;
   }
 
@@ -1188,7 +1755,7 @@ function startManeuver(ship) {
     }
     shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: 80, life: 0.4, color: '#888888' });
     ship._smokestealthTimer = 5.0;
-    smokeDecoys.push({ x: ship.x, y: ship.y, ownerId: ship.id, life: 2.0 });
+    smokeDecoys.push({ x: ship.x, y: ship.y, ownerId: ship.id, ownerTeam: ship.team || 0, life: 2.0 });
   }
 
   if (ship.maneuver === 'doubleTeam') {
@@ -1199,7 +1766,8 @@ function startManeuver(ship) {
       const orbitStart = (ci / 4) * Math.PI * 2; // 0, π/2, π, 3π/2
       shipClones.push({
         ownerId: ship.id,
-        shipId: ship.id,
+        shipId: ship.shipType,
+        _designForced: ship._designForced,
         x: ship.x, y: ship.y,
         ang: ship.ang,
         r: ship.r,
@@ -1270,15 +1838,17 @@ function startManeuver(ship) {
   if (ship.maneuver === 'shockPulse') {
     // Massive stun pulse — 2x repulsor radius
     const pulseRadius = 700;
-    shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: pulseRadius, life: 0.6, maxLife: 0.6, color: '#ffff44' });
-    spawnExplosion(ship.x, ship.y, '#ffff44', 20, 120);
+    shockwaves.push({ x: ship.x, y: ship.y, r: 0, maxR: pulseRadius, life: 0.6, maxLife: 0.6, color: ship.color });
+    spawnExplosion(ship.x, ship.y, ship.color, 20, 120);
     playShootRise();
     // Stun all enemy ships in range
     let stunHit = false;
     for (const target of ships) {
       if (!target.alive || target.id === ship.id || target.invuln > 0) continue;
+      if (ship.team > 0 && target.team === ship.team) continue;
       if (dist(ship, target) < pulseRadius) {
         target.stunTimer = 1.75;
+        target.stunColor = ship.color;
         stunHit = true;
         // Stun arc sparks on affected ship
         for (let sp = 0; sp < 4; sp++) {
@@ -1298,7 +1868,7 @@ function startManeuver(ship) {
             y: target.y + rand(-target.r, target.r),
             vx: Math.cos(a) * rand(40, 80), vy: Math.sin(a) * rand(40, 80),
             life: rand(0.15, 0.3), maxLife: 0.3,
-            color: '#ffff44', size: 1.5,
+            color: ship.color, size: 1.5,
             isArc: true, arcPoints: ap,
           });
         }
@@ -1410,7 +1980,7 @@ function updateManeuver(ship, dt) {
       }
 
       // Asteroid evasion while invisible — steer away from imminent collisions
-      if (ship.passive !== 'drillbore') {
+      if (ship.passive !== 'drillbore' || ship.hp <= 0.5) {
         let evadeX = 0, evadeY = 0, evadeN = 0;
         for (const ast of asteroids) {
           const d = dist(ship, ast);
@@ -1646,7 +2216,7 @@ function updateManeuver(ship, dt) {
         particles.push({
           x: fx + rand(-4, 4), y: fy + rand(-4, 4),
           vx: Math.cos(ship.ang) * rand(40, 80), vy: Math.sin(ship.ang) * rand(40, 80),
-          life: 0.25, maxLife: 0.25, color: ship.color, size: rand(1, 3),
+          life: 0.375, maxLife: 0.375, color: ship.color, size: rand(1, 3),
         });
       }
     }
@@ -1681,6 +2251,7 @@ function updateManeuver(ship, dt) {
         x: ship.x + Math.cos(backAng) * ship.r * 1.5,
         y: ship.y + Math.sin(backAng) * ship.r * 1.5,
         ownerId: ship.id,
+        ownerTeam: ship.team || 0,
         color: ship.color,
         life: 22.5,
         r: 5,
@@ -1780,6 +2351,7 @@ function makeBullet(ship, x, y, vx, vy, opts) {
     concussiveTimer: o.concussiveTimer ?? 0,
     incId: ship.passive === 'incendiary' ? ++incBulletCounter : 0,
     ownerPassive: ship.passive,
+    ownerTeam: ship.team || 0,
   };
 }
 
@@ -2105,7 +2677,7 @@ function detonateMine(mine) {
     const a = (i / 16) * Math.PI * 2;
     bullets.push({
       x: mine.x, y: mine.y, vx: Math.cos(a) * 500, vy: Math.sin(a) * 500,
-      life: 0.4, owner: mine.ownerId, color: mine.color, damage: 2, type: 'grenade',
+      life: 0.4, owner: mine.ownerId, ownerTeam: mine.ownerTeam || 0, color: mine.color, damage: 2, type: 'grenade',
       size: 2, isShrapnel: true, contactDetonate: false, detonateTime: null,
       armed: true, armTime: 0, fireAng: a, spawnTime: gameTime,
       curveRate: 0, sineAmp: 0, sineFreq: 0,
@@ -2138,18 +2710,19 @@ function detonateMine(mine) {
 // Settings state — false = random, true = predetermined
 const settings = {
   randomPersonalities: false,
-  weapons: true,
+  uniqueShips: false,
+  weapons: false,
   randomWeapons: false,
-  passives: true,
-  maneuvers: true,
+  passives: false,
+  maneuvers: false,
   shipHP: 3,
   numShips: 16,
   autoRestart: false,
   chaosMode: false,
   matchLogger: false,
-  showWeaponTag: true,
-  showPassiveTag: true,
-  showManeuverTag: true,
+  showWeaponTag: false,
+  showPassiveTag: false,
+  showManeuverTag: false,
 };
 
 function toggleSetting(el) {
@@ -2176,6 +2749,12 @@ function toggleSetting(el) {
     document.querySelectorAll('#hp-selector .hp-btn').forEach(b => {
       b.classList.toggle('active', parseInt(b.dataset.hp) === 3);
     });
+  }
+  // Re-render team builder when ship appearance changes
+  if (key === 'uniqueShips') {
+    if (document.getElementById('team-builder').classList.contains('active')) {
+      renderTeamBuilder();
+    }
   }
 }
 
@@ -2205,7 +2784,8 @@ try { matchLog = JSON.parse(localStorage.getItem('bbr_matchLog') || '[]'); } cat
 
 function updateLogCount() {
   const el = document.getElementById('log-count');
-  if (el) el.textContent = matchLog.length + ' match' + (matchLog.length !== 1 ? 'es' : '') + ' logged';
+  const numMatches = matchLog.length > 0 ? matchLog[matchLog.length - 1].match : 0;
+  if (el) el.textContent = numMatches + ' match' + (numMatches !== 1 ? 'es' : '') + ' logged';
 }
 updateLogCount();
 
@@ -2335,8 +2915,26 @@ let gameTime = 0;
 let gameOver = false;
 let pregame = true;
 let countdown = false;
+// ─── TEAM BATTLE STATE ──────────────────────────────────────
+const MAX_TEAMS = 6;
+const TEAM_COLORS = ['#ff5050','#5096ff','#50ff50','#ffcc00','#ff50ff','#50ffff'];
+let matchMode = 'ffa'; // 'ffa' or 'teams'
+let teamAssignments = []; // array of arrays of ship indices
+let teamNames = [];
+let teamWeapons = []; // per-team weapon key selections (empty = use global)
+let teamPassives = []; // per-team passive key selections
+let teamManeuvers = []; // per-team maneuver key selections
+let teamShipDesigns = []; // per-team ship design index selections
+let _origTeamSizes = [];
+let _teamCoreColors = [];
+let teamPalettes = {};
 let countdownTimer = 0;
 const COUNTDOWN_DURATION = 5;
+let flyInPhase = false;
+let flyInElapsed = 0;
+const FLY_IN_DURATION = 1.2;
+const FLY_IN_STAGGER = 1.0;
+let flyInTeamLabels = [];
 let winner = null;
 let simSpeed = 1;
 let finaleMode = false;
@@ -2353,9 +2951,7 @@ let targetCamX = cameraX;
 let targetCamY = cameraY;
 let camZoom = 0.15;
 let targetZoom = 0.15;
-let cameraMode = 'overview'; // 'overview', 'dogfight', or 'manual'
-let dogfightPair = null; // [shipA, shipB]
-let dogfightSwitchCooldown = 0; // prevent rapid switching between pairs
+let cameraMode = 'overview'; // 'overview' or 'manual'
 let manualShips = []; // ship ids tracked in manual mode
 let selectBoxStart = null; // {x, y} screen coords
 let selectBoxEnd = null; // {x, y} screen coords
@@ -2733,6 +3329,13 @@ function randInt(a, b) { return Math.floor(rand(a, b + 1)); }
 function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 function angle(a, b) { return Math.atan2(b.y - a.y, b.x - a.x); }
 function wrap(v, max) { return ((v % max) + max) % max; }
+
+// Friendly fire damage multiplier: 0 for first 5s, ramps 0→1 over 5-12s, full after 12s
+function friendlyFireMult() {
+  if (gameTime < 5) return 0;
+  if (gameTime >= 12) return 1;
+  return (gameTime - 5) / 7; // linear ramp over 7 seconds
+}
 function lerp(a, b, t) { return a + (b - a) * t; }
 // Reflect bullet velocity off a surface normal (nx, ny must be unit vector)
 function bounceBullet(b, nx, ny, noFx) {
@@ -2792,14 +3395,75 @@ const SHIP_SHAPES = [
   [[.35,-.3],[.3,-.5],[-.25,-.95],[-.5,-.85],[-.1,-.3],[-.3,-.2],[-1,-.35],[-.8,-.1],[-.1,0],[-.1,0],[-.8,.1],[-1,.35],[-.3,.2],[-.1,.3],[-.5,.85],[-.25,.95],[.3,.5],[.35,.3],[.95,.2],[1.05,0],[.95,-.2]],
 ];
 
+const DEFAULT_SHIP_SHAPE = 9; // White's chevron
+function getShipVerts(shipId, forceUnique) {
+  if (forceUnique || settings.uniqueShips) return SHIP_SHAPES[shipId] || SHIP_SHAPES[DEFAULT_SHIP_SHAPE];
+  return SHIP_SHAPES[DEFAULT_SHIP_SHAPE];
+}
+
+// Create an SVG ship icon that stays crisp at any zoom
+function createShipIconSVG(shipId, color, size, forceUnique) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('width', size);
+  svg.setAttribute('height', size);
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  svg.style.flexShrink = '0';
+  svg.style.display = 'block';
+  const verts = getShipVerts(shipId, forceUnique);
+  const r = size * 0.38;
+  const cx = size / 2, cy = size / 2;
+  const points = verts.map(v => `${cx + v[0] * r},${cy + v[1] * r}`).join(' ');
+
+  // Glow filter
+  const defs = document.createElementNS(ns, 'defs');
+  const filterId = 'glow-' + shipId + '-' + Math.random().toString(36).slice(2, 6);
+  const filter = document.createElementNS(ns, 'filter');
+  filter.setAttribute('id', filterId);
+  filter.setAttribute('x', '-50%'); filter.setAttribute('y', '-50%');
+  filter.setAttribute('width', '200%'); filter.setAttribute('height', '200%');
+  const blur = document.createElementNS(ns, 'feGaussianBlur');
+  blur.setAttribute('stdDeviation', (size * 0.08).toString());
+  blur.setAttribute('result', 'glow');
+  filter.appendChild(blur);
+  const merge = document.createElementNS(ns, 'feMerge');
+  const mn1 = document.createElementNS(ns, 'feMergeNode');
+  mn1.setAttribute('in', 'glow');
+  const mn2 = document.createElementNS(ns, 'feMergeNode');
+  mn2.setAttribute('in', 'SourceGraphic');
+  merge.appendChild(mn1); merge.appendChild(mn2);
+  filter.appendChild(merge);
+  defs.appendChild(filter);
+  svg.appendChild(defs);
+
+  // Fill polygon
+  const fill = document.createElementNS(ns, 'polygon');
+  fill.setAttribute('points', points);
+  fill.setAttribute('fill', color + '33');
+  fill.setAttribute('stroke', 'none');
+  svg.appendChild(fill);
+
+  // Stroke polygon with glow
+  const stroke = document.createElementNS(ns, 'polygon');
+  stroke.setAttribute('points', points);
+  stroke.setAttribute('fill', 'none');
+  stroke.setAttribute('stroke', color);
+  stroke.setAttribute('stroke-width', Math.max(1, size * 0.08).toString());
+  stroke.setAttribute('stroke-linejoin', 'round');
+  stroke.setAttribute('filter', `url(#${filterId})`);
+  svg.appendChild(stroke);
+
+  return svg;
+}
+
 // Create a small canvas with a ship sprite for UI elements
-function createShipIcon(shipId, color, size) {
+function createShipIcon(shipId, color, size, forceUnique) {
   const c = document.createElement('canvas');
   c.width = size;
   c.height = size;
   c.className = 'ship-icon';
   const ctx = c.getContext('2d');
-  const verts = SHIP_SHAPES[shipId] || SHIP_SHAPES[3];
+  const verts = getShipVerts(shipId, forceUnique);
   const r = size * 0.38;
   ctx.save();
   ctx.translate(size / 2, size / 2);
@@ -2820,7 +3484,7 @@ function createShipIcon(shipId, color, size) {
   return c;
 }
 
-function drawShipShape(ctx, x, y, ang, r, color, hp, maxHp, invuln, shipId, hpBarTimer) {
+function drawShipShape(ctx, x, y, ang, r, color, hp, maxHp, invuln, shipId, hpBarTimer, forceUnique) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(ang);
@@ -2833,7 +3497,7 @@ function drawShipShape(ctx, x, y, ang, r, color, hp, maxHp, invuln, shipId, hpBa
   ctx.shadowColor = color;
   ctx.shadowBlur = 20;
 
-  const verts = (shipId != null && SHIP_SHAPES[shipId]) ? SHIP_SHAPES[shipId] : SHIP_SHAPES[3]; // fallback to chevron
+  const verts = getShipVerts(shipId, forceUnique);
 
   ctx.strokeStyle = color;
   ctx.lineWidth = 2.5;
@@ -2914,6 +3578,7 @@ function applyChaosMode() {
     settings.passives = true;
     settings.maneuvers = true;
     settings.numShips = 16;
+    settings.uniqueShips = true;
   } else {
     settings.randomPersonalities = Math.random() < 0.5;
     // Weapon modes: 40% unique, 30% random, 30% basic
@@ -2931,10 +3596,12 @@ function applyChaosMode() {
     settings.numShips = shipOptions[randInt(0, shipOptions.length - 1)];
     settings.passives = Math.random() < 0.6;
     settings.maneuvers = Math.random() < 0.4;
+    settings.uniqueShips = Math.random() < 0.5;
   }
 
   // Sync UI toggles
   document.querySelector('[data-setting="randomPersonalities"]').classList.toggle('on', settings.randomPersonalities);
+  document.querySelector('[data-setting="uniqueShips"]').classList.toggle('on', settings.uniqueShips);
   document.querySelector('[data-setting="weapons"]').classList.toggle('on', settings.weapons);
   document.querySelector('[data-setting="randomWeapons"]').classList.toggle('on', settings.randomWeapons);
   document.querySelector('[data-setting="passives"]').classList.toggle('on', settings.passives);
@@ -2966,6 +3633,9 @@ function init() {
   gameTime = 0;
   gameOver = false;
   winner = null;
+  flyInPhase = false;
+  flyInElapsed = 0;
+  flyInTeamLabels = [];
   finaleMode = false;
   finaleTimer = 0;
   finaleSlowMo = 1;
@@ -3134,22 +3804,46 @@ function init() {
     [spawnPositions[i], spawnPositions[j]] = [spawnPositions[j], spawnPositions[i]];
   }
 
-  // Pick which ships participate (randomized when fewer than max)
-  const allIndices = Array.from({length: PILOT_NAMES.length}, (_, i) => i);
-  for (let i = allIndices.length - 1; i > 0; i--) {
-    const j = randInt(0, i);
-    [allIndices[i], allIndices[j]] = [allIndices[j], allIndices[i]];
+  // Pick which ships participate
+  let activeShips;
+  if (matchMode === 'teams') {
+    // Use exactly the ships assigned to teams
+    activeShips = teamAssignments.flat();
+  } else {
+    // FFA: randomized selection
+    const allIndices = Array.from({length: PILOT_NAMES.length}, (_, i) => i);
+    for (let i = allIndices.length - 1; i > 0; i--) {
+      const j = randInt(0, i);
+      [allIndices[i], allIndices[j]] = [allIndices[j], allIndices[i]];
+    }
+    activeShips = allIndices.slice(0, settings.numShips).sort((a, b) => a - b);
   }
-  const activeShips = allIndices.slice(0, settings.numShips).sort((a, b) => a - b);
   let drillboreTaken = false;
+
+  // Build position→team lookup for loadout selection (handles duplicate ship types)
+  const _posTeamLookup = [];
+  if (matchMode === 'teams') {
+    for (let t = 0; t < teamAssignments.length; t++) {
+      for (const idx of teamAssignments[t]) _posTeamLookup.push(t + 1);
+    }
+  }
 
   for (let si = 0; si < activeShips.length; si++) {
     const i = activeShips[si];
     const sp = spawnPositions[si];
+    const _teamNum = _posTeamLookup[si] || 0;
+    // Ship design override: if team has designs selected, use one from pool
+    let _designType = i;
+    if (_teamNum > 0 && teamShipDesigns[_teamNum - 1] && teamShipDesigns[_teamNum - 1].length > 0) {
+      const pool = teamShipDesigns[_teamNum - 1];
+      _designType = parseInt(pool[randInt(0, pool.length - 1)]);
+    }
     // Face toward center of formation
     const faceAng = Math.atan2(spawnCenter.y - sp.y, spawnCenter.x - sp.x);
     ships.push({
-      id: i,
+      id: si,          // unique per instance
+      shipType: _designType, // ship design (may be overridden by team design pool)
+      _designForced: _designType !== i, // true if design was overridden by team pool
       name: PILOT_NAMES[i],
       color: PILOT_COLORS[i],
       x: sp.x,
@@ -3185,8 +3879,8 @@ function init() {
       strafeFuel: 5,       // seconds of strafe available
       strafeDepleted: false, // lockout when fully drained
       thrustOn: false,
-      weapon: getWeapon(i),
-      passive: getPassive(i),
+      weapon: getWeapon(i, _teamNum),
+      passive: getPassive(i, _teamNum),
       shieldActive: false,
       hitInvulnCooldown: 0,
       iceSlow: 0,       // remaining ice slow duration
@@ -3200,7 +3894,7 @@ function init() {
       hpBarTimer: 0,
       beamTrail: [],
       // Maneuver state
-      maneuver: getManeuver(i),
+      maneuver: getManeuver(i, _teamNum),
       maneuverCooldown: rand(3, 8), // stagger initial cooldowns
       maneuverActive: false,
       maneuverTimer: 0,
@@ -3215,6 +3909,7 @@ function init() {
       _spinOutPhase: null, _spinOutDir: 0, _spinOutBoostTimer: 0, _spinOutArcTarget: 0,
       _reversePhase: null,
       _smokestealthTimer: 0,
+      _friendlyBounceTimer: 0,
       _reflectorAngle: 0,
       _repulsorX: 0, _repulsorY: 0, _repulsorLife: 0, _repulsorMaxLife: 0, _repulsorRadius: 0,
       _minesDropped: 0, _mineDropTimer: 0,
@@ -3226,6 +3921,8 @@ function init() {
       iceDotTimer: 0,   // ice rounds DoT remaining
       _bulletThreat: false,
       _emergencyEvade: false,
+      team: _teamNum,
+      origColor: PILOT_COLORS[i],
     });
     const newShip = ships[ships.length - 1];
     // Drillbore limited to one per match — reroll if already taken
@@ -3258,6 +3955,90 @@ function init() {
   }
 
   // Build id→ship lookup (ship.id may not equal array index with <12 ships)
+  // ── TEAM ASSIGNMENT ──
+  // Build shipById early so team functions can reference ships
+  shipById = {};
+  for (const s of ships) shipById[s.id] = s;
+  // matchMode is already set by the UI mode selector
+  _origTeamSizes = [];
+  _teamCoreColors = [];
+  teamPalettes = {};
+  if (matchMode === 'teams') {
+    // Reposition: teams in cloud formations
+    const nt = teamAssignments.length;
+    const cx = CFG.WORLD_W / 2, cy = CFG.WORLD_H / 2;
+    const totalFighters = ships.filter(s => s.team > 0).length;
+    const smallMatchMult = totalFighters <= 4 ? 1.2 : 1.0;
+    const teamSpread = 200;
+
+    if (nt === 2) {
+      // 2 teams: top vs bottom cloud formation
+      const spawnGap = 700 * smallMatchMult;
+      for (let ti = 0; ti < 2; ti++) {
+        const teamShips = ships.filter(s => s.team === ti + 1);
+        const n = teamShips.length;
+        const baseY = ti === 0 ? cy - spawnGap : cy + spawnGap;
+        const faceAng = ti === 0 ? Math.PI / 2 : -Math.PI / 2;
+        for (let si = 0; si < n; si++) {
+          const spread = n > 1 ? (si / (n - 1) - 0.5) * teamSpread * Math.min(n, 6) : 0;
+          teamShips[si].x = cx + spread + rand(-40, 40);
+          teamShips[si].y = baseY + rand(-50, 50);
+          teamShips[si].ang = faceAng;
+        }
+      }
+    } else {
+      // 3+ teams: polygon spokes with cloud grid formation
+      const spawnDist = Math.min(900, 500 + totalFighters * 20) * smallMatchMult * 1.2;
+      const shipSpacing = 80;
+      for (let ti = 0; ti < nt; ti++) {
+        const teamShips = ships.filter(s => s.team === ti + 1);
+        const n = teamShips.length;
+        const spokeAng = (ti / nt) * Math.PI * 2 - Math.PI / 2;
+        const baseX = cx + Math.cos(spokeAng) * spawnDist;
+        const baseY = cy + Math.sin(spokeAng) * spawnDist;
+        const faceAng = Math.atan2(cy - baseY, cx - baseX);
+        const cols = Math.ceil(Math.sqrt(n));
+        const rows = Math.ceil(n / cols);
+        for (let si = 0; si < n; si++) {
+          const col = si % cols;
+          const row = Math.floor(si / cols);
+          const rowCount = Math.min(cols, n - row * cols);
+          const ox = (col - (rowCount - 1) / 2) * shipSpacing;
+          const oy = (row - (rows - 1) / 2) * shipSpacing;
+          const perpAng = faceAng + Math.PI / 2;
+          teamShips[si].x = baseX + Math.cos(perpAng) * ox + Math.cos(faceAng) * oy + rand(-10, 10);
+          teamShips[si].y = baseY + Math.sin(perpAng) * ox + Math.sin(faceAng) * oy + rand(-10, 10);
+          teamShips[si].ang = faceAng;
+        }
+      }
+    }
+    // Store original team sizes & colors for convergence
+    for (let t = 1; t <= nt; t++) {
+      _origTeamSizes[t] = ships.filter(s => s.team === t).length;
+    }
+    _teamCoreColors = getTeamColors();
+    // Build team color palettes for trail particles
+    for (const s of ships) {
+      if (s.team > 0) {
+        if (!teamPalettes[s.team]) teamPalettes[s.team] = [];
+        if (!teamPalettes[s.team].includes(s.color)) teamPalettes[s.team].push(s.color);
+      }
+    }
+    // Stagger fire cooldowns: only frontmost ship fires immediately
+    for (let t = 1; t <= nt; t++) {
+      const teamShips = ships.filter(s => s.team === t);
+      if (teamShips.length <= 1) continue;
+      let minDist = Infinity, closestId = null;
+      for (const s of teamShips) {
+        const d = Math.hypot(s.x - cx, s.y - cy);
+        if (d < minDist) { minDist = d; closestId = s.id; }
+      }
+      for (const s of teamShips) {
+        if (s.id !== closestId) s.fireCooldown = 2.0;
+      }
+    }
+  }
+
   shipById = {};
   for (const s of ships) shipById[s.id] = s;
 
@@ -3302,11 +4083,15 @@ function init() {
   }
 
   document.getElementById('winner-overlay').classList.remove('show');
+  document.getElementById('tourney-progress-banner').classList.remove('active');
   showScoreboard = false;
   document.getElementById('alive-num').textContent = settings.numShips;
+  document.getElementById('alive-counter').style.display = '';
+  document.getElementById('camera-mode').style.display = '';
   buildScoreboard();
   buildPregameRoster();
   pregame = true;
+  document.getElementById('settings-btn').classList.remove('match-hidden');
   countdown = false;
   countdownTimer = 0;
   document.getElementById('countdown-overlay').classList.add('hidden');
@@ -3316,8 +4101,6 @@ function init() {
   camZoom = 0.15;
   targetZoom = 0.15;
   cameraMode = 'overview';
-  dogfightPair = null;
-  dogfightSwitchCooldown = 0;
   manualShips = [];
   selectBoxStart = null;
   selectBoxEnd = null;
@@ -3347,12 +4130,12 @@ function spawnExplosion(x, y, color, count, speed) {
 function spawnThrustParticle(ship) {
   const bx = ship.x - Math.cos(ship.ang) * ship.r * 0.5;
   const by = ship.y - Math.sin(ship.ang) * ship.r * 0.5;
-  const lifeMult = ship.passive === 'nitro' ? 2.0 : 1.0;
+  const lifeMult = (ship.passive === 'nitro' ? 2.0 : 1.0) * (ship.team > 0 ? 1.5 : 1.0);
 
   if (ship.passive === 'stealth') {
     // Beam trail: store position for line drawing instead of particles
     if (!ship.beamTrail) ship.beamTrail = [];
-    ship.beamTrail.push({ x: bx, y: by, life: 0.25 * lifeMult, maxLife: 0.25 * lifeMult });
+    ship.beamTrail.push({ x: bx, y: by, life: 0.125 * lifeMult, maxLife: 0.125 * lifeMult });
     return;
   }
 
@@ -3363,19 +4146,47 @@ function spawnThrustParticle(ship) {
     angles.push(ship.ang + Math.PI - 0.524); // -30°
   }
 
-  for (const exAng of angles) {
-    const isBio = ship.passive === 'bioHull';
-    particles.push({
-      x: bx + rand(-3, 3),
-      y: by + rand(-3, 3),
-      vx: Math.cos(exAng) * rand(30, 80) + ship.vx * 0.3,
-      vy: Math.sin(exAng) * rand(30, 80) + ship.vy * 0.3,
-      life: rand(0.1, 0.3) * lifeMult,
-      maxLife: 0.3 * lifeMult,
-      color: isBio ? '#44ff44' : ship.color,
-      size: rand(1, 2.5),
-      isPlus: isBio,
-    });
+  const isBio = ship.passive === 'bioHull';
+  const teamColors = (ship.team > 0 && teamPalettes[ship.team]) ? teamPalettes[ship.team] : null;
+
+  // Multi-color team trails: separate nozzles offset perpendicular to ship heading
+  if (teamColors && teamColors.length > 1 && !isBio) {
+    const perp = ship.ang + Math.PI / 2;
+    const nozzleSpread = Math.min(ship.r * 0.6, 5 + teamColors.length); // total spread
+    for (const exAng of angles) {
+      for (let c = 0; c < teamColors.length; c++) {
+        // Spread nozzles evenly: -0.5..+0.5 mapped to -spread..+spread
+        const t = teamColors.length === 1 ? 0 : (c / (teamColors.length - 1) - 0.5) * 2;
+        const ox = Math.cos(perp) * nozzleSpread * t;
+        const oy = Math.sin(perp) * nozzleSpread * t;
+        particles.push({
+          x: bx + ox + rand(-1.5, 1.5),
+          y: by + oy + rand(-1.5, 1.5),
+          vx: Math.cos(exAng) * rand(30, 80) + ship.vx * 0.3,
+          vy: Math.sin(exAng) * rand(30, 80) + ship.vy * 0.3,
+          life: rand(0.45, 1.35) * lifeMult,
+          maxLife: 1.35 * lifeMult,
+          color: teamColors[c],
+          size: rand(1, 2.5),
+        });
+      }
+    }
+  } else {
+    // Single color exhaust (FFA, single-color teams, or bioHull)
+    for (const exAng of angles) {
+      const exColor = isBio ? '#44ff44' : teamColors ? teamColors[0] : ship.color;
+      particles.push({
+        x: bx + rand(-3, 3),
+        y: by + rand(-3, 3),
+        vx: Math.cos(exAng) * rand(30, 80) + ship.vx * 0.3,
+        vy: Math.sin(exAng) * rand(30, 80) + ship.vy * 0.3,
+        life: rand(0.45, 1.35) * lifeMult,
+        maxLife: 1.35 * lifeMult,
+        color: exColor,
+        size: rand(1, 2.5),
+        isPlus: isBio,
+      });
+    }
   }
 }
 
@@ -3420,7 +4231,7 @@ function isDirectionSafe(ship, ang, speed, lookahead) {
 
 // Find the best evasion angle — scan multiple directions and pick the safest
 function findSafeDirection(ship, preferredAng, speed, look) {
-  if (ship.passive === 'drillbore') return preferredAng;
+  if (ship.passive === 'drillbore' && ship.hp > 0.5) return preferredAng;
   const la = look || 1.5;
   // Test preferred angle first
   if (isDirectionSafe(ship, preferredAng, speed, la)) return preferredAng;
@@ -3449,7 +4260,7 @@ function updateAI(ship, dt) {
   // ── PREDICTIVE ASTEROID COLLISION SCAN ──
   // Gather all imminent collisions within the next 2 seconds
   const collisions = [];
-  if (ship.passive !== 'drillbore') {
+  if (ship.passive !== 'drillbore' || ship.hp <= 0.5) {
     for (const ast of asteroids) {
       const d = dist(ship, ast);
       if (d > 900) continue; // scan wider radius
@@ -3464,6 +4275,7 @@ function updateAI(ship, dt) {
   let bulletThreat = null;
   for (const b of bullets) {
     if (b.owner === ship.id) continue;
+    if (b.ownerTeam > 0 && ship.team === b.ownerTeam) continue;
     const d = dist(ship, b);
     if (d > 200) continue;
     // Is bullet heading toward us?
@@ -3482,6 +4294,7 @@ function updateAI(ship, dt) {
   // ── SCAN ENEMIES ──
   for (const other of ships) {
     if (other.id === ship.id || !other.alive) continue;
+    if (ship.team > 0 && other.team === ship.team) continue;
     let d = dist(ship, other);
     // Stealth passive: target appears twice as far away
     if (other.passive === 'stealth') d *= 1.5;
@@ -3511,6 +4324,7 @@ function updateAI(ship, dt) {
   // Check smoke decoys as potential targets (stationary fake enemy)
   for (const decoy of smokeDecoys) {
     if (decoy.ownerId === ship.id) continue; // don't target own smoke
+    if (ship.team > 0 && decoy.ownerTeam === ship.team) continue; // don't target teammate smoke
     const d = dist(ship, decoy);
     if (d < closestEnemyDist) {
       closestEnemyDist = d;
@@ -3521,6 +4335,7 @@ function updateAI(ship, dt) {
   // Check ship clones as potential targets (Double Team)
   for (const clone of shipClones) {
     if (clone.ownerId === ship.id || !clone.alive || clone.hit) continue;
+    if (ship.team > 0) { const cloneOwner = shipById[clone.ownerId]; if (cloneOwner && cloneOwner.team === ship.team) continue; }
     const d = dist(ship, clone);
     if (d < closestEnemyDist) {
       closestEnemyDist = d;
@@ -3660,7 +4475,8 @@ function updateAI(ship, dt) {
     const aggro = Math.max(0, Math.min(1, aggroBase + Math.sin(gameTime * ship.aggroSpeed + ship.aggroPhase) * aggroSwing));
 
     // Interpolate personality values toward aggressive levels based on aggro
-    const baseRange = lerp(550, 1400, aggro);
+    const teamDetectMult = (ship.team > 0) ? 3 : 1;
+    const baseRange = lerp(550, 1400, aggro) * teamDetectMult;
     const maxRange = Math.hypot(CFG.WORLD_W, CFG.WORLD_H);
     const timeScale = Math.min(1, gameTime / 60);
     const aggressionRange = lerp(baseRange, maxRange, timeScale);
@@ -3788,19 +4604,136 @@ function update(rawDt) {
   // During countdown, render ships but don't simulate gameplay
   if (countdown) {
     countdownTimer -= rawDt;
-    // Update countdown display
+
+    // Fly-in animation for team modes
+    if (flyInPhase) {
+      flyInElapsed += rawDt;
+      const numTeams = teamAssignments.length;
+      let allArrived = true;
+
+      for (const ship of ships) {
+        if (ship._flyTeamIdx == null) continue;
+        const teamStart = ship._flyTeamIdx * FLY_IN_STAGGER;
+        const progress = Math.max(0, Math.min(1, (flyInElapsed - teamStart) / FLY_IN_DURATION));
+        const t = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        ship.x = ship._flyStartX + (ship._flyTargetX - ship._flyStartX) * t;
+        ship.y = ship._flyStartY + (ship._flyTargetY - ship._flyStartY) * t;
+        ship._flyAlpha = progress > 0 ? Math.min(1, progress * 2) : 0; // fade in over first half
+        if (progress > 0 && progress < 1) {
+          ship.ang = Math.atan2(ship._flyTargetY - ship._flyStartY, ship._flyTargetX - ship._flyStartX);
+          if (Math.random() < 0.5) spawnThrustParticle(ship);
+        }
+        if (progress >= 1) {
+          const _cx = CFG.WORLD_W / 2, _cy = CFG.WORLD_H / 2;
+          ship.ang = Math.atan2(_cy - ship.y, _cx - ship.x);
+          ship._flyAlpha = 1;
+        }
+        if (progress < 1) allArrived = false;
+      }
+
+      // Update team labels
+      for (let ti = 0; ti < flyInTeamLabels.length; ti++) {
+        const label = flyInTeamLabels[ti];
+        const teamStart = ti * FLY_IN_STAGGER;
+        const progress = Math.max(0, Math.min(1, (flyInElapsed - teamStart) / FLY_IN_DURATION));
+        if (progress >= 0.8 && !label.arrived) label.arrived = true;
+        if (label.arrived) label.alpha = Math.min(1, label.alpha + rawDt * 3);
+      }
+
+      // End fly-in (labels persist until countdown ends)
+      const flyInEnd = (numTeams - 1) * FLY_IN_STAGGER + FLY_IN_DURATION + 0.5;
+      if (flyInElapsed >= flyInEnd) {
+        flyInPhase = false;
+        for (const ship of ships) {
+          if (ship._flyTargetX != null) { ship.x = ship._flyTargetX; ship.y = ship._flyTargetY; }
+          delete ship._flyAlpha;
+        }
+      }
+
+      // Update particles during fly-in
+      const pdt = rawDt * 0.5;
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * pdt; p.y += p.vy * pdt;
+        p.vx *= (1 - 3 * pdt); p.vy *= (1 - 3 * pdt);
+        p.life -= pdt;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    // Timer display
     const secs = Math.ceil(Math.max(0, countdownTimer));
-    document.getElementById('countdown-timer').textContent = 'MATCH BEGINNING IN ' + secs + '!';
-    // Keep camera overview
-    targetCamX = CFG.WORLD_W / 2;
-    targetCamY = CFG.WORLD_H / 2;
-    const fullZoomX = W / (CFG.WORLD_W + 200);
-    const fullZoomY = H / (CFG.WORLD_H + 200);
-    targetZoom = Math.min(fullZoomX, fullZoomY);
-    const camLerpCd = 1 - Math.pow(1 - 0.05, rawDt * 60);
-    cameraX = lerp(cameraX, targetCamX, camLerpCd);
-    cameraY = lerp(cameraY, targetCamY, camLerpCd);
-    camZoom = lerp(camZoom, targetZoom, camLerpCd);
+    if (matchMode === 'teams') {
+      // Big centered countdown number only
+      if (secs > 0) {
+        document.getElementById('countdown-timer').textContent = secs;
+        document.getElementById('countdown-timer').style.fontSize = '72px';
+      } else {
+        document.getElementById('countdown-timer').textContent = 'FIGHT!';
+        document.getElementById('countdown-timer').style.fontSize = '72px';
+      }
+    } else {
+      document.getElementById('countdown-timer').style.fontSize = '';
+      document.getElementById('countdown-timer').textContent = 'MATCH BEGINNING IN ' + secs + '!';
+    }
+
+    // Camera — subtle: stay mostly centered, smooth drift toward arriving team
+    if (flyInPhase) {
+      const cx = CFG.WORLD_W / 2, cy = CFG.WORLD_H / 2;
+      // Blend smoothly between team positions based on elapsed time
+      let shiftX = 0, shiftY = 0;
+      for (let ti = 0; ti < flyInTeamLabels.length; ti++) {
+        const label = flyInTeamLabels[ti];
+        const teamStart = ti * FLY_IN_STAGGER;
+        // Each team's influence: ramp up from its start, hold, ramp down when next starts
+        const fadeIn = Math.min(1, Math.max(0, (flyInElapsed - teamStart) / (FLY_IN_DURATION * 0.5)));
+        const nextStart = (ti + 1) * FLY_IN_STAGGER;
+        const fadeOut = ti < flyInTeamLabels.length - 1
+          ? 1 - Math.min(1, Math.max(0, (flyInElapsed - nextStart) / (FLY_IN_DURATION * 0.5)))
+          : 1;
+        const weight = fadeIn * fadeOut;
+        shiftX += (label.x - cx) * 0.15 * weight;
+        shiftY += (label.y - cy) * 0.15 * weight;
+      }
+      // Zoom to frame ship target positions
+      let _minX = Infinity, _maxX = -Infinity, _minY = Infinity, _maxY = -Infinity;
+      for (const s of ships) {
+        const tx = s._flyTargetX != null ? s._flyTargetX : s.x;
+        const ty = s._flyTargetY != null ? s._flyTargetY : s.y;
+        _minX = Math.min(_minX, tx); _maxX = Math.max(_maxX, tx);
+        _minY = Math.min(_minY, ty); _maxY = Math.max(_maxY, ty);
+      }
+      const _camPad = 200 + ships.length * 15;
+      const _spreadX = _maxX - _minX + _camPad;
+      const _spreadY = _maxY - _minY + _camPad;
+      const targetZ = Math.max(0.15, Math.min(1.5, Math.min(W / _spreadX, H / _spreadY)));
+      const camLerp = 1 - Math.pow(0.015, rawDt);
+      cameraX = lerp(cameraX, cx + shiftX, camLerp);
+      cameraY = lerp(cameraY, cy + shiftY, camLerp);
+      camZoom = lerp(camZoom, targetZ, camLerp);
+    } else {
+      // Standard countdown camera — frame around ship positions
+      const cdAlive = ships.filter(s => s.alive);
+      if (cdAlive.length > 0) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const s of cdAlive) {
+          minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x);
+          minY = Math.min(minY, s.y); maxY = Math.max(maxY, s.y);
+        }
+        targetCamX = (minX + maxX) / 2;
+        targetCamY = (minY + maxY) / 2;
+        const camPad = 200 + cdAlive.length * 15;
+        const spreadX = maxX - minX + camPad;
+        const spreadY = maxY - minY + camPad;
+        targetZoom = Math.min(W / spreadX, H / spreadY);
+        targetZoom = Math.max(0.15, Math.min(1.5, targetZoom));
+      }
+      const camLerpCd = 1 - Math.pow(1 - 0.05, rawDt * 60);
+      cameraX = lerp(cameraX, targetCamX, camLerpCd);
+      cameraY = lerp(cameraY, targetCamY, camLerpCd);
+      camZoom = lerp(camZoom, targetZoom, camLerpCd);
+    }
+
     if (countdownTimer <= 0) {
       endCountdown();
     }
@@ -3815,6 +4748,7 @@ function update(rawDt) {
   gameTime += dt;
 
   if (!skipGameplay) {
+
   // Update ships
   for (const ship of ships) {
     if (!ship.alive) continue;
@@ -3871,11 +4805,12 @@ function update(rawDt) {
     // ── DEBUFF VISUAL EFFECTS ──
     // Incendiary burn: fire particles rising from ship
     if (ship.burnTimer > 0 && Math.random() < 0.5) {
+      const bc = ship.burnColor || '#ff6600';
       particles.push({
         x: ship.x + rand(-ship.r, ship.r), y: ship.y + rand(-ship.r, ship.r),
         vx: rand(-20, 20), vy: rand(-60, -30),
         life: rand(0.2, 0.4), maxLife: 0.4,
-        color: Math.random() < 0.5 ? '#ff6600' : '#ffaa00', size: rand(2, 4),
+        color: bc, size: rand(2, 4),
       });
     }
     // Ice Rounds: diamond and snowflake particles emitted from affected ship
@@ -3889,7 +4824,7 @@ function update(rawDt) {
         vx: Math.cos(perp) * side * rand(30, 60) + rand(-10, 10),
         vy: Math.sin(perp) * side * rand(30, 60) + rand(-10, 10) - 15,
         life: 0.4, maxLife: 0.4,
-        color: '#55bbff', size: rand(3, 6),
+        color: ship.iceColor || '#55bbff', size: rand(3, 6),
         isDiamond: iceType === 'diamond', isSnowflake: iceType === 'snowflake',
         spinAng: rand(0, Math.PI * 2),
       });
@@ -3906,7 +4841,7 @@ function update(rawDt) {
         vx: Math.cos(perp) * side * rand(30, 70),
         vy: Math.sin(perp) * side * rand(30, 70),
         life: 0.25, maxLife: 0.25,
-        color: '#ffaa00', size: rand(1.5, 3), isLine: true, lineAng: perp, lineLen: rand(6, 12),
+        color: ship.jamColor || '#ffaa00', size: rand(1.5, 3), isLine: true, lineAng: perp, lineLen: rand(6, 12),
       });
     }
 
@@ -3928,7 +4863,7 @@ function update(rawDt) {
         x: ship.x + Math.cos(a) * d, y: ship.y + Math.sin(a) * d,
         vx: rand(-20, 20), vy: rand(-20, 20),
         life: 0.18, maxLife: 0.18,
-        color: '#ffff44', size: 1.5,
+        color: ship.stunColor || '#ffff44', size: 1.5,
         isArc: true, arcPoints: ap,
       });
     }
@@ -3942,7 +4877,7 @@ function update(rawDt) {
         x: fx + rand(-5, 5), y: fy + rand(-5, 5),
         vx: Math.cos(a) * rand(20, 60), vy: Math.sin(a) * rand(20, 60),
         life: 0.25, maxLife: 0.25,
-        color: '#8844dd', size: rand(2, 4.5),
+        color: ship.overrideColor || '#8844dd', size: rand(2, 4.5),
       });
     }
 
@@ -3953,7 +4888,7 @@ function update(rawDt) {
       shockwaves.push({
         x: fx + rand(-6, 6), y: fy + rand(-6, 6),
         r: 0, maxR: rand(12, 25), life: 0.2, maxLife: 0.2,
-        color: '#ff8800', ellipse: true, ellipseAng: ship.ang + rand(-0.3, 0.3),
+        color: ship.blindColor || '#ff8800', ellipse: true, ellipseAng: ship.ang + rand(-0.3, 0.3),
       });
     }
     ship.fireCooldown = Math.max(0, ship.fireCooldown - dt);
@@ -4011,7 +4946,7 @@ function update(rawDt) {
     if (ship.overrideTimer <= 0 && !maneuverControlsMovement) {
     let emergAvoidX = 0, emergAvoidY = 0;
     let emergCount = 0;
-    if (ship.passive !== 'drillbore') {
+    if (ship.passive !== 'drillbore' || ship.hp <= 0.5) {
       for (const ast of asteroids) {
         const d = dist(ship, ast);
         if (d > ast.r + 350) continue;
@@ -4053,7 +4988,7 @@ function update(rawDt) {
     // Thrust
     ship.thrustOn = ship._aiThrust;
     if (ship._aiThrust) {
-      const thrustMult = (ship.passive === 'nitro' ? 1.2 : 1.0) * (ship.passive === 'bioHull' ? 0.9 : 1.0);
+      const thrustMult = (ship.passive === 'nitro' ? 1.3 : 1.0) * (ship.passive === 'bioHull' ? 0.9 : 1.0);
       ship.vx += Math.cos(ship.ang) * CFG.SHIP_THRUST * thrustMult * dt;
       ship.vy += Math.sin(ship.ang) * CFG.SHIP_THRUST * thrustMult * dt;
       if (Math.random() < 0.6) spawnThrustParticle(ship);
@@ -4064,7 +4999,7 @@ function update(rawDt) {
     const speed = Math.hypot(ship.vx, ship.vy);
     const maneuverSpeedMult = ship.maneuverActive ? (ship.maneuver === 'barrelRoll' ? 1.5 : ship.maneuver === 'quickTurn' ? 1.8 : ship.maneuver === 'serpentine' ? 2.5 : ship.maneuver === 'spinOut' ? 2.5 : ship._teleportPhase === 'phasing' ? 2 : 1) : 1;
     const reflectorSlow = (ship.maneuverActive && ship.maneuver === 'reflectorShields') ? 0.7 : 1;
-    const maxSpeed = CFG.SHIP_MAX_SPEED * (ship.passive === 'nitro' ? 1.3 : 1) * (ship._hyperSpeedActive ? 3 : 1) * maneuverSpeedMult * reflectorSlow;
+    const maxSpeed = CFG.SHIP_MAX_SPEED * (ship.passive === 'nitro' ? 1.4 : 1) * (ship._hyperSpeedActive ? 3 : 1) * maneuverSpeedMult * reflectorSlow;
     if (speed > maxSpeed) {
       const ratio = maxSpeed / speed;
       ship.vx *= ratio;
@@ -4191,6 +5126,7 @@ function update(rawDt) {
         let closest = null, cDist = Infinity;
         for (const s of ships) {
           if (!s.alive || s.id === b.owner) continue;
+          if (b.ownerTeam > 0 && s.team === b.ownerTeam) continue;
           const d = dist(b, s);
           if (d < cDist) { cDist = d; closest = s; }
         }
@@ -4369,28 +5305,34 @@ function update(rawDt) {
       }
     }
 
-    // Bullet trail particle
+    // Bullet trail particle — scale spawn rate with finale slowdown
+    if (finaleSlowMo < 1 && Math.random() > finaleSlowMo) { /* skip trail this frame */ }
+    else {
     const _preTrailCount = particles.length;
     if (b.type === 'flamethrower') {
       // Flamethrower: dense flickering flame particles
-      const age = gameTime - b.spawnTime;
-      const nearShip = age < 0.2;
-      const spawnCount = nearShip ? 1 : 3;
-      const spawnChance = nearShip ? 0.3 : 1;
-      if (Math.random() < spawnChance) {
-        for (let tp = 0; tp < spawnCount; tp++) {
-          const tLife = rand(0.15, 0.35);
-          const fade = Math.max(0.3, 1 - age / (b.life + age));
-          particles.push({
-            x: b.x + rand(-4, 4),
-            y: b.y + rand(-4, 4),
-            vx: b.vx * rand(-0.05, 0.1) + rand(-20, 20),
-            vy: b.vy * rand(-0.05, 0.1) + rand(-20, 20),
-            life: tLife,
-            maxLife: tLife,
-            color: b.color,
-            size: rand(1.5, 4) * fade,
-          });
+      // Skip if debuff passive — debuff aura particles replace these
+      const _ftDebuffs = ['iceRounds', 'jamRounds', 'stunShock', 'override', 'blindRounds'];
+      if (!_ftDebuffs.includes(b.ownerPassive)) {
+        const age = gameTime - b.spawnTime;
+        const nearShip = age < 0.2;
+        const spawnCount = nearShip ? 1 : 3;
+        const spawnChance = nearShip ? 0.3 : 1;
+        if (Math.random() < spawnChance) {
+          for (let tp = 0; tp < spawnCount; tp++) {
+            const tLife = rand(0.15, 0.35);
+            const fade = Math.max(0.3, 1 - age / (b.life + age));
+            particles.push({
+              x: b.x + rand(-4, 4),
+              y: b.y + rand(-4, 4),
+              vx: b.vx * rand(-0.05, 0.1) + rand(-20, 20),
+              vy: b.vy * rand(-0.05, 0.1) + rand(-20, 20),
+              life: tLife,
+              maxLife: tLife,
+              color: b.color,
+              size: rand(1.5, 4) * fade,
+            });
+          }
         }
       }
     } else if (b.sineAmp && b.type !== 'doublehelix') {
@@ -4551,6 +5493,7 @@ function update(rawDt) {
       for (let pi = _preTrailCount; pi < particles.length; pi++) {
         particles[pi].incId = b.incId;
         particles[pi].incOwner = b.owner;
+        particles[pi].incOwnerTeam = b.ownerTeam || 0;
       }
     }
 
@@ -4579,16 +5522,17 @@ function update(rawDt) {
     }
 
     // Debuff passive aura trails — particles perpendicular to bullet path
-    const debuffColors = {
-      iceRounds: '#55bbff', jamRounds: '#ff4444', stunShock: '#ffff44',
-      override: '#8844dd', blindRounds: '#ff8800',
-    };
-    if (debuffColors[b.ownerPassive]) {
+    const debuffPassives = ['iceRounds', 'jamRounds', 'stunShock', 'override', 'blindRounds'];
+    if (debuffPassives.includes(b.ownerPassive)) {
       const bSpd = Math.hypot(b.vx, b.vy);
       // Faster bullets spawn trails more reliably (lightning at 1600 u/s needs help)
       let spawnChance = Math.min(0.95, 0.5 + bSpd / 3000);
       if (b.ownerPassive === 'stunShock') spawnChance *= 0.5; // half density for stun
+      // Flamethrower debuffs: boost density to replace normal flame particles
+      const debuffCount = b.type === 'flamethrower' ? 2 : 1;
+      if (b.type === 'flamethrower') spawnChance = Math.min(0.95, spawnChance * 1.5);
       if (bSpd > 10 && Math.random() < spawnChance) {
+        for (let _dc = 0; _dc < debuffCount; _dc++) {
         const perpAng = Math.atan2(b.vy, b.vx) + Math.PI * 0.5;
         const side = Math.random() < 0.5 ? 1 : -1;
         if (b.ownerPassive === 'stunShock') {
@@ -4607,11 +5551,13 @@ function update(rawDt) {
           particles.push({
             x: b.x, y: b.y, vx: b.vx * 0.1, vy: b.vy * 0.1,
             life: rand(0.12, 0.22), maxLife: 0.22,
-            color: '#ffff44', size: 1.5,
+            color: b.color, size: 1.5,
             isArc: true, arcPoints,
           });
         } else if (b.ownerPassive === 'iceRounds') {
           // Ice crystals: diamonds and snowflakes
+          // Dragonfire + ice: cut 60% of particles to avoid slowdown
+          if (b.type === 'flamethrower' && Math.random() < 0.6) { /* skip */ } else {
           const spread = rand(6, 16);
           const px = b.x + Math.cos(perpAng) * spread * side;
           const py = b.y + Math.sin(perpAng) * spread * side;
@@ -4622,10 +5568,11 @@ function update(rawDt) {
             vx: Math.cos(perpAng) * driftSpd * side + b.vx * 0.05,
             vy: Math.sin(perpAng) * driftSpd * side + b.vy * 0.05,
             life: rand(0.2, 0.4), maxLife: 0.4,
-            color: '#55bbff', size: rand(2, 4.5),
+            color: b.color, size: rand(2, 4.5),
             isDiamond: iceType === 'diamond', isSnowflake: iceType === 'snowflake',
             spinAng: rand(0, Math.PI * 2),
           });
+          }
         } else {
           const spread = rand(4, (b.size || 2) + 10);
           const px = b.x + Math.cos(perpAng) * spread * side;
@@ -4636,12 +5583,14 @@ function update(rawDt) {
             vx: Math.cos(perpAng) * driftSpd * side + b.vx * 0.1,
             vy: Math.sin(perpAng) * driftSpd * side + b.vy * 0.1,
             life: rand(0.12, 0.25), maxLife: 0.25,
-            color: debuffColors[b.ownerPassive],
+            color: b.color,
             size: rand(1, 2.5),
           });
         }
+        } // end debuffCount loop
       }
     }
+    } // end finale trail slowdown
 
     if (b.life <= 0 || b.x < -50 || b.x > CFG.WORLD_W + 50 || b.y < -50 || b.y > CFG.WORLD_H + 50) {
       if (b.type === 'lightning' && b.trail && b.trail.length > 0) {
@@ -4755,22 +5704,26 @@ function update(rawDt) {
     // Bullet vs ship
     for (const ship of ships) {
       if (!ship.alive || ship.id === b.owner || ship.invuln > 0) continue;
+      const isFriendly = b.ownerTeam > 0 && ship.team === b.ownerTeam;
       const bDist = dist(b, ship);
 
-      // Near-miss debuff detection: 2x hit radius applies effect only (no damage)
+      // Near-miss debuff detection: 2x hit radius applies effect only (no damage) — skip for friendlies
       const attacker = shipById[b.owner];
-      if (attacker && bDist < (ship.r + 4) * 2 && bDist >= ship.r + 4) {
-        if (attacker.passive === 'blindRounds') ship.blindTimer = 3;
-        if (attacker.passive === 'iceRounds') { ship.iceSlow = 2; ship.iceDotTimer = 2.0; }
-        if (attacker.passive === 'jamRounds') ship.jamSlow = 4;
-        if (attacker.passive === 'stunShock') ship.stunTimer = 1.75;
-        if (attacker.passive === 'override') { ship.overrideTimer = 2; ship.overrideTurnDir = Math.random() < 0.5 ? -1 : 1; }
+      if (attacker && !isFriendly && bDist < (ship.r + 4) * 2 && bDist >= ship.r + 4) {
+        if (attacker.passive === 'blindRounds') { ship.blindTimer = 3; ship.blindColor = attacker.color; }
+        if (attacker.passive === 'iceRounds') { ship.iceSlow = 2; ship.iceDotTimer = 2.0; ship.iceColor = attacker.color; }
+        if (attacker.passive === 'jamRounds') { ship.jamSlow = 4; ship.jamColor = attacker.color; }
+        if (attacker.passive === 'stunShock') { ship.stunTimer = 1.75; ship.stunColor = attacker.color; }
+        if (attacker.passive === 'override') { ship.overrideTimer = 2; ship.overrideTurnDir = Math.random() < 0.5 ? -1 : 1; ship.overrideColor = attacker.color; }
         if (['blindRounds','iceRounds','jamRounds','stunShock','override'].includes(attacker.passive)) playDebuff();
       }
 
       if (bDist < ship.r + 4) {
-        // Shield passive: absorb first hit
-        if (ship.shieldActive) {
+        // Friendly fire: scale damage by ramp multiplier
+        const ffMult = isFriendly ? friendlyFireMult() : 1;
+
+        // Shield passive: absorb first hit (skip for 0-damage friendly hits)
+        if (ship.shieldActive && ffMult > 0) {
           ship.shieldActive = false;
           ship.hpBarTimer = 0.75;
           const shieldColor = b.color || '#fff';
@@ -4803,12 +5756,21 @@ function update(rawDt) {
               bulletDmg = Math.max(0.5, bulletDmg); // floor at 0.5
             }
           }
-          const dmg = bulletDmg * (ship.passive === 'titanium' ? 0.75 : 1);
+          const dmg = bulletDmg * (ship.passive === 'titanium' ? 0.75 : 1) * ffMult;
+          if (dmg <= 0) {
+            // Zero damage friendly hit — still consume the bullet but no damage/effects
+            const _owner = shipById[b.owner];
+            if (!(_owner && (_owner.passive === 'piercing' || _owner.passive === 'bouncyShot'))) {
+              bullets.splice(i, 1); i--;
+            }
+            break;
+          }
           // Incendiary: 50% instant, 50% as burn DoT over 2s
           if (b.ownerPassive === 'incendiary') {
             ship.hp -= dmg * 0.5;
             ship.burnTimer = 2.0;
             ship.burnDps = (dmg * 0.5) / 2.0; // remaining 50% over 2s
+            ship.burnColor = b.color || '#ff6600';
           } else {
             ship.hp -= dmg;
           }
@@ -4843,11 +5805,11 @@ function update(rawDt) {
           // Ice/Jam rounds: apply debuff based on attacker's passive
           const attacker = shipById[b.owner];
           if (attacker) {
-            if (attacker.passive === 'iceRounds') { ship.iceSlow = 2; ship.iceDotTimer = 2.0; }
-            if (attacker.passive === 'jamRounds') ship.jamSlow = 4;
-            if (attacker.passive === 'stunShock') ship.stunTimer = 1.75;
-            if (attacker.passive === 'override') { ship.overrideTimer = 2; ship.overrideTurnDir = Math.random() < 0.5 ? -1 : 1; }
-            if (attacker.passive === 'blindRounds') ship.blindTimer = 3;
+            if (attacker.passive === 'iceRounds') { ship.iceSlow = 2; ship.iceDotTimer = 2.0; ship.iceColor = attacker.color; }
+            if (attacker.passive === 'jamRounds') { ship.jamSlow = 4; ship.jamColor = attacker.color; }
+            if (attacker.passive === 'stunShock') { ship.stunTimer = 1.75; ship.stunColor = attacker.color; }
+            if (attacker.passive === 'override') { ship.overrideTimer = 2; ship.overrideTurnDir = Math.random() < 0.5 ? -1 : 1; ship.overrideColor = attacker.color; }
+            if (attacker.passive === 'blindRounds') { ship.blindTimer = 3; ship.blindColor = attacker.color; }
             if (['blindRounds','iceRounds','jamRounds','stunShock','override','incendiary'].includes(attacker.passive)) playDebuff();
           }
           if (ship.hp <= 0) {
@@ -4893,8 +5855,13 @@ function update(rawDt) {
       if (dist(ship, ast) < ship.r + ast.r * 0.85) {
         // Drillbore passive: smash through asteroids unharmed
         if (ship.passive === 'drillbore') {
+          // Drillbore: smash through but take 10% chip damage
+          const chipDmg = 0.2;
+          ship.hp -= chipDmg;
+          ship.hpBarTimer = 0.75;
           spawnExplosion(ast.x, ast.y, ship.color, 12, 80);
           playAsteroidBreak();
+          if (ship.hp <= 0) killShip(ship, -1);
         // Shield passive: absorb asteroid hit
         } else if (ship.shieldActive) {
           ship.shieldActive = false;
@@ -4931,17 +5898,63 @@ function update(rawDt) {
     }
   }
 
-  // Ship vs ship collision — both die
+  // Ship vs ship collision — enemies die, friendlies bounce
   for (let i = 0; i < ships.length; i++) {
     const a = ships[i];
     if (!a.alive || a._teleportPhase === 'phasing') continue;
+    a._friendlyBounceTimer = Math.max(0, (a._friendlyBounceTimer || 0) - dt);
     for (let j = i + 1; j < ships.length; j++) {
       const b = ships[j];
       if (!b.alive || b._teleportPhase === 'phasing') continue;
-      if (dist(a, b) < a.r + b.r) {
+      if (dist(a, b) >= a.r + b.r) continue;
+
+      const isFriendly = a.team > 0 && a.team === b.team;
+
+      if (isFriendly) {
+        // Friendly collision: bounce off each other (skip if recently bounced)
+        if (a._friendlyBounceTimer > 0 && b._friendlyBounceTimer > 0) continue;
+
+        // Separate ships
+        const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+        const sepAng = Math.atan2(a.y - b.y, a.x - b.x);
+        const overlap = (a.r + b.r) - dist(a, b);
+        a.x += Math.cos(sepAng) * overlap * 0.5;
+        a.y += Math.sin(sepAng) * overlap * 0.5;
+        b.x -= Math.cos(sepAng) * overlap * 0.5;
+        b.y -= Math.sin(sepAng) * overlap * 0.5;
+
+        // Bounce velocities
+        const bounceSpeed = 120;
+        a.vx = Math.cos(sepAng) * bounceSpeed;
+        a.vy = Math.sin(sepAng) * bounceSpeed;
+        b.vx = -Math.cos(sepAng) * bounceSpeed;
+        b.vy = -Math.sin(sepAng) * bounceSpeed;
+
+        // Apply ramping friendly fire damage (3 base damage)
+        const ffDmg = 3 * friendlyFireMult();
+        if (ffDmg > 0) {
+          a.hp -= ffDmg * (a.passive === 'titanium' ? 0.75 : 1);
+          b.hp -= ffDmg * (b.passive === 'titanium' ? 0.75 : 1);
+          a.hpBarTimer = 0.5;
+          b.hpBarTimer = 0.5;
+          if (a.hp <= 0 && a.alive) killShip(a, b.id);
+          if (b.hp <= 0 && b.alive) killShip(b, a.id);
+        }
+
+        // Small spark particles at contact point
+        for (let k = 0; k < 6; k++) {
+          const pa = rand(0, Math.PI * 2);
+          const sp = rand(30, 80);
+          particles.push({ x:cx, y:cy, vx:Math.cos(pa)*sp, vy:Math.sin(pa)*sp, life:rand(0.15,0.4), maxLife:0.4, color:'#fff', size:rand(0.5,1.5) });
+        }
+
+        // Cooldown to prevent repeat bouncing
+        a._friendlyBounceTimer = 0.2;
+        b._friendlyBounceTimer = 0.2;
+      } else {
+        // Enemy collision — original lethal behavior
         const mx = (a.x + b.x) / 2;
         const my = (a.y + b.y) / 2;
-        // White particles at midpoint, no shockwave
         for (let k = 0; k < 20; k++) {
           const pa = rand(0, Math.PI * 2);
           const sp = rand(20, 150);
@@ -4950,7 +5963,6 @@ function update(rawDt) {
         spawnExplosion(a.x, a.y, a.color, 15, 100);
         spawnExplosion(b.x, b.y, b.color, 15, 100);
         playExplosion();
-        // Kill both — attribute to each other (drillbore/shield survive)
         const aDrill = a.passive === 'drillbore';
         const bDrill = b.passive === 'drillbore';
         if (aDrill) { /* drillbore survives */ }
@@ -4991,6 +6003,7 @@ function update(rawDt) {
     if (p.incId && !incSpentBullets.has(p.incId)) {
       for (const ship of ships) {
         if (!ship.alive || ship.id === p.incOwner || ship.invuln > 0) continue;
+        if (p.incOwnerTeam > 0 && ship.team === p.incOwnerTeam) continue;
         if (Math.hypot(p.x - ship.x, p.y - ship.y) < ship.r + 3) {
           const dmg = 0.5 * (ship.passive === 'titanium' ? 0.75 : 1);
           if (ship.shieldActive) {
@@ -5006,10 +6019,10 @@ function update(rawDt) {
             spawnExplosion(p.x, p.y, '#f80', 4, 30);
             const attacker = shipById[p.incOwner];
             if (attacker) {
-              if (attacker.passive === 'iceRounds') { ship.iceSlow = 2; ship.iceDotTimer = 2.0; }
-              if (attacker.passive === 'jamRounds') ship.jamSlow = 4;
-              if (attacker.passive === 'stunShock') ship.stunTimer = 1.75;
-              if (attacker.passive === 'override') { ship.overrideTimer = 2; ship.overrideTurnDir = Math.random() < 0.5 ? -1 : 1; }
+              if (attacker.passive === 'iceRounds') { ship.iceSlow = 2; ship.iceDotTimer = 2.0; ship.iceColor = attacker.color; }
+              if (attacker.passive === 'jamRounds') { ship.jamSlow = 4; ship.jamColor = attacker.color; }
+              if (attacker.passive === 'stunShock') { ship.stunTimer = 1.75; ship.stunColor = attacker.color; }
+              if (attacker.passive === 'override') { ship.overrideTimer = 2; ship.overrideTurnDir = Math.random() < 0.5 ? -1 : 1; ship.overrideColor = attacker.color; }
             }
             if (ship.passive === 'hitInvuln' && ship.hp > 0 && ship.hitInvulnCooldown <= 0) {
               ship.invuln = 1; ship.hitInvulnCooldown = 8;
@@ -5226,6 +6239,7 @@ function update(rawDt) {
     // Proximity: enemy ship within 200 units
     for (const ship of ships) {
       if (ship.id === mine.ownerId || !ship.alive) continue;
+      if (mine.ownerTeam > 0 && ship.team === mine.ownerTeam) continue;
       if (dist(mine, ship) < mine.proximityRadius) { detonate = true; break; }
     }
 
@@ -5305,6 +6319,7 @@ function update(rawDt) {
           let closest = null, cDist = Infinity;
           for (const s of ships) {
             if (!s.alive || s.id === d.ownerId) continue;
+            if (d.ownerTeam > 0 && s.team === d.ownerTeam) continue;
             const dd = dist(d, s);
             if (dd < cDist) { cDist = dd; closest = s; }
           }
@@ -5316,6 +6331,7 @@ function update(rawDt) {
             const tAng = angle(d, closest);
             d.vx = Math.cos(tAng) * d.speed;
             d.vy = Math.sin(tAng) * d.speed;
+            playShootRise();
             // Breakaway ellipse particle
             shockwaves.push({ x: d.x, y: d.y, r: 0, maxR: 15, life: 0.2, maxLife: 0.2, color: d.color, ellipse: true, ellipseAng: tAng });
           }
@@ -5325,6 +6341,7 @@ function update(rawDt) {
       // Collision damage while orbiting (contact damage)
       for (const s of ships) {
         if (!s.alive || s.id === d.ownerId) continue;
+        if (d.ownerTeam > 0 && s.team === d.ownerTeam) continue;
         if (dist(d, s) < d.r + s.r) {
           // Deal damage
           s.hp -= d.damage;
@@ -5362,6 +6379,7 @@ function update(rawDt) {
       let closest = null, cDist = Infinity;
       for (const s of ships) {
         if (!s.alive || s.id === d.ownerId) continue;
+        if (d.ownerTeam > 0 && s.team === d.ownerTeam) continue;
         const dd = dist(d, s);
         if (dd < cDist) { cDist = dd; closest = s; }
       }
@@ -5395,6 +6413,7 @@ function update(rawDt) {
       let hit = false;
       for (const s of ships) {
         if (!s.alive || s.id === d.ownerId || s.invuln > 0) continue;
+        if (d.ownerTeam > 0 && s.team === d.ownerTeam) continue;
         if (dist(d, s) < d.r + s.r) {
           // Shield passive: absorb first hit
           if (s.shieldActive) {
@@ -5486,75 +6505,7 @@ function update(rawDt) {
   const alive = ships.filter(s => s.alive);
   if (alive.length > 0 && !finaleMode) {
 
-    if (cameraMode === 'dogfight') {
-      // Find and track the best dogfight
-      dogfightSwitchCooldown = Math.max(0, dogfightSwitchCooldown - rawDt);
-      const pair = findBestDogfight();
-
-      if (pair) {
-        const a = pair[0], b = pair[1];
-        // Only switch to a new pair if cooldown expired
-        if (!dogfightPair ||
-            (!shipById[dogfightPair[0]].alive || !shipById[dogfightPair[1]].alive) ||
-            (dogfightSwitchCooldown <= 0 && (dogfightPair[0] !== a.id || dogfightPair[1] !== b.id) && (dogfightPair[0] !== b.id || dogfightPair[1] !== a.id))) {
-          // If switching away from a dead pair, start linger
-          if (dogfightPair && (!shipById[dogfightPair[0]].alive || !shipById[dogfightPair[1]].alive) && cameraLinger <= 0) {
-            cameraLinger = 1.2;
-          }
-          if (cameraLinger <= 0) {
-            dogfightPair = [a.id, b.id];
-            dogfightSwitchCooldown = 2.0;
-            cameraTransitioning = false;
-          }
-        }
-      }
-
-      // Linger countdown — hold camera still
-      if (cameraLinger > 0) {
-        cameraLinger -= rawDt;
-        if (cameraLinger <= 0) {
-          cameraTransitioning = true;
-          // Now allow the pair switch
-          const freshPair = findBestDogfight();
-          if (freshPair) {
-            dogfightPair = [freshPair[0].id, freshPair[1].id];
-            dogfightSwitchCooldown = 2.0;
-          } else {
-            dogfightPair = null;
-          }
-        }
-        // Don't update target — hold position
-      } else if (dogfightPair && shipById[dogfightPair[0]].alive && shipById[dogfightPair[1]].alive) {
-        const sa = shipById[dogfightPair[0]], sb = shipById[dogfightPair[1]];
-        targetCamX = (sa.x + sb.x) / 2;
-        targetCamY = (sa.y + sb.y) / 2;
-        const spread = dist(sa, sb) + 400;
-        const needZoomX = W / spread;
-        const needZoomY = H / spread;
-        targetZoom = Math.min(needZoomX, needZoomY);
-        targetZoom = Math.max(0.4, Math.min(2.5, targetZoom));
-        cameraTransitioning = false;
-      } else if (!dogfightPair || !shipById[dogfightPair[0]].alive || !shipById[dogfightPair[1]].alive) {
-        // Pair lost and no linger — start linger if we haven't
-        if (cameraLinger <= 0 && !cameraTransitioning) {
-          cameraLinger = 1.2;
-        } else if (cameraTransitioning) {
-          // Slowly pull out to overview framing
-          dogfightPair = null;
-          let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-          for (const s of alive) {
-            minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x);
-            minY = Math.min(minY, s.y); maxY = Math.max(maxY, s.y);
-          }
-          targetCamX = (minX + maxX) / 2;
-          targetCamY = (minY + maxY) / 2;
-          const spreadX = maxX - minX + 600;
-          const spreadY = maxY - minY + 600;
-          targetZoom = Math.max(0.15, Math.min(1.5, Math.min(W / spreadX, H / spreadY)));
-        }
-      }
-
-    } else if (cameraMode === 'manual') {
+    if (cameraMode === 'manual') {
       // Track selected ships
       const tracked = manualShips.filter(id => shipById[id] && shipById[id].alive);
       if (tracked.length <= 1) {
@@ -5616,8 +6567,9 @@ function update(rawDt) {
       targetCamX = (minX + maxX) / 2;
       targetCamY = (minY + maxY) / 2;
 
-      const spreadX = maxX - minX + 600;
-      const spreadY = maxY - minY + 600;
+      const camPad = 200 + alive.length * 15;
+      const spreadX = maxX - minX + camPad;
+      const spreadY = maxY - minY + camPad;
       const needZoomX = W / spreadX;
       const needZoomY = H / spreadY;
       targetZoom = Math.min(needZoomX, needZoomY);
@@ -5631,7 +6583,7 @@ function update(rawDt) {
     baseCamSpeed = 0; // hold still during linger
   } else if (cameraTransitioning) {
     baseCamSpeed = 0.02; // slow pull-out from fights
-  } else if (cameraMode === 'dogfight' || cameraMode === 'manual') {
+  } else if (cameraMode === 'manual') {
     baseCamSpeed = 0.08; // snappy tracking during active fights
   } else {
     baseCamSpeed = CFG.CAMERA_LERP;
@@ -5657,8 +6609,9 @@ function update(rawDt) {
   // Finale slow-mo: triggered by the killing blow in killShip
   if (finaleMode) {
     finaleTimer += rawDt;
-    // Dramatic slowdown curve: stays near-frozen throughout
-    finaleSlowMo = 0.03 + Math.min(0.05, finaleTimer * 0.02);
+    // Gradual slowdown: starts at ~0.3x speed, eases to near-zero over 3.5s
+    const t = Math.min(1, finaleTimer / 3.5);
+    finaleSlowMo = 0.3 * (1 - t) * (1 - t); // quadratic ease to zero
     finaleFlash = Math.max(0, finaleFlash - rawDt * 2.5);
 
     // Screen shake — intense at first, decays over ~1.5s
@@ -5682,7 +6635,14 @@ function update(rawDt) {
   // Normal win check (fallback if somehow missed)
   const aliveCount = ships.filter(s => s.alive).length;
   document.getElementById('alive-num').textContent = aliveCount;
-  if (aliveCount <= 1 && !gameOver && !finaleMode) {
+  let shouldEnd = false;
+  if (matchMode === 'teams') {
+    const teamsAlive = new Set(ships.filter(s => s.alive && s.team > 0).map(s => s.team));
+    if (teamsAlive.size <= 1) shouldEnd = true;
+  } else {
+    if (aliveCount <= 1) shouldEnd = true;
+  }
+  if (shouldEnd && !gameOver && !finaleMode) {
     gameOver = true;
     winner = ships.find(s => s.alive) || null;
     setTimeout(showWinner, 1000);
@@ -5691,10 +6651,22 @@ function update(rawDt) {
   updateScoreboard();
 }
 
+function updateBannerShipIcon(ship) {
+  if (matchMode !== 'teams' || !ship.team) return;
+  const t = ship.team - 1;
+  let offset = 0;
+  for (let i = 0; i < t; i++) offset += teamAssignments[i].length;
+  const idx = ship.id - offset;
+  const icon = document.querySelector(`.banner-team-ships .ship-icon[data-banner-ship-id="${t}-${idx}"]`);
+  if (icon) icon.classList.add('eliminated');
+}
+
 function killShip(ship, killerId) {
   ship.alive = false;
   ship.deathTime = gameTime;
   ship.placement = ships.filter(s => s.alive).length + 1;
+  // Update tournament banner ship icons
+  updateBannerShipIcon(ship);
   // Death explosion — longer-lasting particles than normal (3x for flagship)
   const deathLifeMult = ship.passive === 'flagship' ? 3 : 1;
   const deathCount = ship.passive === 'flagship' ? 80 : 40;
@@ -5758,13 +6730,20 @@ function killShip(ship, killerId) {
   addKillMessage(killerName, killerColor, ship.name, ship.color);
 
   const aliveCount = ships.filter(s => s.alive).length;
-  if (aliveCount <= 1 && !finaleMode) {
+  // Check win: FFA = 1 ship left, Teams = 1 team left
+  let shouldFinale = false;
+  if (matchMode === 'teams') {
+    const teamsAlive = new Set(ships.filter(s => s.alive && s.team > 0).map(s => s.team));
+    if (teamsAlive.size <= 1) shouldFinale = true;
+  } else {
+    if (aliveCount <= 1) shouldFinale = true;
+  }
+  if (shouldFinale && !finaleMode) {
     finaleMode = true;
     finaleTimer = 0;
     finaleFlash = 1;
-    const survivor = ships.find(s => s.alive);
-    // Only grant invuln if there IS a survivor (not a draw)
-    if (survivor) survivor.invuln = Infinity;
+    // Grant invuln to all survivors
+    for (const s of ships) { if (s.alive) s.invuln = Infinity; }
     finaleDeath = {
       x: ship.x, y: ship.y,
       color: ship.color,
@@ -5782,69 +6761,15 @@ function killShip(ship, killerId) {
   }
 }
 
-// ─── DOGFIGHT DETECTION ──────────────────────────────────────
-function findBestDogfight() {
-  const alive = ships.filter(s => s.alive && s._teleportPhase !== 'phasing');
-  if (alive.length < 2) return null;
-
-  let bestPair = null;
-  let bestScore = -Infinity;
-
-  for (let i = 0; i < alive.length; i++) {
-    for (let j = i + 1; j < alive.length; j++) {
-      const a = alive[i], b = alive[j];
-      const d = dist(a, b);
-      if (d > 1200) continue; // too far apart to be a dogfight
-
-      // Proximity score — closer = better, peaks under 400
-      const proxScore = Math.max(0, 1200 - d) / 1200;
-
-      // Check if they're shooting at each other via bullets in flight
-      let aShotsAtB = 0, bShotsAtA = 0;
-      for (const bul of bullets) {
-        if (bul.owner === a.id) {
-          const toBx = b.x - bul.x, toBy = b.y - bul.y;
-          const dot = toBx * bul.vx + toBy * bul.vy;
-          if (dot > 0 && Math.hypot(toBx, toBy) < 800) aShotsAtB++;
-        } else if (bul.owner === b.id) {
-          const toAx = a.x - bul.x, toAy = a.y - bul.y;
-          const dot = toAx * bul.vx + toAy * bul.vy;
-          if (dot > 0 && Math.hypot(toAx, toAy) < 800) bShotsAtA++;
-        }
-      }
-
-      // Mutual engagement bonus — both firing at each other is the best
-      const mutualFire = Math.min(aShotsAtB, bShotsAtA);
-      const anyFire = aShotsAtB + bShotsAtA;
-      const fireScore = mutualFire * 3 + anyFire;
-
-      // Prefer keeping the current pair to avoid camera thrashing
-      let stabilityBonus = 0;
-      if (dogfightPair && (
-        (dogfightPair[0] === a.id && dogfightPair[1] === b.id) ||
-        (dogfightPair[0] === b.id && dogfightPair[1] === a.id))) {
-        stabilityBonus = 2;
-      }
-
-      const score = proxScore * 5 + fireScore + stabilityBonus;
-      if (score > bestScore && anyFire > 0) {
-        bestScore = score;
-        bestPair = [a, b];
-      }
-    }
-  }
-
-  return bestPair;
-}
-
 // ─── RENDER ───────────────────────────────────────────────────
 function render() {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
 
   ctx.save();
-  // Camera transform
-  ctx.translate(W / 2 + screenShakeX, H / 2 + screenShakeY);
+  // Camera transform — shift view center down during tournament to clear top banner
+  const bannerOffset = matchMode === 'teams' ? 30 : 0;
+  ctx.translate(W / 2 + screenShakeX, H / 2 + screenShakeY + bannerOffset);
   ctx.scale(camZoom, camZoom);
   ctx.translate(-cameraX, -cameraY);
 
@@ -5945,7 +6870,7 @@ function render() {
     } else {
       ctx.globalAlpha = 0.7;
     }
-    drawShipShape(ctx, clone.x, clone.y, clone.ang, clone.r, clone.color, 1, 1, 0, clone.shipId, 0);
+    drawShipShape(ctx, clone.x, clone.y, clone.ang, clone.r, clone.color, 1, 1, 0, clone.shipId, 0, clone._designForced);
     ctx.restore();
   }
 
@@ -6274,8 +7199,11 @@ function render() {
       ctx.restore();
     }
 
+    // Fly-in fade alpha
+    const _shipAlpha = ship._flyAlpha != null ? ship._flyAlpha : 1;
+
     // Zoom-dependent glow ring — visible at distance, fades when close
-    const zoomRingAlpha = Math.max(0, Math.min(0.35, (0.5 - camZoom) * 1));
+    const zoomRingAlpha = Math.max(0, Math.min(0.35, (0.5 - camZoom) * 1)) * _shipAlpha;
     if (zoomRingAlpha > 0.01) {
       const ringR = ship.r * 6;
       const hc = ship.color;
@@ -6290,7 +7218,9 @@ function render() {
       ctx.fill();
     }
 
-    drawShipShape(ctx, ship.x, ship.y, ship.ang, ship.r, ship.color, ship.hp, ship.maxHp, ship.invuln, ship.id, ship.hpBarTimer);
+    if (_shipAlpha < 1) ctx.globalAlpha = _shipAlpha;
+    drawShipShape(ctx, ship.x, ship.y, ship.ang, ship.r, ship.color, ship.hp, ship.maxHp, ship.invuln, ship.shipType, ship.hpBarTimer, ship._designForced);
+    if (_shipAlpha < 1) ctx.globalAlpha = 1;
 
     // ── PASSIVE VISUAL OVERLAYS ──
     ctx.save();
@@ -6452,6 +7382,25 @@ function render() {
   }
   ctx.globalAlpha = 1;
 
+  // Fly-in team name labels (world space)
+  if (flyInTeamLabels.length > 0) {
+    for (const label of flyInTeamLabels) {
+      if (label.alpha <= 0) continue;
+      ctx.save();
+      ctx.globalAlpha = label.alpha;
+      const _labelSize = matchMode === 'teams' ? 90 : 28;
+      ctx.font = `900 ${Math.round(_labelSize / camZoom)}px Orbitron, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.shadowColor = label.color;
+      ctx.shadowBlur = (_labelSize * 0.35) / camZoom;
+      ctx.fillStyle = label.color;
+      ctx.fillText(label.name, label.x, label.y);
+      ctx.fillText(label.name, label.x, label.y);
+      ctx.restore();
+    }
+  }
+
   ctx.restore();
 
   // ── ANIME FINALE EFFECTS ──
@@ -6521,17 +7470,25 @@ function render() {
       const slideX = Math.max(0, 30 - textT * 60);
 
       const w = ships.find(s => s.alive);
-      if (w) {
+      // In team mode, show winning team name and color
+      let winName = w ? w.name : null;
+      let winColor = w ? w.color : null;
+      if (matchMode === 'teams' && w && w.team > 0) {
+        winName = teamNames[w.team - 1] || winName;
+        const tc = getTeamColors();
+        winColor = tc[w.team - 1] || winColor;
+      }
+      if (winName) {
         ctx.save();
         ctx.globalAlpha = textAlpha;
 
         // Glowing name
         ctx.font = '900 56px "Orbitron"';
         ctx.textAlign = 'center';
-        ctx.shadowColor = w.color;
+        ctx.shadowColor = winColor;
         ctx.shadowBlur = (40) * glowScale;
-        ctx.fillStyle = w.color;
-        ctx.fillText(w.name, W/2 + slideX, H/2);
+        ctx.fillStyle = winColor;
+        ctx.fillText(winName, W/2 + slideX, H/2);
         ctx.shadowBlur = 0;
 
         // "WINS" subtitle
@@ -6585,7 +7542,7 @@ function render() {
   }
 
   // ── SCOREBOARD HUD ──
-  drawScoreboard(ctx);
+  // (scoreboard HUD removed for cleaner look)
 }
 
 // ─── STARS ────────────────────────────────────────────────────
@@ -6608,6 +7565,43 @@ function drawStars() {
   }
 }
 
+function lerpHexColor(c1, c2, t) {
+  const h = s => parseInt(s.slice(1), 16);
+  const v1 = h(c1), v2 = h(c2);
+  const r1 = (v1>>16)&0xff, g1 = (v1>>8)&0xff, b1 = v1&0xff;
+  const r2 = (v2>>16)&0xff, g2 = (v2>>8)&0xff, b2 = v2&0xff;
+  const r = Math.round(r1 + (r2 - r1) * t), g = Math.round(g1 + (g2 - g1) * t), b = Math.round(b1 + (b2 - b1) * t);
+  return '#' + ((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1);
+}
+
+function getTeamColors() {
+  // In tournament mode, use pre-computed match colors for consistency
+  if (tourneyActive && _tourneyMatchColors) return [..._tourneyMatchColors];
+  // Pick most common color from each team, avoiding duplicates
+  const result = [];
+  const used = new Set();
+  for (let t = 0; t < teamAssignments.length; t++) {
+    const freq = {};
+    const teamShips = ships.filter(s => s.team === t + 1);
+    for (const s of teamShips) {
+      const c = s.origColor;
+      freq[c] = (freq[c] || 0) + 1;
+    }
+    let best = null, bestN = 0;
+    for (const [c, n] of Object.entries(freq)) {
+      if (used.has(c)) continue;
+      if (n > bestN) { bestN = n; best = c; }
+    }
+    if (!best) {
+      for (const [c, n] of Object.entries(freq)) if (n > bestN || !best) { bestN = n; best = c; }
+    }
+    if (!best) best = TEAM_COLORS[t] || '#888';
+    result.push(best);
+    used.add(best);
+  }
+  return result;
+}
+
 function buildPregameRoster() {
   const el = document.getElementById('pregame-roster');
   el.innerHTML = '';
@@ -6618,7 +7612,7 @@ function buildPregameRoster() {
     tag.style.borderColor = ship.color + '55';
     tag.style.background = ship.color + '11';
     tag.style.animationDelay = `${i * 0.06}s`;
-    tag.appendChild(createShipIcon(ship.id, ship.color, 22));
+    tag.appendChild(createShipIcon(ship.shipType, ship.color, 22, ship._designForced));
     const nameSpan = document.createElement('span');
     nameSpan.style.color = ship.color;
     if (ship.name === 'MAGENTA') nameSpan.style.marginLeft = '2px';
@@ -6626,6 +7620,1568 @@ function buildPregameRoster() {
     tag.appendChild(nameSpan);
     el.appendChild(tag);
   }
+}
+
+
+// ─── TEAM BUILDER UI ─────────────────────────────────────────
+let teamBuilderTarget = 0; // which team index gets next ship click
+
+function setMatchModeUI(mode) {
+  matchMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  const roster = document.getElementById('pregame-roster');
+  const builder = document.getElementById('team-builder');
+  const startBtn = document.getElementById('start-btn');
+  const shipCountRow = document.getElementById('ship-count-selector');
+
+  if (mode === 'tournament') {
+    // Open tournament overlay, hide pregame
+    document.getElementById('pregame-overlay').classList.add('hidden');
+    document.getElementById('tournament-overlay').classList.add('active');
+    document.getElementById('tourney-bracket-title').textContent = 'TOURNAMENT';
+    document.getElementById('tourney-bracket-title').style.color = '#fff';
+    document.getElementById('tourney-bracket-subtitle').textContent = 'SINGLE ELIMINATION';
+    renderBracket();
+    return;
+  }
+
+  if (mode === 'ffa') {
+    roster.style.display = 'grid';
+    builder.classList.remove('active');
+    startBtn.textContent = 'START MATCH';
+    startBtn.disabled = false;
+  } else {
+    roster.style.display = 'none';
+    builder.classList.add('active');
+    // Initialize teams if empty
+    if (teamAssignments.length < 2) {
+      teamAssignments = [[], []];
+      teamNames = ['TEAM 1', 'TEAM 2'];
+      teamWeapons = [[], []];
+      teamPassives = [[], []];
+      teamManeuvers = [[], []];
+      teamShipDesigns = [[], []];
+      teamBuilderTarget = 0;
+    }
+    // Team mode active
+    renderTeamBuilder();
+  }
+}
+
+let _activeWpnDropdown = null;
+function closeWeaponDropdown() {
+  if (_activeWpnDropdown) { _activeWpnDropdown.remove(); _activeWpnDropdown = null; }
+}
+function toggleLoadoutDropdown(teamIdx, btn, type) {
+  const ddKey = `${type}-${teamIdx}`;
+  if (_activeWpnDropdown && _activeWpnDropdown._ddKey === ddKey) {
+    closeWeaponDropdown(); return;
+  }
+  closeWeaponDropdown();
+  const dd = document.createElement('div');
+  dd.className = 'team-wpn-dropdown';
+  dd._ddKey = ddKey;
+
+  let keys, defs, stateArr;
+  if (type === 'designs') { keys = SHIP_DESIGN_KEYS; defs = SHIP_DESIGN_DEFS; stateArr = teamShipDesigns; }
+  else if (type === 'weapons') { keys = Object.keys(WEAPON_DEFS); defs = WEAPON_DEFS; stateArr = teamWeapons; }
+  else if (type === 'passives') { keys = PASSIVE_KEYS; defs = PASSIVE_DEFS; stateArr = teamPassives; }
+  else { keys = MANEUVER_KEYS; defs = MANEUVER_DEFS; stateArr = teamManeuvers; }
+
+  for (const key of keys) {
+    const item = document.createElement('label');
+    item.className = 'team-wpn-item';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = stateArr[teamIdx].includes(key);
+    cb.onchange = () => {
+      if (cb.checked) {
+        if (!stateArr[teamIdx].includes(key)) stateArr[teamIdx].push(key);
+      } else {
+        stateArr[teamIdx] = stateArr[teamIdx].filter(k => k !== key);
+      }
+      const allBtns = document.querySelectorAll(`.team-wpn-btn[data-type="${type}"][data-team="${teamIdx}"]`);
+      const b = allBtns[0];
+      if (b) {
+        const count = stateArr[teamIdx].length;
+        const icon = type === 'designs' ? 'Ships' : type === 'weapons' ? 'Weapons' : type === 'passives' ? 'Abilities' : 'Maneuvers';
+        b.textContent = count === 0 ? icon : count === 1 ? defs[stateArr[teamIdx][0]]?.name || stateArr[teamIdx][0] : `${icon} ×${count}`;
+        b.classList.toggle('active', count > 0);
+      }
+      // Live-update slot icons when designs change
+      if (type === 'designs') {
+        const col = b?.closest('.team-col');
+        if (col) {
+          const slots = col.querySelectorAll('.team-slot');
+          const designs = stateArr[teamIdx] || [];
+          slots.forEach((slot, si) => {
+            const shipIdx = teamAssignments[teamIdx][si];
+            if (shipIdx === undefined) return;
+            const oldIcon = slot.querySelector('.ship-icon, svg');
+            if (oldIcon) {
+              const designIdx = designs.length > 0 ? parseInt(designs[si % designs.length]) : shipIdx;
+              const newIcon = createShipIcon(designIdx, PILOT_COLORS[shipIdx], 22, true);
+              slot.replaceChild(newIcon, oldIcon);
+            }
+          });
+        }
+      }
+    };
+    item.appendChild(cb);
+    const label = document.createElement('span');
+    if (type === 'designs') {
+      const colorIdx = parseInt(key);
+      // Add inline SVG ship icon
+      const iconSvg = createShipIconSVG(colorIdx, PILOT_COLORS[colorIdx], 16, true);
+      if (iconSvg) {
+        iconSvg.style.flexShrink = '0';
+        item.appendChild(iconSvg);
+      }
+      label.style.color = PILOT_COLORS[colorIdx];
+      label.textContent = defs[key].name;
+    } else {
+      label.textContent = defs[key].name;
+    }
+    item.appendChild(label);
+    dd.appendChild(item);
+  }
+
+  const rect = btn.getBoundingClientRect();
+  dd.style.position = 'fixed';
+  dd.style.top = rect.bottom + 2 + 'px';
+  const leftPos = Math.min(rect.left, window.innerWidth - 140);
+  dd.style.left = Math.max(0, leftPos) + 'px';
+  document.body.appendChild(dd);
+  _activeWpnDropdown = dd;
+}
+document.addEventListener('click', (e) => {
+  if (_activeWpnDropdown && !_activeWpnDropdown.contains(e.target) && !e.target.classList.contains('team-wpn-btn')) {
+    closeWeaponDropdown();
+  }
+});
+
+function renderTeamBuilder() {
+  // Ship picker grid
+  const picker = document.getElementById('ship-picker');
+  picker.innerHTML = '';
+  const assignedShips = new Set(teamAssignments.flat());
+  for (let i = 0; i < PILOT_NAMES.length; i++) {
+    const el = document.createElement('div');
+    el.className = 'picker-ship';
+    el.appendChild(createShipIcon(i, PILOT_COLORS[i], 22, true));
+    const name = document.createElement('span');
+    name.style.color = PILOT_COLORS[i];
+    name.textContent = PILOT_NAMES[i];
+    el.appendChild(name);
+    el.onclick = () => addShipToTeam(i);
+    picker.appendChild(el);
+  }
+
+  // Team columns
+  const colArea = document.getElementById('team-columns');
+  colArea.innerHTML = '';
+  const tc = teamAssignments.length > 0 ? getTeamBuilderColors() : TEAM_COLORS;
+
+  for (let t = 0; t < teamAssignments.length; t++) {
+    const col = document.createElement('div');
+    col.className = 'team-col';
+    col.style.borderColor = (tc[t] || '#888') + '40';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'team-col-header';
+    header.id = 'team-header-' + t;
+    header.style.color = tc[t] || '#888';
+    header.textContent = teamNames[t];
+    header.ondblclick = () => editTeamName(t);
+    col.appendChild(header);
+
+    // Per-team loadout selectors
+    const loadoutRow = document.createElement('div');
+    loadoutRow.className = 'team-loadout-row';
+    const loadoutTypes = [
+      { type: 'designs', arr: teamShipDesigns, defs: SHIP_DESIGN_DEFS, icon: 'Ships' },
+      { type: 'weapons', arr: teamWeapons, defs: WEAPON_DEFS, icon: 'Weapons' },
+      { type: 'passives', arr: teamPassives, defs: PASSIVE_DEFS, icon: 'Abilities' },
+      { type: 'maneuvers', arr: teamManeuvers, defs: MANEUVER_DEFS, icon: 'Maneuvers' },
+    ];
+    for (const lt of loadoutTypes) {
+      const btn = document.createElement('div');
+      btn.className = 'team-wpn-btn' + (lt.arr[t] && lt.arr[t].length > 0 ? ' active' : '');
+      if (lt.type === 'passives' || lt.type === 'maneuvers') btn.style.fontSize = '8px';
+      btn.setAttribute('data-type', lt.type);
+      btn.setAttribute('data-team', t);
+      btn.title = lt.type.charAt(0).toUpperCase() + lt.type.slice(1);
+      const count = lt.arr[t] ? lt.arr[t].length : 0;
+      btn.textContent = count === 0 ? lt.icon : count === 1 ? lt.defs[lt.arr[t][0]]?.name || lt.arr[t][0] : `${lt.icon} ×${count}`;
+      const _type = lt.type, _t = t;
+      btn.onclick = (e) => { e.stopPropagation(); toggleLoadoutDropdown(_t, btn, _type); };
+      loadoutRow.appendChild(btn);
+    }
+    col.appendChild(loadoutRow);
+
+    // Slots area (fixed height, items shrink beyond 10)
+    const slotsArea = document.createElement('div');
+    slotsArea.className = 'team-slots-area';
+
+    // Filled slots
+    const designs = teamShipDesigns[t] || [];
+    for (let i = 0; i < teamAssignments[t].length; i++) {
+      const si = teamAssignments[t][i];
+      const slot = document.createElement('div');
+      slot.className = 'team-slot';
+      // If designs are overridden, show the design icon instead
+      if (designs.length > 0) {
+        const designIdx = parseInt(designs[i % designs.length]);
+        slot.appendChild(createShipIcon(designIdx, PILOT_COLORS[si], 22, true));
+      } else {
+        slot.appendChild(createShipIcon(si, PILOT_COLORS[si], 22));
+      }
+      const name = document.createElement('span');
+      name.className = 'team-slot-name';
+      name.style.color = PILOT_COLORS[si];
+      name.textContent = PILOT_NAMES[si];
+      slot.appendChild(name);
+      const rem = document.createElement('span');
+      rem.className = 'team-slot-remove';
+      rem.textContent = '✕';
+      const slotIdx = i;
+      rem.onclick = (e) => { e.stopPropagation(); removeFromTeam(t, slotIdx); };
+      slot.appendChild(rem);
+      slotsArea.appendChild(slot);
+    }
+
+    col.appendChild(slotsArea);
+
+    // "Add" slot
+    const addSlot = document.createElement('div');
+    addSlot.className = 'team-add-slot' + (teamBuilderTarget === t ? ' target' : '');
+    addSlot.textContent = '+ Add';
+    addSlot.onclick = () => { teamBuilderTarget = t; renderTeamBuilder(); };
+    col.appendChild(addSlot);
+
+    // Remove team button (if >2 teams)
+    if (teamAssignments.length > 2) {
+      const remBtn = document.createElement('div');
+      remBtn.className = 'team-col-remove';
+      remBtn.textContent = '✕ remove';
+      remBtn.onclick = () => removeTeamFromBuilder(t);
+      col.appendChild(remBtn);
+    }
+    colArea.appendChild(col);
+  }
+
+  // Add team button
+  if (teamAssignments.length < MAX_TEAMS) {
+    const addCol = document.createElement('div');
+    addCol.className = 'add-team-col';
+    addCol.textContent = '+ TEAM';
+    addCol.onclick = addTeamToBuilder;
+    colArea.appendChild(addCol);
+  }
+
+  // Update start button
+  updateTeamStartButton();
+}
+
+function getTeamBuilderColors() {
+  // For builder UI, use default team colors (no ships assigned yet for color detection)
+  const result = [];
+  for (let t = 0; t < teamAssignments.length; t++) {
+    if (teamAssignments[t].length > 0) {
+      // Pick most common color in this team
+      const freq = {};
+      for (const idx of teamAssignments[t]) {
+        const c = PILOT_COLORS[idx];
+        freq[c] = (freq[c] || 0) + 1;
+      }
+      let best = null, bestN = 0;
+      for (const [c, n] of Object.entries(freq)) {
+        if (n > bestN) { bestN = n; best = c; }
+      }
+      result.push(best || TEAM_COLORS[t]);
+    } else {
+      result.push(TEAM_COLORS[t]);
+    }
+  }
+  return result;
+}
+
+function addShipToTeam(shipIdx) {
+  teamAssignments[teamBuilderTarget].push(shipIdx);
+  renderTeamBuilder();
+}
+
+function removeFromTeam(teamIdx, slotIdx) {
+  if (slotIdx >= 0 && slotIdx < teamAssignments[teamIdx].length) {
+    teamAssignments[teamIdx].splice(slotIdx, 1);
+  }
+  renderTeamBuilder();
+}
+
+function addTeamToBuilder() {
+  if (teamAssignments.length >= MAX_TEAMS) return;
+  teamAssignments.push([]);
+  teamNames.push('TEAM ' + teamAssignments.length);
+  teamWeapons.push([]);
+  teamPassives.push([]);
+  teamManeuvers.push([]);
+  teamShipDesigns.push([]);
+  teamBuilderTarget = teamAssignments.length - 1;
+  renderTeamBuilder();
+}
+
+function removeTeamFromBuilder(t) {
+  if (teamAssignments.length <= 2) return;
+  teamAssignments.splice(t, 1);
+  teamNames.splice(t, 1);
+  teamWeapons.splice(t, 1);
+  teamPassives.splice(t, 1);
+  teamManeuvers.splice(t, 1);
+  teamShipDesigns.splice(t, 1);
+  if (teamBuilderTarget >= teamAssignments.length) teamBuilderTarget = teamAssignments.length - 1;
+  renderTeamBuilder();
+}
+
+function editTeamName(t) {
+  const header = document.getElementById('team-header-' + t);
+  if (!header) return;
+  const tc = getTeamBuilderColors();
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = teamNames[t];
+  input.maxLength = 16;
+  input.style.cssText = 'background:transparent; border:none; border-bottom:1px solid ' + (tc[t] || '#fff') + '80; color:inherit; font-family:Orbitron,sans-serif; font-size:inherit; font-weight:inherit; letter-spacing:inherit; text-align:center; width:100%; outline:none; padding:0;';
+  const commit = () => {
+    const val = input.value.trim();
+    teamNames[t] = val || ('TEAM ' + (t + 1));
+    header.textContent = teamNames[t];
+  };
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
+  header.textContent = '';
+  header.appendChild(input);
+  input.focus();
+  input.select();
+}
+
+// ─── TOURNAMENT MODE ─────────────────────────────────────────
+let tourneySize = 8;
+let tourneyTeams = []; // array of { name, ships:[], weapons:[], passives:[], maneuvers:[], designs:[], color:null }
+let tourneyBracket = []; // array of rounds, each round = array of matches {team1idx, team2idx, winnerIdx}
+let tourneyRound = 0;
+let tourneyMatchIdx = 0;
+let tourneyActive = false; // true = tournament is in progress (playing matches)
+let tourneyAnimating = false; // true = bracket transition animation in progress
+let _tourneyMatchColors = null; // cached match colors for current tournament match
+let tourneyBaseScale = 1; // stored auto-scale factor for zoom in/out
+let tourneyEliminated = new Set(); // team indices that have been eliminated (for persistent dim)
+let tourneyModalSlot = -1; // which bracket slot is being edited
+let _tourneyModalShips = [];
+let _tourneyModalWeapons = [];
+let _tourneyModalPassives = [];
+let _tourneyModalManeuvers = [];
+let _tourneyModalDesigns = [];
+
+function setTourneySize(n) {
+  tourneySize = n;
+  document.querySelectorAll('.tourney-size-btn').forEach(b =>
+    b.classList.toggle('active', parseInt(b.dataset.size) === n)
+  );
+  initTourneyTeams();
+  buildBracket();
+  renderBracket();
+}
+
+function initTourneyTeams() {
+  // Preserve existing teams that fit, pad or trim
+  const old = tourneyTeams.slice(0, tourneySize);
+  tourneyTeams = [];
+  for (let i = 0; i < tourneySize; i++) {
+    if (old[i]) {
+      tourneyTeams.push(old[i]);
+    } else {
+      tourneyTeams.push({ name: '', ships: [], weapons: [], passives: [], maneuvers: [], designs: [], color: null });
+    }
+  }
+  tourneyRound = 0;
+  tourneyMatchIdx = 0;
+  tourneyActive = false;
+}
+
+function randomFillTournament() {
+  if (tourneyActive) return;
+  const shipsPerTeam = Math.max(2, Math.floor(16 / tourneySize));
+  // Shuffle all 16 ship indices
+  const allShips = Array.from({length: 16}, (_, i) => i);
+  for (let i = allShips.length - 1; i > 0; i--) {
+    const j = randInt(0, i);
+    [allShips[i], allShips[j]] = [allShips[j], allShips[i]];
+  }
+  let shipPool = [...allShips];
+  for (let t = 0; t < tourneySize; t++) {
+    const teamShips = [];
+    for (let s = 0; s < shipsPerTeam; s++) {
+      if (shipPool.length === 0) {
+        // Reshuffle if we run out
+        shipPool = [...allShips];
+        for (let i = shipPool.length - 1; i > 0; i--) {
+          const j = randInt(0, i);
+          [shipPool[i], shipPool[j]] = [shipPool[j], shipPool[i]];
+        }
+      }
+      teamShips.push(shipPool.pop());
+    }
+    const teamWeaps = teamShips.map(() => WEAPON_KEYS[randInt(0, WEAPON_KEYS.length - 1)]);
+    const teamPass = teamShips.map(() => PASSIVE_KEYS[randInt(0, PASSIVE_KEYS.length - 1)]);
+    const teamMan = teamShips.map(() => MANEUVER_KEYS[randInt(0, MANEUVER_KEYS.length - 1)]);
+    // Name from first two ship colors
+    const n1 = PILOT_NAMES[teamShips[0]];
+    const n2 = teamShips.length > 1 ? PILOT_NAMES[teamShips[1]] : '';
+    const teamName = n2 ? `${n1}/${n2}` : n1;
+    tourneyTeams[t] = {
+      name: teamName,
+      ships: teamShips,
+      weapons: teamWeaps,
+      passives: teamPass,
+      maneuvers: teamMan,
+      designs: [],
+      color: PILOT_COLORS[teamShips[0]]
+    };
+  }
+  buildBracket();
+  renderBracket();
+}
+
+function buildBracket() {
+  tourneyBracket = [];
+  let teamsInRound = tourneySize;
+  while (teamsInRound > 1) {
+    const matches = [];
+    for (let i = 0; i < teamsInRound / 2; i++) {
+      matches.push({ team1: null, team2: null, winner: null });
+    }
+    tourneyBracket.push(matches);
+    teamsInRound /= 2;
+  }
+  // Seed first round
+  if (tourneyBracket.length > 0) {
+    for (let i = 0; i < tourneyBracket[0].length; i++) {
+      tourneyBracket[0][i].team1 = i * 2;
+      tourneyBracket[0][i].team2 = i * 2 + 1;
+    }
+  }
+}
+
+function getTourneyTeamLabel(idx) {
+  if (idx === null || idx === undefined) return null;
+  const t = tourneyTeams[idx];
+  if (!t) return null;
+  if (t.name) return t.name;
+  if (t.ships.length > 0) return t.ships.map(si => PILOT_NAMES[si]).join('/');
+  return null;
+}
+
+function getTourneyTeamColor(idx) {
+  if (idx === null || idx === undefined) return 'rgba(255,255,255,0.15)';
+  const t = tourneyTeams[idx];
+  if (!t || t.ships.length === 0) return 'rgba(255,255,255,0.15)';
+  // Most common color on this team
+  const freq = {};
+  for (const si of t.ships) {
+    const c = PILOT_COLORS[si];
+    freq[c] = (freq[c] || 0) + 1;
+  }
+  const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+  return sorted[0] ? sorted[0][0] : '#888';
+}
+
+// Get colors for two tournament teams in a match, avoiding duplicates
+function getTourneyMatchColors(idx1, idx2) {
+  const c1 = getTourneyTeamColor(idx1);
+  const c2Raw = getTourneyTeamColor(idx2);
+  if (c2Raw !== c1) return [c1, c2Raw];
+  // Collision: second team uses its second-most-common color
+  const t2 = tourneyTeams[idx2];
+  if (!t2 || t2.ships.length === 0) return [c1, '#888'];
+  const freq = {};
+  for (const si of t2.ships) {
+    const c = PILOT_COLORS[si];
+    freq[c] = (freq[c] || 0) + 1;
+  }
+  const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+  const fallback = sorted.find(e => e[0] !== c1);
+  return [c1, fallback ? fallback[0] : '#888'];
+}
+
+function buildTeamBanner(roundLabel, tc) {
+  const banner = document.getElementById('tourney-progress-banner');
+  banner.innerHTML = '';
+
+  // Round/mode label
+  if (roundLabel) {
+    const roundDiv = document.createElement('div');
+    roundDiv.className = 'banner-round';
+    roundDiv.textContent = roundLabel;
+    banner.appendChild(roundDiv);
+  }
+
+  // Teams row
+  const teamsDiv = document.createElement('div');
+  teamsDiv.className = 'banner-teams';
+
+  for (let t = 0; t < Math.min(2, teamAssignments.length); t++) {
+    if (t > 0) {
+      const vs = document.createElement('span');
+      vs.className = 'banner-vs';
+      vs.textContent = 'VS';
+      teamsDiv.appendChild(vs);
+    }
+    const teamDiv = document.createElement('div');
+    teamDiv.className = 'banner-team';
+    const nameSpan = document.createElement('div');
+    nameSpan.className = 'banner-team-name';
+    nameSpan.style.color = tc[t] || '#888';
+    nameSpan.textContent = teamNames[t];
+    teamDiv.appendChild(nameSpan);
+
+    const shipsRow = document.createElement('div');
+    shipsRow.className = 'banner-team-ships';
+    const teamShips = ships.filter(s => s.team === t + 1);
+    teamShips.forEach((ship, idx) => {
+      const icon = createShipIconSVG(ship.shipType, ship.color, 14, ship._designForced);
+      icon.setAttribute('class', 'ship-icon');
+      icon.setAttribute('data-banner-ship-id', `${t}-${idx}`);
+      shipsRow.appendChild(icon);
+    });
+    teamDiv.appendChild(shipsRow);
+    teamsDiv.appendChild(teamDiv);
+  }
+  banner.appendChild(teamsDiv);
+  banner.classList.add('active');
+}
+
+function getRoundName(roundIdx, totalRounds) {
+  const fromFinal = totalRounds - 1 - roundIdx;
+  if (fromFinal === 0) return 'FINAL';
+  if (fromFinal === 1) return 'SEMIS';
+  if (fromFinal === 2) return 'QUARTERS';
+  return 'ROUND ' + (roundIdx + 1);
+}
+
+function renderBracket() {
+  const container = document.getElementById('bracket-container');
+  container.innerHTML = '';
+  if (tourneyBracket.length === 0) return;
+
+  const totalRounds = tourneyBracket.length;
+  const isLarge = tourneySize >= 32;
+  const isHuge = tourneySize >= 64;
+  const slotH = isHuge ? 34 : isLarge ? 40 : 48;
+  const slotW = isHuge ? 100 : isLarge ? 120 : 140;
+  const connW = isHuge ? 14 : isLarge ? 18 : 24;
+  const fontSize = isHuge ? '8px' : isLarge ? '9px' : '10px';
+  const lineColor = 'rgba(255,255,255,0.15)';
+  const matchGap = 2;
+  const matchH = slotH * 2 + matchGap;
+  const cellPad = isHuge ? 2 : isLarge ? 3 : 4;
+  const cellH0 = matchH + cellPad * 2;
+
+  const halfRounds = totalRounds - 1; // rounds per half (excluding final)
+
+  // Get match indices for a given half of a round
+  function getHalfMatchIndices(roundIdx, side) {
+    const count = tourneyBracket[roundIdx].length;
+    const half = Math.ceil(count / 2);
+    if (side === 'left') return Array.from({length: half}, (_, i) => i);
+    return Array.from({length: count - half}, (_, i) => half + i);
+  }
+
+  // Create a single bracket slot element
+  function makeSlot(teamIdx, match, roundIdx, globalMatchIdx, isTop) {
+    const slot = document.createElement('div');
+    slot.className = 'bracket-slot' + (isTop ? ' slot-top' : ' slot-bot');
+    slot.style.minWidth = slotW + 'px';
+    slot.style.fontSize = fontSize;
+    if (teamIdx !== null) slot.dataset.team = teamIdx;
+
+    const teamLabel = getTourneyTeamLabel(teamIdx);
+    const teamColor = getTourneyTeamColor(teamIdx);
+    const isFilled = teamIdx !== null && tourneyTeams[teamIdx] && tourneyTeams[teamIdx].ships.length > 0;
+    const isWinner = match.winner !== null && match.winner === teamIdx;
+    const isLoser = match.winner !== null && match.winner !== teamIdx && teamIdx !== null;
+    const isCurrentMatch = tourneyActive && roundIdx === tourneyRound && globalMatchIdx === tourneyMatchIdx && match.winner === null;
+
+    if (isWinner) slot.classList.add('winner');
+    if (isFilled) slot.classList.add('filled');
+    if (isCurrentMatch) slot.classList.add('current-match');
+    // Use persistent eliminated state during tournaments, .loser outside
+    if (isLoser) {
+      if (tourneyActive || tourneyAnimating) {
+        if (tourneyEliminated.has(teamIdx)) slot.classList.add('eliminated');
+      } else {
+        slot.classList.add('loser');
+      }
+    }
+
+    // Colored border
+    if (isFilled) {
+      slot.style.borderColor = teamColor + '55';
+      if (isCurrentMatch) slot.style.borderColor = 'rgba(68,255,136,0.5)';
+    }
+
+    // Top row: [seed] dot name
+    const topRow = document.createElement('div');
+    topRow.className = 'slot-top-row';
+
+    const name = document.createElement('span');
+    name.className = 'slot-name';
+    if (teamLabel) {
+      name.textContent = teamLabel;
+      name.style.color = isFilled ? teamColor : 'rgba(255,255,255,0.3)';
+    } else {
+      name.textContent = teamIdx !== null ? 'EMPTY' : '—';
+      name.style.color = 'rgba(255,255,255,0.2)';
+    }
+    topRow.appendChild(name);
+    slot.appendChild(topRow);
+
+    // Bottom row: ship vector icons
+    if (isFilled) {
+      const shipsRow = document.createElement('div');
+      shipsRow.className = 'slot-ships-row';
+      const team = tourneyTeams[teamIdx];
+      const designs = team.designs || [];
+      const iconSize = isHuge ? 12 : isLarge ? 14 : 16;
+      team.ships.forEach((si, idx) => {
+        const hasDesigns = designs.length > 0;
+        const designIdx = hasDesigns ? parseInt(designs[idx % designs.length]) : si;
+        shipsRow.appendChild(createShipIconSVG(designIdx, PILOT_COLORS[si], iconSize, hasDesigns));
+      });
+      slot.appendChild(shipsRow);
+    }
+
+    if (roundIdx === 0 && !tourneyActive && teamIdx !== null) {
+      slot.onclick = () => openTourneyTeamModal(teamIdx);
+      slot.title = 'Click to edit team';
+    } else {
+      slot.style.cursor = 'default';
+    }
+    if (teamIdx !== null) slot.dataset.teamIdx = teamIdx;
+    return slot;
+  }
+
+  // Create a connector column between rounds
+  // side='left': merges rightward (┐├┘), side='right': merges leftward (┌┤└)
+  function makeConnectors(sourceRoundIdx, side, numGroups) {
+    const col = document.createElement('div');
+    col.style.cssText = `display:flex; flex-direction:column; width:${connW}px; flex-shrink:0;`;
+    const groupH = cellH0 * Math.pow(2, sourceRoundIdx + 1);
+
+    for (let g = 0; g < numGroups; g++) {
+      const group = document.createElement('div');
+      group.style.cssText = `height:${groupH}px; display:flex; flex-shrink:0;`;
+
+      if (side === 'left') {
+        // Merge part: ┐ over ┘
+        const merge = document.createElement('div');
+        merge.style.cssText = 'flex:1; display:flex; flex-direction:column;';
+        const top = document.createElement('div');
+        top.style.cssText = `flex:1; border-bottom:1px solid ${lineColor}; border-right:1px solid ${lineColor};`;
+        const bot = document.createElement('div');
+        bot.style.cssText = `flex:1; border-top:1px solid ${lineColor}; border-right:1px solid ${lineColor};`;
+        merge.appendChild(top);
+        merge.appendChild(bot);
+        group.appendChild(merge);
+        // Exit: horizontal line →
+        const exit = document.createElement('div');
+        exit.style.cssText = 'flex:1; display:flex; align-items:center;';
+        const line = document.createElement('div');
+        line.style.cssText = `height:0; width:100%; border-top:1px solid ${lineColor};`;
+        exit.appendChild(line);
+        group.appendChild(exit);
+      } else {
+        // Entry: horizontal line ←
+        const entry = document.createElement('div');
+        entry.style.cssText = 'flex:1; display:flex; align-items:center;';
+        const line = document.createElement('div');
+        line.style.cssText = `height:0; width:100%; border-top:1px solid ${lineColor};`;
+        entry.appendChild(line);
+        group.appendChild(entry);
+        // Merge part: ┌ over └ (mirrored)
+        const merge = document.createElement('div');
+        merge.style.cssText = 'flex:1; display:flex; flex-direction:column;';
+        const top = document.createElement('div');
+        top.style.cssText = `flex:1; border-bottom:1px solid ${lineColor}; border-left:1px solid ${lineColor};`;
+        const bot = document.createElement('div');
+        bot.style.cssText = `flex:1; border-top:1px solid ${lineColor}; border-left:1px solid ${lineColor};`;
+        merge.appendChild(top);
+        merge.appendChild(bot);
+        group.appendChild(merge);
+      }
+      col.appendChild(group);
+    }
+    return col;
+  }
+
+  // Build one half of the bracket
+  function buildHalf(side) {
+    const div = document.createElement('div');
+    div.className = 'bracket-half';
+
+    // Left: rounds 0,1,...,halfRounds-1 (R1 far left → semi near center)
+    // Right: rounds halfRounds-1,...,1,0 (semi near center → R1 far right)
+    const roundSeq = side === 'left'
+      ? Array.from({length: halfRounds}, (_, i) => i)
+      : Array.from({length: halfRounds}, (_, i) => halfRounds - 1 - i);
+
+    for (let si = 0; si < roundSeq.length; si++) {
+      const r = roundSeq[si];
+      const matchIdxs = getHalfMatchIndices(r, side);
+      const cellH = cellH0 * Math.pow(2, r);
+
+      // Connector before this round (if not first column)
+      if (si > 0) {
+        const prevR = roundSeq[si - 1];
+        if (side === 'left') {
+          // prevR → r: prevR pairs merge into r matches
+          div.appendChild(makeConnectors(prevR, 'left', matchIdxs.length));
+        } else {
+          // r pairs merge into prevR (prevR is closer to final, displayed to the left)
+          const prevIdxs = getHalfMatchIndices(prevR, side);
+          div.appendChild(makeConnectors(r, 'right', prevIdxs.length));
+        }
+      }
+
+      // Round column
+      const roundCol = document.createElement('div');
+      roundCol.className = 'bracket-round';
+      for (const mi of matchIdxs) {
+        const match = tourneyBracket[r][mi];
+        const cell = document.createElement('div');
+        cell.style.cssText = `height:${cellH}px; display:flex; align-items:center; flex-shrink:0;`;
+        const md = document.createElement('div');
+        md.className = 'bracket-match';
+        md.dataset.round = r;
+        md.dataset.match = mi;
+        md.appendChild(makeSlot(match.team1, match, r, mi, true));
+        md.appendChild(makeSlot(match.team2, match, r, mi, false));
+        cell.appendChild(md);
+        roundCol.appendChild(cell);
+      }
+      div.appendChild(roundCol);
+    }
+    return div;
+  }
+
+  // Simple horizontal line connector to/from the final
+  function makeHLine() {
+    const d = document.createElement('div');
+    d.style.cssText = `width:${connW}px; display:flex; align-items:center; flex-shrink:0;`;
+    const l = document.createElement('div');
+    l.style.cssText = `height:0; width:100%; border-top:1px solid ${lineColor};`;
+    d.appendChild(l);
+    return d;
+  }
+
+  // Assemble: [Left half] [line] [FINAL] [line] [Right half]
+  container.appendChild(buildHalf('left'));
+  container.appendChild(makeHLine());
+
+  // Final match
+  const finalMatch = tourneyBracket[totalRounds - 1][0];
+  const finalDiv = document.createElement('div');
+  finalDiv.className = 'bracket-final-area';
+  const finalLabel = document.createElement('div');
+  finalLabel.className = 'bracket-final-label';
+  finalLabel.textContent = 'FINAL';
+  finalDiv.appendChild(finalLabel);
+  const fmd = document.createElement('div');
+  fmd.className = 'bracket-match';
+  fmd.dataset.round = totalRounds - 1;
+  fmd.dataset.match = 0;
+  fmd.appendChild(makeSlot(finalMatch.team1, finalMatch, totalRounds - 1, 0, true));
+  fmd.appendChild(makeSlot(finalMatch.team2, finalMatch, totalRounds - 1, 0, false));
+  finalDiv.appendChild(fmd);
+  container.appendChild(finalDiv);
+
+  container.appendChild(makeHLine());
+  container.appendChild(buildHalf('right'));
+
+  // Auto-scale bracket to fill available space
+  if (!tourneyAnimating) {
+    container.style.transition = 'none';
+    container.style.transform = '';
+    container.style.transformOrigin = 'center center';
+    requestAnimationFrame(() => {
+      const area = document.getElementById('tourney-bracket-area');
+      if (!area) return;
+      const areaRect = area.getBoundingClientRect();
+      const titleH = (document.getElementById('tourney-bracket-title')?.offsetHeight || 0)
+                    + (document.getElementById('tourney-bracket-subtitle')?.offsetHeight || 0) + 24;
+      const availW = areaRect.width - 32;
+      const availH = areaRect.height - titleH - 16;
+      const bracketW = container.scrollWidth;
+      const bracketH = container.scrollHeight;
+      if (bracketW > 0 && bracketH > 0 && availW > 0 && availH > 0) {
+        const scaleX = availW / bracketW;
+        const scaleY = availH / bracketH;
+        const scale = Math.min(scaleX, scaleY, 1.5);
+        tourneyBaseScale = scale;
+        container.style.transform = `scale(${scale})`;
+      }
+      // Commit position, then restore CSS transitions
+      container.offsetHeight;
+      container.style.transition = '';
+    });
+  } else {
+    // During animation: DOM was rebuilt — restore base scale instantly (no transition)
+    container.style.transition = 'none';
+    container.style.transform = `scale(${tourneyBaseScale})`;
+    container.offsetHeight; // force commit
+    container.style.transition = '';
+  }
+
+  updateTourneyStatus();
+}
+
+function updateTourneyStatus() {
+  const statusEl = document.getElementById('tourney-status');
+  const startBtn = document.getElementById('tourney-start-btn');
+  const filled = tourneyTeams.filter(t => t.ships.length > 0).length;
+  statusEl.textContent = `${filled} / ${tourneySize} TEAMS SET`;
+
+  if (tourneyActive) {
+    startBtn.textContent = 'IN PROGRESS';
+    startBtn.disabled = true;
+  } else if (filled === tourneySize) {
+    startBtn.textContent = 'BEGIN';
+    startBtn.disabled = false;
+  } else {
+    startBtn.textContent = 'BEGIN';
+    startBtn.disabled = true;
+  }
+  const randomBtn = document.getElementById('tourney-random-btn');
+  if (randomBtn) randomBtn.style.display = tourneyActive ? 'none' : '';
+}
+
+// ─── Tournament Team Modal ──────────────────────────────────
+function openTourneyTeamModal(slotIdx) {
+  if (slotIdx === null || slotIdx === undefined) return;
+  tourneyModalSlot = slotIdx;
+  const team = tourneyTeams[slotIdx];
+  _tourneyModalShips = [...team.ships];
+  _tourneyModalWeapons = [...team.weapons];
+  _tourneyModalPassives = [...team.passives];
+  _tourneyModalManeuvers = [...team.maneuvers];
+  _tourneyModalDesigns = [...(team.designs || [])];
+  document.getElementById('tourney-modal-name-input').value = team.name;
+  renderTourneyModal();
+  document.getElementById('tourney-team-modal').classList.add('active');
+}
+
+function closeTourneyTeamModal() {
+  document.getElementById('tourney-team-modal').classList.remove('active');
+  tourneyModalSlot = -1;
+}
+
+function saveTourneyTeam() {
+  if (tourneyModalSlot < 0) return;
+  const team = tourneyTeams[tourneyModalSlot];
+  team.ships = [..._tourneyModalShips];
+  team.weapons = [..._tourneyModalWeapons];
+  team.passives = [..._tourneyModalPassives];
+  team.maneuvers = [..._tourneyModalManeuvers];
+  team.designs = [..._tourneyModalDesigns];
+  team.name = document.getElementById('tourney-modal-name-input').value.trim();
+  // Auto color from first ship
+  team.color = team.ships.length > 0 ? PILOT_COLORS[team.ships[0]] : null;
+  closeTourneyTeamModal();
+  renderBracket();
+}
+
+function renderTourneyModal() {
+  // Ship picker
+  const picker = document.getElementById('tourney-modal-picker');
+  picker.innerHTML = '';
+  for (let i = 0; i < PILOT_NAMES.length; i++) {
+    const el = document.createElement('div');
+    el.className = 'picker-ship';
+    el.appendChild(createShipIcon(i, PILOT_COLORS[i], 22, true));
+    const name = document.createElement('span');
+    name.style.color = PILOT_COLORS[i];
+    name.textContent = PILOT_NAMES[i];
+    el.appendChild(name);
+    const _i = i;
+    el.onclick = () => { _tourneyModalShips.push(_i); renderTourneyModal(); };
+    picker.appendChild(el);
+  }
+
+  // Current slots
+  const slotsEl = document.getElementById('tourney-modal-slots');
+  slotsEl.innerHTML = '';
+  if (_tourneyModalShips.length === 0) {
+    slotsEl.innerHTML = '<span style="color:rgba(255,255,255,0.2); font-size:10px;">No fighters added yet</span>';
+  } else {
+    _tourneyModalShips.forEach((si, idx) => {
+      const chip = document.createElement('div');
+      chip.className = 'tourney-modal-ship';
+      // Show design override icon if designs are selected
+      if (_tourneyModalDesigns.length > 0) {
+        const designIdx = parseInt(_tourneyModalDesigns[idx % _tourneyModalDesigns.length]);
+        chip.appendChild(createShipIcon(designIdx, PILOT_COLORS[si], 20, true));
+      } else {
+        chip.appendChild(createShipIcon(si, PILOT_COLORS[si], 20));
+      }
+      const n = document.createElement('span');
+      n.style.color = PILOT_COLORS[si];
+      n.textContent = PILOT_NAMES[si];
+      chip.appendChild(n);
+      const rem = document.createElement('span');
+      rem.className = 'tm-remove';
+      rem.textContent = '✕';
+      rem.onclick = () => { _tourneyModalShips.splice(idx, 1); renderTourneyModal(); };
+      chip.appendChild(rem);
+      slotsEl.appendChild(chip);
+    });
+  }
+
+  // Loadout buttons
+  const loadoutsEl = document.getElementById('tourney-modal-loadouts');
+  loadoutsEl.innerHTML = '';
+  const loadoutTypes = [
+    { type: 'designs', arr: _tourneyModalDesigns, defs: SHIP_DESIGN_DEFS, icon: 'Ships', keys: SHIP_DESIGN_KEYS },
+    { type: 'weapons', arr: _tourneyModalWeapons, defs: WEAPON_DEFS, icon: 'Weapons', keys: Object.keys(WEAPON_DEFS) },
+    { type: 'passives', arr: _tourneyModalPassives, defs: PASSIVE_DEFS, icon: 'Abilities', keys: PASSIVE_KEYS },
+    { type: 'maneuvers', arr: _tourneyModalManeuvers, defs: MANEUVER_DEFS, icon: 'Maneuvers', keys: MANEUVER_KEYS },
+  ];
+  for (const lt of loadoutTypes) {
+    const btn = document.createElement('div');
+    btn.className = 'team-wpn-btn' + (lt.arr.length > 0 ? ' active' : '');
+    if (lt.type === 'passives' || lt.type === 'maneuvers') btn.style.fontSize = '8px';
+    btn.setAttribute('data-type', 'tourney-' + lt.type);
+    btn.title = lt.type.charAt(0).toUpperCase() + lt.type.slice(1);
+    const count = lt.arr.length;
+    btn.textContent = count === 0 ? lt.icon : count === 1 ? lt.defs[lt.arr[0]]?.name || lt.arr[0] : `${lt.icon} ×${count}`;
+    btn.onclick = (e) => { e.stopPropagation(); toggleTourneyLoadoutDropdown(lt, btn); };
+    loadoutsEl.appendChild(btn);
+  }
+}
+
+function toggleTourneyLoadoutDropdown(lt, btn) {
+  const ddKey = 'tourney-' + lt.type;
+  if (_activeWpnDropdown && _activeWpnDropdown._ddKey === ddKey) {
+    closeWeaponDropdown(); return;
+  }
+  closeWeaponDropdown();
+  const dd = document.createElement('div');
+  dd.className = 'team-wpn-dropdown';
+  dd._ddKey = ddKey;
+
+  for (const key of lt.keys) {
+    const item = document.createElement('label');
+    item.className = 'team-wpn-item';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = lt.arr.includes(key);
+    cb.onchange = () => {
+      if (cb.checked) {
+        if (!lt.arr.includes(key)) lt.arr.push(key);
+      } else {
+        const idx = lt.arr.indexOf(key);
+        if (idx >= 0) lt.arr.splice(idx, 1);
+      }
+      // Update button label
+      const count = lt.arr.length;
+      btn.textContent = count === 0 ? lt.icon : count === 1 ? lt.defs[lt.arr[0]]?.name || lt.arr[0] : `${lt.icon} ×${count}`;
+      btn.classList.toggle('active', count > 0);
+      // Live-update ship chip icons when designs change
+      if (lt.type === 'designs') {
+        const chips = document.querySelectorAll('#tourney-modal-slots .tourney-modal-ship');
+        const designs = lt.arr;
+        chips.forEach((chip, ci) => {
+          const shipIdx = _tourneyModalShips[ci];
+          if (shipIdx === undefined) return;
+          const oldIcon = chip.querySelector('.ship-icon, svg');
+          if (oldIcon) {
+            const designIdx = designs.length > 0 ? parseInt(designs[ci % designs.length]) : shipIdx;
+            const newIcon = createShipIcon(designIdx, PILOT_COLORS[shipIdx], 20, true);
+            chip.replaceChild(newIcon, oldIcon);
+          }
+        });
+      }
+    };
+    item.appendChild(cb);
+    const label = document.createElement('span');
+    if (lt.type === 'designs') {
+      const colorIdx = parseInt(key);
+      const iconSvg = createShipIconSVG(colorIdx, PILOT_COLORS[colorIdx], 16, true);
+      if (iconSvg) {
+        iconSvg.style.flexShrink = '0';
+        item.appendChild(iconSvg);
+      }
+      label.style.color = PILOT_COLORS[colorIdx];
+    }
+    label.textContent = lt.defs[key].name;
+    item.appendChild(label);
+    dd.appendChild(item);
+  }
+
+  const rect = btn.getBoundingClientRect();
+  dd.style.position = 'fixed';
+  dd.style.top = rect.bottom + 2 + 'px';
+  dd.style.left = Math.max(0, Math.min(rect.left, window.innerWidth - 140)) + 'px';
+  document.body.appendChild(dd);
+  _activeWpnDropdown = dd;
+}
+
+// ─── Tournament Flow ─────────────────────────────────────────
+function startTournament() {
+  if (tourneyTeams.some(t => t.ships.length === 0)) return;
+  tourneyActive = true;
+  tourneyRound = 0;
+  tourneyMatchIdx = 0;
+  tourneyEliminated.clear();
+  buildBracket();
+  renderBracket();
+
+  // Show bracket with first match flashing, others dimmed
+  const overlay = document.getElementById('tournament-overlay');
+  overlay.classList.add('bracket-transition');
+  document.getElementById('tourney-sidebar').style.display = 'none';
+  const container = document.getElementById('bracket-container');
+  container.classList.add('tourney-focus');
+
+  // After a moment showing bracket, black flash to start first match
+  setTimeout(() => {
+    container.classList.remove('tourney-focus');
+    const flash = document.getElementById('bracket-flash');
+    flash.classList.add('active');
+
+    setTimeout(() => {
+      // During black: force-hide bracket instantly, then start match
+      overlay.style.transition = 'none';
+      overlay.classList.remove('active', 'bracket-transition');
+      overlay.offsetHeight;
+      overlay.style.transition = '';
+      document.getElementById('tourney-sidebar').style.display = '';
+      playNextTourneyMatch();
+      // Wait for game to render a frame before revealing
+      requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        flash.classList.remove('active');
+      });
+      });
+    }, 300);
+  }, 2000);
+}
+
+function playNextTourneyMatch() {
+  if (tourneyRound >= tourneyBracket.length) {
+    finishTournament();
+    return;
+  }
+  const round = tourneyBracket[tourneyRound];
+  while (tourneyMatchIdx < round.length && round[tourneyMatchIdx].winner !== null) {
+    tourneyMatchIdx++;
+  }
+  if (tourneyMatchIdx >= round.length) {
+    advanceTourneyRound();
+    return;
+  }
+
+  const match = round[tourneyMatchIdx];
+  const t1 = tourneyTeams[match.team1];
+  const t2 = tourneyTeams[match.team2];
+
+  matchMode = 'teams';
+  teamAssignments = [[...t1.ships], [...t2.ships]];
+  teamNames = [
+    getTourneyTeamLabel(match.team1) || ('TEAM ' + (match.team1 + 1)),
+    getTourneyTeamLabel(match.team2) || ('TEAM ' + (match.team2 + 1))
+  ];
+  teamWeapons = [[...t1.weapons], [...t2.weapons]];
+  teamPassives = [[...t1.passives], [...t2.passives]];
+  teamManeuvers = [[...t1.maneuvers], [...t2.maneuvers]];
+  teamShipDesigns = [[...(t1.designs || [])], [...(t2.designs || [])]];
+  settings.numShips = teamAssignments.flat().length;
+
+  document.getElementById('tournament-overlay').classList.remove('active');
+  document.getElementById('pregame-overlay').classList.add('hidden');
+  pregame = true;
+
+  const tc = getTourneyMatchColors(match.team1, match.team2);
+  _tourneyMatchColors = tc;
+
+  startMatch();
+}
+
+function advanceTourneyRound() {
+  const round = tourneyBracket[tourneyRound];
+  const nextRound = tourneyBracket[tourneyRound + 1];
+  if (!nextRound) {
+    finishTournament();
+    return;
+  }
+  for (let m = 0; m < round.length; m++) {
+    const nextMatchIdx = Math.floor(m / 2);
+    const slotInMatch = m % 2;
+    if (slotInMatch === 0) {
+      nextRound[nextMatchIdx].team1 = round[m].winner;
+    } else {
+      nextRound[nextMatchIdx].team2 = round[m].winner;
+    }
+  }
+  tourneyRound++;
+  tourneyMatchIdx = 0;
+  playNextTourneyMatch();
+}
+
+function onTourneyMatchEnd() {
+  const round = tourneyBracket[tourneyRound];
+  const match = round[tourneyMatchIdx];
+  if (!match || match.winner !== null) return;
+
+  const teamsAlive = [...new Set(ships.filter(s => s.alive && s.team > 0).map(s => s.team))];
+  if (teamsAlive.length === 1) {
+    match.winner = teamsAlive[0] === 1 ? match.team1 : match.team2;
+  } else {
+    const t1Kills = ships.filter(s => s.team === 1).reduce((sum, s) => sum + (s.kills || 0), 0);
+    const t2Kills = ships.filter(s => s.team === 2).reduce((sum, s) => sum + (s.kills || 0), 0);
+    match.winner = t1Kills >= t2Kills ? match.team1 : match.team2;
+  }
+}
+
+// ─── BRACKET TRANSITION ANIMATION ─────────────────────────────
+function tourneyBracketTransition() {
+  tourneyAnimating = true;
+  const savedRound = tourneyRound;
+  const savedMatch = tourneyMatchIdx;
+
+  // Record result
+  onTourneyMatchEnd();
+  const match = tourneyBracket[savedRound][savedMatch];
+  const winnerIdx = match.winner;
+  const loserIdx = winnerIdx === match.team1 ? match.team2 : match.team1;
+  const isFinal = savedRound === tourneyBracket.length - 1;
+  const roundComplete = tourneyBracket[savedRound].every(m => m.winner !== null);
+
+  // Hide winner overlay and banner
+  document.getElementById('winner-overlay').classList.remove('show');
+  document.getElementById('tourney-progress-banner').classList.remove('active');
+  clearAutoRestart();
+
+  // Prepare bracket and fade it in directly (no black screen here)
+  const overlay = document.getElementById('tournament-overlay');
+  overlay.classList.remove('active', 'bracket-transition');
+  document.getElementById('tourney-sidebar').style.display = 'none';
+  renderBracket();
+
+  const container = document.getElementById('bracket-container');
+  snapToMatch(container, savedRound, savedMatch);
+
+  // Fade in overlay on next frame
+  requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    overlay.classList.add('active', 'bracket-transition');
+
+    // After fade-in completes, start elimination sequence
+    setTimeout(() => {
+      doElimination();
+    }, 550);
+  });
+  });
+
+  function doElimination() {
+    const overlay = document.getElementById('tournament-overlay');
+    const container = document.getElementById('bracket-container');
+    const matchEl = container.querySelector(
+      `.bracket-match[data-round="${savedRound}"][data-match="${savedMatch}"]`
+    );
+    if (!matchEl) { tourneyAnimating = false; return; }
+
+    const loserSlot = matchEl.querySelector(`.bracket-slot[data-team="${loserIdx}"]`);
+    const winnerSlot = matchEl.querySelector(`.bracket-slot[data-team="${winnerIdx}"]`);
+
+    // Reset loser to full opacity before flicker
+    if (loserSlot) {
+      loserSlot.classList.remove('loser');
+      loserSlot.style.opacity = '1';
+    }
+
+    // Flash loser erratically
+    if (loserSlot) loserSlot.classList.add('flash-eliminate');
+    if (winnerSlot) winnerSlot.classList.add('highlight-winner');
+
+    setTimeout(() => {
+      // Stop flashing, go permanently dim
+      if (loserSlot) {
+        loserSlot.classList.remove('flash-eliminate');
+        loserSlot.style.opacity = '';
+        loserSlot.classList.add('eliminated');
+      }
+      tourneyEliminated.add(loserIdx);
+
+      setTimeout(() => {
+        if (isFinal) {
+          finishChampionSequence(winnerIdx);
+          return;
+        }
+
+        // Determine next match to pan toward
+        let nextRoundIdx, nextMatchIdx;
+        if (!roundComplete) {
+          // Same round, next match
+          nextRoundIdx = savedRound;
+          nextMatchIdx = savedMatch + 1;
+          tourneyMatchIdx = savedMatch + 1;
+        } else {
+          // Round complete — pan toward next round's first match
+          nextRoundIdx = savedRound + 1;
+          nextMatchIdx = 0;
+        }
+
+        // Pan camera to next match position, pause, then black flash to gameplay
+        panToMatch(container, nextRoundIdx, nextMatchIdx, () => {
+          // Highlight the next match with green ring, dim everything else
+          container.classList.add('tourney-focus');
+          const nextMatchEl = container.querySelector(
+            `.bracket-match[data-round="${nextRoundIdx}"][data-match="${nextMatchIdx}"]`
+          );
+          if (nextMatchEl) {
+            nextMatchEl.querySelectorAll('.bracket-slot').forEach(s => s.classList.add('current-match'));
+          }
+
+          // Brief pause showing the next match highlight
+          setTimeout(() => {
+            container.classList.remove('tourney-focus');
+            const flash = document.getElementById('bracket-flash');
+            flash.classList.add('active');
+            setTimeout(() => {
+              // During black: advance data if needed, force-hide bracket, start match
+              if (roundComplete) {
+                advanceTourneyRound_data();
+              }
+              overlay.style.transition = 'none';
+              overlay.classList.remove('active', 'bracket-transition');
+              overlay.offsetHeight;
+              overlay.style.transition = '';
+              tourneyAnimating = false;
+              document.getElementById('tourney-sidebar').style.display = '';
+              playNextTourneyMatch();
+              // Wait for game to render a frame before revealing
+              requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                flash.classList.remove('active');
+              });
+              });
+            }, 300);
+          }, 1200);
+        });
+      }, 600);
+    }, 500);
+  }
+}
+
+// Advance bracket data without starting next match
+function advanceTourneyRound_data() {
+  const round = tourneyBracket[tourneyRound];
+  const nextRound = tourneyBracket[tourneyRound + 1];
+  if (!nextRound) return;
+  for (let m = 0; m < round.length; m++) {
+    const nextMatchIdx = Math.floor(m / 2);
+    const slotInMatch = m % 2;
+    if (slotInMatch === 0) {
+      nextRound[nextMatchIdx].team1 = round[m].winner;
+    } else {
+      nextRound[nextMatchIdx].team2 = round[m].winner;
+    }
+  }
+  tourneyRound++;
+  tourneyMatchIdx = 0;
+}
+
+const BRACKET_ZOOM_DURATION = 1200;
+const BRACKET_PAN_DURATION = 900;
+
+function zoomToMatch(container, roundIdx, matchIdx, callback) {
+  const matchEl = container.querySelector(
+    `.bracket-match[data-round="${roundIdx}"][data-match="${matchIdx}"]`
+  );
+  if (!matchEl) { if (callback) callback(); return; }
+
+  const containerRect = container.getBoundingClientRect();
+  const matchRect = matchEl.getBoundingClientRect();
+  const area = document.getElementById('tourney-bracket-area');
+  const areaRect = area.getBoundingClientRect();
+
+  const currentScale = tourneyBaseScale || 1;
+  // Match center in container's un-scaled coordinate space
+  const mcx = (matchRect.left + matchRect.width / 2 - containerRect.left) / currentScale;
+  const mcy = (matchRect.top + matchRect.height / 2 - containerRect.top) / currentScale;
+  // Container center in un-scaled space
+  const ccx = containerRect.width / currentScale / 2;
+  const ccy = containerRect.height / currentScale / 2;
+
+  const fullZoom = Math.min(
+    (areaRect.width * 0.35) / (matchRect.width / currentScale),
+    (areaRect.height * 0.4) / (matchRect.height / currentScale),
+    currentScale * 4
+  );
+  const zoomScale = currentScale + (fullZoom - currentScale) * 0.325; // gentle zoom
+
+  // Translate to center the match, then scale — origin stays fixed at center
+  const tx = (ccx - mcx);
+  const ty = (ccy - mcy);
+  container.style.transition = `transform ${BRACKET_ZOOM_DURATION}ms cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease`;
+  container.style.transform = `translate(${tx}px, ${ty}px) scale(${zoomScale})`;
+
+  setTimeout(() => { if (callback) callback(); }, BRACKET_ZOOM_DURATION + 50);
+}
+
+function panToMatch(container, roundIdx, matchIdx, callback) {
+  const matchEl = container.querySelector(
+    `.bracket-match[data-round="${roundIdx}"][data-match="${matchIdx}"]`
+  );
+  if (!matchEl) { if (callback) callback(); return; }
+
+  // Read current zoom level to maintain it
+  const currentTransform = container.style.transform || '';
+  const scaleMatch = currentTransform.match(/scale\(([\d.]+)\)/);
+  const currentZoom = scaleMatch ? parseFloat(scaleMatch[1]) : (tourneyBaseScale || 1);
+
+  // Temporarily reset to base scale to measure natural positions
+  const savedTransform = container.style.transform;
+  container.style.transition = 'none';
+  container.style.transform = `scale(${tourneyBaseScale})`;
+  container.offsetHeight; // force reflow
+
+  const baseScale = tourneyBaseScale || 1;
+  const containerRect = container.getBoundingClientRect();
+  const matchRect = matchEl.getBoundingClientRect();
+  const area = document.getElementById('tourney-bracket-area');
+  const areaRect = area.getBoundingClientRect();
+
+  const mcx = (matchRect.left + matchRect.width / 2 - containerRect.left) / baseScale;
+  const mcy = (matchRect.top + matchRect.height / 2 - containerRect.top) / baseScale;
+  const ccx = containerRect.width / baseScale / 2;
+  const ccy = containerRect.height / baseScale / 2;
+
+  // Restore previous transform instantly
+  container.style.transform = savedTransform;
+  container.offsetHeight; // force reflow
+
+  const tx = (ccx - mcx);
+  const ty = (ccy - mcy);
+  // Now animate the pan
+  container.style.transition = `transform ${BRACKET_PAN_DURATION}ms cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease`;
+  container.style.transform = `translate(${tx}px, ${ty}px) scale(${currentZoom})`;
+
+  setTimeout(() => { if (callback) callback(); }, BRACKET_PAN_DURATION + 50);
+}
+
+function zoomOut(container, callback) {
+  container.style.transition = `transform ${BRACKET_ZOOM_DURATION}ms cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease`;
+  container.style.transform = `scale(${tourneyBaseScale})`;
+  setTimeout(() => { if (callback) callback(); }, BRACKET_ZOOM_DURATION + 50);
+}
+
+function bracketFlash(duringFn, callback) {
+  const flash = document.getElementById('bracket-flash');
+  flash.classList.add('active');
+  setTimeout(() => {
+    if (duringFn) duringFn();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        flash.classList.remove('active');
+        setTimeout(() => { if (callback) callback(); }, 300);
+      });
+    });
+  }, 280);
+}
+
+// Position on a match instantly (no animation) — for use during flash
+function snapToMatch(container, roundIdx, matchIdx) {
+  const matchEl = container.querySelector(
+    `.bracket-match[data-round="${roundIdx}"][data-match="${matchIdx}"]`
+  );
+  if (!matchEl) return;
+
+  const baseScale = tourneyBaseScale || 1;
+  // Already at base scale after renderBracket during flash, measure directly
+  container.style.transition = 'none';
+  container.style.transform = `scale(${baseScale})`;
+  container.offsetHeight;
+
+  const containerRect = container.getBoundingClientRect();
+  const matchRect = matchEl.getBoundingClientRect();
+  const area = document.getElementById('tourney-bracket-area');
+  const areaRect = area.getBoundingClientRect();
+
+  const mcx = (matchRect.left + matchRect.width / 2 - containerRect.left) / baseScale;
+  const mcy = (matchRect.top + matchRect.height / 2 - containerRect.top) / baseScale;
+  const ccx = containerRect.width / baseScale / 2;
+  const ccy = containerRect.height / baseScale / 2;
+
+  const fullZoom = Math.min(
+    (areaRect.width * 0.35) / (matchRect.width / baseScale),
+    (areaRect.height * 0.4) / (matchRect.height / baseScale),
+    baseScale * 4
+  );
+  const zoomScale = baseScale + (fullZoom - baseScale) * 0.325;
+  const tx = (ccx - mcx);
+  const ty = (ccy - mcy);
+
+  container.style.transform = `translate(${tx}px, ${ty}px) scale(${zoomScale})`;
+  container.offsetHeight;
+  container.style.transition = '';
+}
+
+function finishChampionSequence(winnerIdx) {
+  // Keep animating true through zoom out
+  document.getElementById('alive-counter').style.display = '';
+  document.getElementById('camera-mode').style.display = '';
+
+  const container = document.getElementById('bracket-container');
+  const overlay = document.getElementById('tournament-overlay');
+
+  // Zoom out, then fade-swap to final state
+  zoomOut(container, () => {
+    container.classList.add('fade-content');
+    setTimeout(() => {
+      tourneyAnimating = false;
+      tourneyActive = false;
+      document.getElementById('settings-btn').classList.remove('match-hidden');
+      overlay.classList.remove('bracket-transition');
+      overlay.classList.add('champion-screen');
+      document.getElementById('tourney-sidebar').style.display = '';
+      renderBracket();
+
+      // Find the champion slot and add glow
+      requestAnimationFrame(() => {
+        const champSlots = container.querySelectorAll(
+          `.bracket-slot[data-team="${winnerIdx}"]`
+        );
+        const finalRound = tourneyBracket.length - 1;
+        champSlots.forEach(s => {
+          const m = s.closest('.bracket-match');
+          if (m && parseInt(m.dataset.round) === finalRound) {
+            const champColor = getTourneyTeamColor(winnerIdx);
+            s.classList.add('champion-glow');
+            s.style.setProperty('--glow-color', champColor + '88');
+          }
+        });
+        container.classList.remove('fade-content');
+      });
+
+      // Update title
+      const champName = getTourneyTeamLabel(winnerIdx) || 'TEAM ' + (winnerIdx + 1);
+      const champColor = getTourneyTeamColor(winnerIdx);
+      document.getElementById('tourney-bracket-title').innerHTML = `${champName}`;
+      document.getElementById('tourney-bracket-title').style.color = champColor;
+      document.getElementById('tourney-bracket-subtitle').textContent = 'TOURNAMENT CHAMPION';
+
+      document.getElementById('tourney-start-btn').textContent = 'NEW TOURNAMENT';
+      document.getElementById('tourney-start-btn').disabled = false;
+      document.getElementById('tourney-start-btn').onclick = () => {
+        tourneyEliminated.clear();
+        overlay.classList.remove('champion-screen');
+        buildBracket();
+        document.getElementById('tourney-bracket-title').textContent = 'TOURNAMENT';
+        document.getElementById('tourney-bracket-title').style.color = '#fff';
+        document.getElementById('tourney-bracket-subtitle').textContent = 'SINGLE ELIMINATION';
+        document.getElementById('tourney-start-btn').onclick = () => startTournament();
+        renderBracket();
+      };
+    }, 350);
+  });
+}
+
+// Hook into the restart button during tournament (fallback)
+function tourneyRestartHandler() {
+  if (!tourneyActive) return false;
+  clearAutoRestart();
+  document.getElementById('winner-overlay').classList.remove('show');
+  tourneyBracketTransition();
+  return true;
+}
+
+function finishTournament() {
+  // This is only called if advanceTourneyRound finds no next round
+  // and the final hasn't been played yet — it triggers the last match
+  // The champion sequence is handled by tourneyBracketTransition for the final
+  if (tourneyBracket[tourneyBracket.length - 1][0].winner !== null) {
+    // Final already decided, show champion
+    const finalMatch = tourneyBracket[tourneyBracket.length - 1][0];
+    finishChampionSequence(finalMatch.winner);
+  }
+}
+
+function exitTournament() {
+  if (tourneyActive || tourneyAnimating) {
+    if (!confirm('Exit tournament in progress?')) return;
+    tourneyActive = false;
+    tourneyAnimating = false;
+    tourneyEliminated.clear();
+  }
+  document.getElementById('tournament-overlay').classList.remove('active', 'bracket-transition', 'champion-screen');
+  document.getElementById('bracket-flash').classList.remove('active');
+  document.getElementById('bracket-container').style.transform = '';
+  document.getElementById('tourney-sidebar').style.display = '';
+  document.getElementById('tourney-progress-banner').classList.remove('active');
+  document.getElementById('winner-overlay').classList.remove('show');
+  document.getElementById('alive-counter').style.display = '';
+  document.getElementById('camera-mode').style.display = '';
+  clearAutoRestart();
+  matchMode = 'ffa';
+  flyInPhase = false;
+  flyInTeamLabels = [];
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === 'ffa'));
+  document.getElementById('pregame-overlay').classList.remove('hidden');
+  pregame = true;
+  document.getElementById('settings-btn').classList.remove('match-hidden');
+  gameOver = false;
+  init();
+}
+
+// Initialize tournament on first load
+initTourneyTeams();
+buildBracket();
+
+// Re-scale bracket on window resize
+window.addEventListener('resize', () => {
+  if (document.getElementById('tournament-overlay').classList.contains('active')) {
+    renderBracket();
+  }
+});
+
+function updateTeamStartButton() {
+  const btn = document.getElementById('start-btn');
+  if (matchMode !== 'teams') return;
+  const filledTeams = teamAssignments.filter(t => t.length >= 1).length;
+  const ready = filledTeams >= 2;
+  btn.disabled = !ready;
+  if (ready) {
+    const sizes = teamAssignments.filter(t => t.length > 0).map(t => t.length).join('v');
+    btn.textContent = 'FIGHT (' + sizes + ')';
+  } else {
+    btn.textContent = 'ADD FIGHTERS';
+  }
+}
+
+function autoFillTeams() {
+  const all = Array.from({length: 16}, (_, i) => i);
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+  let idx = 0;
+  for (let t = 0; t < teamAssignments.length; t++) {
+    const count = randInt(2, 5);
+    teamAssignments[t] = [];
+    for (let i = 0; i < count; i++) teamAssignments[t].push(all[(idx++) % all.length]);
+  }
+  renderTeamBuilder();
 }
 
 document.getElementById('start-btn').addEventListener('click', startMatch);
@@ -6672,7 +9228,7 @@ function drawScoreboard(ctx) {
       const iconSize = 12;
       const iconX = x + 10;
       const iconY = y + 10;
-      const verts = SHIP_SHAPES[ship.id] || SHIP_SHAPES[3];
+      const verts = getShipVerts(ship.shipType, ship._designForced);
       const ir = iconSize * 0.38;
       ctx.save();
       ctx.translate(iconX, iconY);
@@ -6788,13 +9344,19 @@ function startMatch() {
   if (settings.chaosMode) {
     applyChaosMode();
     init();
+  } else if (matchMode === 'teams') {
+    // Team mode: set numShips to total team members and reinit
+    const totalShips = teamAssignments.flat().length;
+    if (totalShips < 2) return;
+    settings.numShips = totalShips;
+    init();
   } else if (ships.length !== settings.numShips) {
     init();
   }
   ensureAudio();
   for (let i = 0; i < ships.length; i++) {
     const ship = ships[i];
-    const p = PRESET_PROFILES[ship.id];
+    const p = PRESET_PROFILES[ship.shipType];
     ship.hp = settings.shipHP;
     ship.maxHp = settings.shipHP;
     ship.aiBehavior = settings.randomPersonalities ? randomBehavior() : p.behavior;
@@ -6805,9 +9367,9 @@ function startMatch() {
     ship.aimRange = settings.randomPersonalities ? rand(0.3, 0.5) : p.aimRange;
     ship.aimSpeed = settings.randomPersonalities ? rand(0.3, 0.8) : p.aimSpeed;
     ship.aimPhase = settings.randomPersonalities ? rand(0, Math.PI * 2) : p.aimPhase;
-    ship.weapon = getWeapon(ship.id);
-    ship.passive = getPassive(ship.id);
-    ship.maneuver = getManeuver(ship.id);
+    ship.weapon = getWeapon(ship.shipType, ship.team || 0);
+    ship.passive = getPassive(ship.shipType, ship.team || 0);
+    ship.maneuver = getManeuver(ship.shipType, ship.team || 0);
     ship.maneuverCooldown = rand(3, 8);
     ship.maneuverActive = false;
     ship.maneuverTimer = 0;
@@ -6841,78 +9403,296 @@ function startMatch() {
     ship.lastAttackerTime = 0;
   }
   pregame = false;
+  document.getElementById('settings-btn').classList.add('match-hidden');
   document.getElementById('pregame-overlay').classList.add('hidden');
   document.getElementById('settings-panel').classList.remove('open');
+
+  // Hide HUD overlays in FFA (teams already hides them for tournament)
+  if (matchMode !== 'teams') {
+    document.getElementById('alive-counter').style.display = 'none';
+    document.getElementById('camera-mode').style.display = 'none';
+  }
+
+  // Show team banner for all team battles
+  if (matchMode === 'teams') {
+    const tc = (tourneyActive && _tourneyMatchColors) ? [..._tourneyMatchColors] : getTeamColors();
+    const label = tourneyActive ? getRoundName(tourneyRound, tourneyBracket.length) : 'TEAM BATTLE';
+    buildTeamBanner(label, tc);
+    document.getElementById('alive-counter').style.display = 'none';
+    document.getElementById('camera-mode').style.display = 'none';
+  }
 
   // Enter countdown phase (skip for match logger to keep data collection fast)
   if (settings.matchLogger) {
     showScoreboard = true;
   } else {
     countdown = true;
-    countdownTimer = COUNTDOWN_DURATION;
-    buildCountdownRoster();
-    document.getElementById('countdown-overlay').classList.remove('hidden');
+    if (matchMode === 'teams') {
+      setupFlyIn();
+      // Minimal overlay: just big countdown number + bets text, no roster
+      document.getElementById('countdown-timer').textContent = '';
+      document.getElementById('countdown-loadout').textContent = '';
+      document.getElementById('countdown-roster').innerHTML = '';
+      document.getElementById('countdown-roster').style.display = 'none';
+      document.getElementById('countdown-bets').textContent = 'CHOOSE YOUR TEAM!';
+      const _cdOverlay = document.getElementById('countdown-overlay');
+      _cdOverlay.classList.remove('hidden');
+      _cdOverlay.style.background = 'rgba(0,0,0,0.15)';
+    } else {
+      flyInPhase = false;
+      countdownTimer = COUNTDOWN_DURATION;
+      buildCountdownRoster();
+      document.getElementById('countdown-bets').textContent = 'PLACE YOUR BETS!';
+      document.getElementById('countdown-overlay').classList.remove('hidden');
+    }
   }
 }
 
 function buildCountdownRoster() {
   const el = document.getElementById('countdown-roster');
   el.innerHTML = '';
-  // Determine loadout mode
-  let loadoutMode = 'UNIQUE';
-  if (settings.chaosMode) loadoutMode = 'RANDOM';
-  else if (settings.randomWeapons) loadoutMode = 'RANDOM';
-  else if (!settings.weapons) loadoutMode = 'STANDARD';
-  document.getElementById('countdown-loadout').textContent = 'LOADOUTS: ' + loadoutMode;
+  const showAnyTag = settings.showWeaponTag || settings.showPassiveTag || settings.showManeuverTag;
+  if (showAnyTag) {
+    let loadoutMode = matchMode === 'teams' ? 'TEAM BATTLE' : 'UNIQUE';
+    if (settings.chaosMode) loadoutMode = 'RANDOM';
+    else if (settings.randomWeapons) loadoutMode = 'RANDOM';
+    else if (!settings.weapons) loadoutMode = 'STANDARD';
+    document.getElementById('countdown-loadout').textContent = 'LOADOUTS: ' + loadoutMode;
+  } else {
+    document.getElementById('countdown-loadout').textContent = '';
+  }
   document.getElementById('countdown-timer').textContent = 'MATCH BEGINNING IN 5!';
 
-  for (let i = 0; i < ships.length; i++) {
-    const ship = ships[i];
-    const card = document.createElement('div');
-    card.className = 'cd-ship-card';
-    card.style.borderColor = ship.color + '55';
-    card.style.background = ship.color + '0d';
-    card.style.animationDelay = `${i * 0.04}s`;
-
-    // Header: icon + name
-    const header = document.createElement('div');
-    header.className = 'cd-ship-header';
-    header.appendChild(createShipIcon(ship.id, ship.color, 18));
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'cd-ship-name';
-    nameSpan.style.color = ship.color;
-    nameSpan.textContent = ship.name;
-    header.appendChild(nameSpan);
-    card.appendChild(header);
-
-    // Details
-    const weapName = ship.weapon ? ship.weapon.name : 'Basic';
-    const passName = PASSIVE_DEFS[ship.passive] ? PASSIVE_DEFS[ship.passive].name : 'None';
-    const manuName = MANEUVER_DEFS[ship.maneuver] ? MANEUVER_DEFS[ship.maneuver].name : 'None';
-
-    const detail = document.createElement('div');
-    detail.className = 'cd-ship-detail';
-    detail.innerHTML = `${weapName}<br>${passName}<br>${manuName}`;
-    card.appendChild(detail);
-
-    el.appendChild(card);
+  // Adjust grid for team mode
+  if (matchMode === 'teams') {
+    el.style.gridTemplateColumns = 'repeat(' + teamAssignments.length + ', 1fr)';
+    el.style.maxWidth = Math.max(600, teamAssignments.length * 200) + 'px';
+  } else {
+    el.style.gridTemplateColumns = 'repeat(4, 1fr)';
+    el.style.maxWidth = '1250px';
   }
+
+  if (matchMode === 'teams') {
+    // Team mode: big team names with VS, bare ship icons fade in L→R
+    const tc = getTeamColors();
+    el.style.display = 'flex';
+    el.style.flexDirection = 'row';
+    el.style.justifyContent = 'center';
+    el.style.alignItems = 'center';
+    el.style.gap = '0';
+    el.style.gridTemplateColumns = '';
+    el.style.maxWidth = '100%';
+    el.style.width = '100%';
+    el.style.padding = '0 20px';
+
+    const iconSize = 48;
+    const iconGap = 18;
+    const maxPerRow = 8;
+
+    for (let t = 0; t < teamAssignments.length; t++) {
+      // VS separator between teams
+      if (t > 0) {
+        const vs = document.createElement('div');
+        vs.style.cssText = 'font-family:Orbitron,sans-serif; font-size:36px; font-weight:900; letter-spacing:8px; color:rgba(255,255,255,0.45); padding:0 30px; text-shadow:0 0 30px rgba(255,255,255,0.15); flex-shrink:0;';
+        vs.textContent = 'VS';
+        el.appendChild(vs);
+      }
+      const teamCol = document.createElement('div');
+      teamCol.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:12px; flex:1; min-width:0;';
+      // Team header
+      const th = document.createElement('div');
+      th.style.cssText = `font-family:Orbitron,sans-serif; font-size:32px; font-weight:900; letter-spacing:8px; text-shadow:0 0 40px currentColor;`;
+      th.style.color = tc[t] || '#888';
+      th.textContent = teamNames[t];
+      teamCol.appendChild(th);
+      // Ship icons — wrap into rows of maxPerRow, center-justified
+      const iconsRow = document.createElement('div');
+      const rowWidth = maxPerRow * (iconSize + iconGap);
+      iconsRow.style.cssText = `display:flex; flex-wrap:wrap; justify-content:center; gap:${iconGap}px; padding:6px 0; max-width:${rowWidth}px;`;
+      const teamShips = ships.filter(s => s.team === t + 1);
+      for (let si = 0; si < teamShips.length; si++) {
+        const ship = teamShips[si];
+        const wrap = document.createElement('div');
+        wrap.style.cssText = `opacity:0; animation:rosterIn 0.2s ease forwards; width:${iconSize}px; height:${iconSize}px; display:flex; align-items:center; justify-content:center;`;
+        wrap.style.animationDelay = `${0.3 + si * 0.06}s`;
+        wrap.appendChild(createShipIcon(ship.shipType, ship.color, iconSize, ship._designForced));
+        iconsRow.appendChild(wrap);
+      }
+      teamCol.appendChild(iconsRow);
+      el.appendChild(teamCol);
+    }
+  } else {
+    // FFA mode: flat grid
+    el.style.display = 'grid';
+    el.style.flexDirection = '';
+    el.style.justifyContent = '';
+    el.style.alignItems = '';
+    el.style.width = '';
+    el.style.padding = '';
+    for (let i = 0; i < ships.length; i++) {
+      const ship = ships[i];
+      const card = document.createElement('div');
+      card.className = 'cd-ship-card';
+      card.style.borderColor = ship.color + '55';
+      card.style.background = ship.color + '0d';
+      card.style.animationDelay = `${i * 0.04}s`;
+      const showAny = settings.showWeaponTag || settings.showPassiveTag || settings.showManeuverTag;
+      if (showAny) {
+        const header = document.createElement('div');
+        header.className = 'cd-ship-header';
+        header.appendChild(createShipIcon(ship.shipType, ship.color, 27, ship._designForced));
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'cd-ship-name';
+        nameSpan.style.color = ship.color;
+        const cdName = ship.name.length > 5 ? '\u00a0\u00a0' + ship.name : ship.name;
+        nameSpan.textContent = cdName;
+        header.appendChild(nameSpan);
+        card.appendChild(header);
+        const lines = [];
+        if (settings.showWeaponTag) lines.push(ship.weapon ? ship.weapon.name : 'Basic');
+        if (settings.showPassiveTag) lines.push(PASSIVE_DEFS[ship.passive] ? PASSIVE_DEFS[ship.passive].name : 'None');
+        if (settings.showManeuverTag) lines.push(MANEUVER_DEFS[ship.maneuver] ? MANEUVER_DEFS[ship.maneuver].name : 'None');
+        const detail = document.createElement('div');
+        detail.className = 'cd-ship-detail';
+        detail.innerHTML = lines.join('<br>');
+        card.appendChild(detail);
+      } else {
+        const nameSpan = document.createElement('div');
+        nameSpan.className = 'cd-ship-name';
+        nameSpan.style.color = ship.color;
+        nameSpan.style.textAlign = 'center';
+        nameSpan.style.width = '100%';
+        nameSpan.style.marginBottom = '4px';
+        nameSpan.textContent = ship.name.length > 5 ? '\u00a0\u00a0' + ship.name : ship.name;
+        card.appendChild(nameSpan);
+        const icon = createShipIcon(ship.shipType, ship.color, 36, ship._designForced);
+        icon.style.display = 'block';
+        icon.style.margin = '0 auto';
+        card.appendChild(icon);
+      }
+      el.appendChild(card);
+    }
+  }
+}
+
+function setupFlyIn() {
+  flyInPhase = true;
+  flyInElapsed = 0;
+  flyInTeamLabels = [];
+  const cx = CFG.WORLD_W / 2, cy = CFG.WORLD_H / 2;
+  const numTeams = teamAssignments.length;
+  const _tcArr = getTeamColors();
+
+  for (let t = 0; t < numTeams; t++) {
+    const teamShips = ships.filter(s => s.team === t + 1);
+    if (teamShips.length === 0) continue;
+    let avgX = 0, avgY = 0;
+    for (const s of teamShips) { avgX += s.x; avgY += s.y; }
+    avgX /= teamShips.length; avgY /= teamShips.length;
+
+    const dx = avgX - cx, dy = avgY - cy;
+    const d = Math.max(1, Math.hypot(dx, dy));
+    const nx = dx / d, ny = dy / d;
+    const flyDist = 400;
+
+    for (const s of teamShips) {
+      s._flyTargetX = s.x; s._flyTargetY = s.y;
+      s._flyStartX = s.x + nx * flyDist; s._flyStartY = s.y + ny * flyDist;
+      s._flyTeamIdx = t;
+      s.x = s._flyStartX; s.y = s._flyStartY;
+    }
+
+    let maxY = -Infinity;
+    for (const s of teamShips) maxY = Math.max(maxY, s._flyTargetY);
+
+    // 2-team: place labels between formation and center; 3+: below formation
+    let labelX, labelY;
+    if (numTeams === 2) {
+      // Position label on the center-facing side of the formation
+      labelX = avgX + (cx - avgX) * 0.45;
+      labelY = avgY + (cy - avgY) * 0.45;
+    } else {
+      labelX = avgX;
+      labelY = maxY + 100;
+    }
+    flyInTeamLabels.push({
+      x: labelX, y: labelY,
+      name: teamNames[t], color: _tcArr[t], alpha: 0, arrived: false
+    });
+  }
+
+  const totalFlyIn = (numTeams - 1) * FLY_IN_STAGGER + FLY_IN_DURATION + 0.5;
+  countdownTimer = Math.max(COUNTDOWN_DURATION, totalFlyIn + 1);
+
+  // Snap camera to frame final target positions so we start zoomed in properly
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const s of ships) {
+    if (s._flyTargetX == null) continue;
+    minX = Math.min(minX, s._flyTargetX); maxX = Math.max(maxX, s._flyTargetX);
+    minY = Math.min(minY, s._flyTargetY); maxY = Math.max(maxY, s._flyTargetY);
+  }
+  const camPad = 200 + ships.length * 15;
+  const spreadX = maxX - minX + camPad;
+  const spreadY = maxY - minY + camPad;
+  cameraX = (minX + maxX) / 2;
+  cameraY = (minY + maxY) / 2;
+  camZoom = Math.max(0.15, Math.min(1.5, Math.min(W / spreadX, H / spreadY)));
 }
 
 function endCountdown() {
   countdown = false;
   countdownTimer = 0;
-  document.getElementById('countdown-overlay').classList.add('hidden');
+  flyInPhase = false;
+  flyInTeamLabels = [];
+  // Snap any fly-in ships to final positions
+  for (const ship of ships) {
+    if (ship._flyTargetX != null) { ship.x = ship._flyTargetX; ship.y = ship._flyTargetY; }
+    delete ship._flyAlpha;
+  }
+  // Reset countdown overlay styles
+  document.getElementById('countdown-timer').style.fontSize = '';
+  document.getElementById('countdown-roster').style.display = '';
+  const _cdOv = document.getElementById('countdown-overlay');
+  _cdOv.style.background = '';
+  _cdOv.classList.add('hidden');
   showScoreboard = true;
 }
 
 function showWinner() {
   logMatchData();
+
+  // Hide team banner
+  document.getElementById('tourney-progress-banner').classList.remove('active');
+
+  // Tournament mode: skip results screen, go straight to bracket transition
+  if (tourneyActive) {
+    showScoreboard = false;
+    // Brief delay to let the anime cut-in finish, then transition
+    setTimeout(() => tourneyBracketTransition(), 800);
+    return;
+  }
+
   const ov = document.getElementById('winner-overlay');
   ov.classList.add('show');
+  document.getElementById('settings-btn').classList.remove('match-hidden');
   showScoreboard = false;
+  // Force animation replay on persistent elements
+  for (const el of [ov.querySelector('h2'), document.getElementById('winner-name'), document.getElementById('restart-btn')]) {
+    if (el) { el.style.animation = 'none'; el.offsetHeight; el.style.animation = ''; }
+  }
   const nameEl = document.getElementById('winner-name');
-  if (winner) {
+  if (matchMode === 'teams') {
+    const _wcArr = getTeamColors();
+    const teamsAlive = [...new Set(ships.filter(s => s.alive && s.team > 0).map(s => s.team))];
+    if (teamsAlive.length === 1) {
+      const wt = teamsAlive[0];
+      nameEl.textContent = teamNames[wt - 1];
+      nameEl.style.color = _wcArr[wt - 1] || '#fff';
+    } else {
+      nameEl.textContent = 'DRAW';
+      nameEl.style.color = '#888';
+    }
+  } else if (winner) {
     nameEl.textContent = winner.name;
     nameEl.style.color = winner.color;
   } else {
@@ -6943,10 +9723,86 @@ function showWinner() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
-  ranked.forEach((ship, i) => {
+  if (matchMode === 'teams') {
+    // Team rankings — condensed: team name + kills, ship icons underneath
+    const _rcArr = getTeamColors();
+    const teamStats = [];
+    for (let t = 0; t < teamAssignments.length; t++) {
+      const teamShips = ships.filter(s => s.team === t + 1);
+      const totalKills = teamShips.reduce((s, sh) => s + (sh.kills || 0), 0);
+      const lastDeath = Math.max(...teamShips.map(s => s.alive ? gameTime : (s.deathTime || 0)));
+      const anyAlive = teamShips.some(s => s.alive);
+      teamStats.push({ idx: t, teamShips, totalKills, lastDeath, anyAlive });
+    }
+    teamStats.sort((a, b) => {
+      if (a.anyAlive && !b.anyAlive) return -1;
+      if (!a.anyAlive && b.anyAlive) return 1;
+      return b.lastDeath - a.lastDeath;
+    });
+    let delay = 0;
+    teamStats.forEach((ts, rank) => {
+      // Team header row: rank, color dot, name, kills
+      const teamRow = document.createElement('div');
+      teamRow.className = 'rank-row' + (rank === 0 ? ' top1' : rank === 1 ? ' top2' : rank === 2 ? ' top3' : '');
+      teamRow.style.animationDelay = `${0.35 + delay * 0.08}s`;
+      teamRow.style.fontWeight = '700';
+      delay++;
+      const numSpan = document.createElement('span');
+      numSpan.className = 'rank-num';
+      numSpan.textContent = rank + 1;
+      teamRow.appendChild(numSpan);
+      const teamDot = document.createElement('span');
+      teamDot.style.cssText = `display:inline-block; width:16px; height:16px; border-radius:50%; background:${_rcArr[ts.idx] || '#888'}; margin:0 8px; flex-shrink:0;`;
+      teamRow.appendChild(teamDot);
+      const nameBlock = document.createElement('div');
+      nameBlock.className = 'rank-name-block';
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'rank-name';
+      nameSpan.style.color = _rcArr[ts.idx] || '#fff';
+      nameSpan.textContent = teamNames[ts.idx];
+      nameBlock.appendChild(nameSpan);
+      teamRow.appendChild(nameBlock);
+      const causeSpan = document.createElement('span');
+      causeSpan.className = 'rank-cause';
+      causeSpan.textContent = '';
+      teamRow.appendChild(causeSpan);
+      const killSpan = document.createElement('span');
+      killSpan.className = 'rank-kills';
+      killSpan.textContent = ts.totalKills;
+      teamRow.appendChild(killSpan);
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'rank-time';
+      timeSpan.textContent = '';
+      teamRow.appendChild(timeSpan);
+      container.appendChild(teamRow);
+
+      // Ship icons row underneath
+      const iconsRow = document.createElement('div');
+      iconsRow.className = 'rank-row';
+      iconsRow.style.animationDelay = `${0.35 + delay * 0.08}s`;
+      iconsRow.style.paddingLeft = '48px';
+      iconsRow.style.minHeight = '0';
+      iconsRow.style.gap = '4px';
+      delay++;
+      // Sort: alive ships first
+      const sortedShips = [...ts.teamShips].sort((a, b) => {
+        if (a.alive && !b.alive) return -1;
+        if (!a.alive && b.alive) return 1;
+        return 0;
+      });
+      for (const ship of sortedShips) {
+        const icon = createShipIcon(ship.shipType, ship.color, 22, ship._designForced);
+        if (!ship.alive) icon.style.opacity = '0.35';
+        iconsRow.appendChild(icon);
+      }
+      container.appendChild(iconsRow);
+    });
+  } else {
+    // FFA rankings
+    ranked.forEach((ship, i) => {
     const row = document.createElement('div');
     row.className = 'rank-row' + (i === 0 ? ' top1' : i === 1 ? ' top2' : i === 2 ? ' top3' : '');
-    row.style.animationDelay = `${i * 0.08}s`;
+    row.style.animationDelay = `${0.35 + i * 0.08}s`;
     const survivalTime = ship.alive ? gameTime : ship.deathTime;
     const causeText = ship.alive ? '—' : (ship.killedBy === 'ASTEROID' ? 'ASTEROID' : `✕ ${ship.killedBy}`);
 
@@ -6954,7 +9810,7 @@ function showWinner() {
     numSpan.className = 'rank-num';
     numSpan.textContent = i + 1;
     row.appendChild(numSpan);
-    row.appendChild(createShipIcon(ship.id, ship.color, 32));
+    row.appendChild(createShipIcon(ship.shipType, ship.color, 32, ship._designForced));
     const nameBlock = document.createElement('div');
     nameBlock.className = 'rank-name-block';
     const nameSpan = document.createElement('span');
@@ -6962,13 +9818,17 @@ function showWinner() {
     nameSpan.style.color = ship.color;
     nameSpan.textContent = ship.name;
     nameBlock.appendChild(nameSpan);
-    const loadoutSpan = document.createElement('span');
-    loadoutSpan.className = 'rank-loadout';
-    const wpnName = ship.weapon?.name || 'Standard Issue';
-    const pasName = PASSIVE_DEFS[ship.passive]?.name || 'None';
-    const manName = MANEUVER_DEFS[ship.maneuver]?.name || '';
-    loadoutSpan.textContent = wpnName + ' | ' + pasName + (manName ? ' | ' + manName : '');
-    nameBlock.appendChild(loadoutSpan);
+    const showAnyTag = settings.showWeaponTag || settings.showPassiveTag || settings.showManeuverTag;
+    if (showAnyTag) {
+      const loadoutSpan = document.createElement('span');
+      loadoutSpan.className = 'rank-loadout';
+      const parts = [];
+      if (settings.showWeaponTag) parts.push(ship.weapon?.name || 'Standard Issue');
+      if (settings.showPassiveTag) parts.push(PASSIVE_DEFS[ship.passive]?.name || 'None');
+      if (settings.showManeuverTag) parts.push(MANEUVER_DEFS[ship.maneuver]?.name || '');
+      loadoutSpan.textContent = parts.filter(Boolean).join(' | ');
+      nameBlock.appendChild(loadoutSpan);
+    }
     row.appendChild(nameBlock);
     const causeSpan = document.createElement('span');
     causeSpan.className = 'rank-cause';
@@ -6983,7 +9843,8 @@ function showWinner() {
     timeSpan.textContent = fmtTime(survivalTime);
     row.appendChild(timeSpan);
     container.appendChild(row);
-  });
+    });
+  }
 
   // Scale rankings to fit screen — measure after layout
   container.style.transform = '';
@@ -6999,10 +9860,22 @@ function showWinner() {
     }
   });
 
+  // Set restart button animation delay after all rows
+  const totalRows = container.querySelectorAll('.rank-row').length;
+  const restartBtn = document.getElementById('restart-btn');
+  restartBtn.style.animationDelay = `${0.35 + totalRows * 0.08}s`;
+
+  // Tournament mode: change button text and auto-advance
+  if (tourneyActive) {
+    restartBtn.textContent = 'NEXT MATCH';
+  } else {
+    restartBtn.textContent = 'NEW MATCH';
+  }
+
   // Auto-restart countdown
   clearAutoRestart();
-  if (settings.autoRestart) {
-    let remaining = settings.matchLogger ? 3 : 10;
+  if (settings.autoRestart || tourneyActive) {
+    let remaining = (settings.matchLogger && !tourneyActive) ? 3 : 5;
     const cdEl = document.getElementById('auto-restart-countdown');
     cdEl.style.display = 'block';
     cdEl.innerHTML = `NEXT MATCH IN <span class="countdown-num">${remaining}</span>`;
@@ -7010,8 +9883,12 @@ function showWinner() {
       remaining--;
       if (remaining <= 0) {
         clearAutoRestart();
-        if (!settings.chaosMode) init();
-        startMatch();
+        if (tourneyActive) {
+          tourneyRestartHandler();
+        } else {
+          if (!settings.chaosMode) init();
+          startMatch();
+        }
       } else {
         cdEl.innerHTML = `NEXT MATCH IN <span class="countdown-num">${remaining}</span>`;
       }
@@ -7029,6 +9906,10 @@ document.querySelectorAll('#speed-selector button').forEach(btn => {
 });
 
 document.getElementById('restart-btn').addEventListener('click', () => {
+  if (tourneyActive) {
+    tourneyRestartHandler();
+    return;
+  }
   clearAutoRestart();
   applyChaosMode();
   init();
@@ -7038,14 +9919,8 @@ document.getElementById('restart-btn').addEventListener('click', () => {
 document.addEventListener('keydown', (e) => {
   if (e.code === 'Space' && !pregame && !countdown) {
     e.preventDefault();
-    if (cameraMode === 'manual') {
-      cameraMode = 'overview';
-      manualShips = [];
-    } else {
-      cameraMode = cameraMode === 'overview' ? 'dogfight' : 'overview';
-    }
-    dogfightPair = null;
-    dogfightSwitchCooldown = 0;
+    cameraMode = 'overview';
+    manualShips = [];
     cameraLinger = 0;
     cameraTransitioning = false;
     updateCameraModeUI();
@@ -7055,17 +9930,7 @@ document.addEventListener('keydown', (e) => {
 function updateCameraModeUI() {
   const el = document.getElementById('camera-mode');
   const text = document.getElementById('camera-mode-text');
-  if (cameraMode === 'dogfight') {
-    el.classList.add('dogfight');
-    el.classList.remove('manual');
-    if (dogfightPair && shipById[dogfightPair[0]].alive && shipById[dogfightPair[1]].alive) {
-      const a = shipById[dogfightPair[0]], b = shipById[dogfightPair[1]];
-      text.textContent = `${a.name} vs ${b.name}`;
-    } else {
-      text.textContent = 'DOGFIGHT — scanning...';
-    }
-  } else if (cameraMode === 'manual') {
-    el.classList.remove('dogfight');
+  if (cameraMode === 'manual') {
     el.classList.add('manual');
     const tracked = manualShips.filter(id => shipById[id] && shipById[id].alive);
     if (tracked.length > 0) {
@@ -7074,7 +9939,6 @@ function updateCameraModeUI() {
       text.textContent = 'MANUAL — select ships';
     }
   } else {
-    el.classList.remove('dogfight');
     el.classList.remove('manual');
     text.textContent = 'OVERVIEW';
   }
